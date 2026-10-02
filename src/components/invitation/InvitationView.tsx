@@ -1,0 +1,62 @@
+import type { ComponentType } from "react";
+import { isFullWidth } from "@/lib/library";
+import type { Block, InvitationData } from "@/lib/schema";
+import { headingsMode, palettes, themeStyle } from "@/lib/theme";
+import { blockComponents } from "./blocks/registry";
+import type { BlockContext } from "./blocks/types";
+import { MotionContext, OrnamentMotionContext, type Motion } from "./motion";
+import { TextureLayer } from "./TextureLayer";
+
+type Props = {
+  data: InvitationData;
+  slug: string;
+  preview?: boolean;
+  /** Анимации: гостю — «paused» до открытия конверта, мини-превью шаблонов — «off». */
+  motion?: Motion;
+};
+
+/** Общий шаблон приглашения — его видят гости и превью в редакторе. */
+export function InvitationView({ data, slug, preview = false, motion: requested = "on" }: Props) {
+  const ctx: BlockContext = { data, slug, preview };
+  const { style, speed } = data.theme.motion;
+  // Стиль «Без анимаций» — то же, что статичный режим: всё видно сразу.
+  const motion: Motion = style === "none" ? "off" : requested;
+  const bg = data.theme.background;
+
+  return (
+    <div
+      data-testid="invitation"
+      data-motion={motion}
+      data-style={style}
+      data-headings={headingsMode(data.theme)}
+      className={`relative min-h-full overflow-hidden bg-[var(--bg)] text-[var(--text)] ${motion === "off" ? "" : "inv-motion"}`}
+      style={{
+        ...themeStyle(data.theme),
+        ["--inv-speed" as string]: speed,
+        fontFamily: "var(--font-body)",
+        backgroundImage: bg ? `linear-gradient(color-mix(in srgb, var(--bg) 70%, transparent), var(--bg)), url("${bg}")` : undefined,
+        backgroundSize: bg ? "cover" : undefined,
+        backgroundPosition: "center top",
+      }}
+    >
+      <MotionContext.Provider value={motion}>
+      <OrnamentMotionContext.Provider value={data.theme.ornamentMotion}>
+        <TextureLayer texture={data.theme.texture} dark={palettes[data.theme.palette].dark} />
+        {/* Колонка содержимого — 430 px; блок «во всю ширину» выходит на всю ширину экрана (его текст — в колонке). */}
+        <main className="relative pb-24">
+          {data.blocks
+            .filter((b) => b.visible)
+            .map((block) => {
+              const Component = blockComponents[block.type] as ComponentType<{ block: Block; ctx: BlockContext }>;
+              return (
+                <div key={block.id} className={isFullWidth(block) ? "" : "mx-auto max-w-[430px]"}>
+                  <Component block={block} ctx={ctx} />
+                </div>
+              );
+            })}
+        </main>
+      </OrnamentMotionContext.Provider>
+      </MotionContext.Provider>
+    </div>
+  );
+}

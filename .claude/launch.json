@@ -1,0 +1,33 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "dev-3200",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "NEXT_DIST_DIR=.next-3200 npx next dev -p 3200"
+      ],
+      "port": 3200
+    },
+    {
+      "name": "dev-auto",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "NEXT_DIST_DIR=.next-auto npx next dev -p ${PORT:-3300}"
+      ],
+      "port": 3300,
+      "autoPort": true
+    }
+  ]
+}

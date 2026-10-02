@@ -1,0 +1,261 @@
+"use client";
+
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type Announcements,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { ChevronDown, Copy, GripVertical, Plus, Trash2 } from "lucide-react";
+import { useState, type ComponentType } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import {
+  addOrnament,
+  blockById,
+  blockLabels,
+  blockName,
+  canAddBlock,
+  canRemoveBlock,
+  duplicateBlock,
+  insertBlock,
+  moveBlock,
+  newBlockId,
+  removeBlock,
+  removeOrnament,
+  toggleBlock,
+  updateBlock,
+  updateOrnament,
+} from "@/lib/blocks";
+import type { Block, BlockType, InvitationData, Ornament } from "@/lib/schema";
+import { createBlock } from "@/lib/templates";
+import { cn } from "@/lib/utils";
+import { AddBlockDialog } from "./AddBlockDialog";
+import { blockFields } from "./BlockFields";
+import { BlockStyle } from "./BlockStyle";
+import { VariantPicker } from "./VariantPicker";
+
+type Props = {
+  data: InvitationData;
+  onChange: (data: InvitationData) => void;
+  /** Раскрытый блок (id) — всегда не больше одного: открыли другой, предыдущий закрылся. */
+  expanded: string | null;
+  onExpandedChange: (id: string | null) => void;
+  /** Появился новый блок (добавлен или скопирован) — его раскрывают и показывают в превью. */
+  onAdded?: (id: string) => void;
+};
+
+/** Объявления для скринридеров при перетаскивании (по умолчанию dnd-kit говорит по-английски). */
+function announcementsFor(data: InvitationData): Announcements {
+  const name = (id: unknown) => {
+    const block = blockById(data, String(id));
+    return block ? blockName(data, block) : String(id);
+  };
+  return {
+    onDragStart: ({ active }) => `Блок «${name(active.id)}» взят.`,
+    onDragOver: ({ active, over }) => (over ? `Блок «${name(active.id)}» над блоком «${name(over.id)}».` : undefined),
+    onDragEnd: ({ active, over }) =>
+      over ? `Блок «${name(active.id)}» перемещён на место блока «${name(over.id)}».` : `Блок «${name(active.id)}» отпущен.`,
+    onDragCancel: ({ active }) => `Перемещение блока «${name(active.id)}» отменено.`,
+  };
+}
+
+export function BlocksPanel({ data, onChange, expanded, onExpandedChange, onAdded }: Props) {
+  const [adding, setAdding] = useState(false);
+  const [removing, setRemoving] = useState<Block | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function onDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) return;
+    const index = (id: unknown) => data.blocks.findIndex((b) => b.id === id);
+    onChange(moveBlock(data, index(active.id), index(over.id)));
+  }
+
+  function add(type: BlockType, preset?: string) {
+    const block = createBlock(data, type, preset);
+    onChange(insertBlock(data, block, expanded));
+    setAdding(false);
+    onAdded?.(block.id);
+  }
+
+  function duplicate(id: string) {
+    const copyId = newBlockId(blockById(data, id)!.type, data.blocks.map((b) => b.id));
+    onChange(duplicateBlock(data, id, copyId));
+    onAdded?.(copyId);
+  }
+
+  function remove() {
+    if (!removing) return;
+    onChange(removeBlock(data, removing.id));
+    if (expanded === removing.id) onExpandedChange(null);
+    setRemoving(null);
+  }
+
+  return (
+    <>
+      <DndContext
+        // Стабильный id: иначе счётчик dnd-kit даёт разные aria-describedby на сервере и клиенте (hydration mismatch).
+        id="blocks-dnd"
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={onDragEnd}
+        accessibility={{
+          announcements: announcementsFor(data),
+          screenReaderInstructions: {
+            draggable: "Чтобы взять блок, нажмите пробел. Стрелками перемещайте, пробелом отпустите, Escape — отмена.",
+          },
+        }}
+      >
+        <SortableContext items={data.blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+          <ul className="flex flex-col gap-2">
+            {data.blocks.map((block) => (
+              <BlockItem
+                key={block.id}
+                block={block}
+                name={blockName(data, block)}
+                data={data}
+                expanded={expanded === block.id}
+                onExpand={() => onExpandedChange(expanded === block.id ? null : block.id)}
+                onToggle={() => onChange(toggleBlock(data, block.id))}
+                onDuplicate={canAddBlock(data, block.type) ? () => duplicate(block.id) : undefined}
+                onRemove={canRemoveBlock(block) ? () => setRemoving(block) : undefined}
+                onFieldsChange={(patch) => onChange(updateBlock(data, block.id, patch))}
+                onAddOrnament={(o) => onChange(addOrnament(data, block.id, o))}
+                onUpdateOrnament={(i, patch) => onChange(updateOrnament(data, block.id, i, patch))}
+                onRemoveOrnament={(i) => onChange(removeOrnament(data, block.id, i))}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
+
+      <Button type="button" variant="outline" className="mt-3 w-full border-dashed" onClick={() => setAdding(true)}>
+        <Plus /> Добавить блок
+      </Button>
+      <AddBlockDialog open={adding} onOpenChange={setAdding} data={data} onPick={add} />
+
+      <AlertDialog open={removing !== null} onOpenChange={(open) => !open && setRemoving(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить блок «{removing ? blockName(data, removing) : ""}»?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Его тексты, фото и оформление пропадут. Если блок нужен позже — его можно просто скрыть переключателем.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={remove}>
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+type ItemProps = {
+  block: Block;
+  /** Название в списке: «Текст», при нескольких — «Текст 2». */
+  name: string;
+  data: InvitationData;
+  expanded: boolean;
+  onExpand: () => void;
+  onToggle: () => void;
+  /** Нет — копировать нельзя (одиночный тип или лимит блоков). */
+  onDuplicate?: () => void;
+  /** Нет — удалять нельзя (главный экран). */
+  onRemove?: () => void;
+  onFieldsChange: (patch: Partial<Block>) => void;
+  onAddOrnament: (o: Ornament) => void;
+  onUpdateOrnament: (index: number, patch: Partial<Ornament>) => void;
+  onRemoveOrnament: (index: number) => void;
+};
+
+function BlockItem({ block, name, data, expanded, onExpand, onToggle, onDuplicate, onRemove, onFieldsChange, ...ornamentHandlers }: ItemProps) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id: block.id,
+  });
+  const label = name;
+  // Свой заголовок помогает различать блоки одного типа («Текст 2 · Подарки»); у «Текста» он и есть суть блока.
+  const subtitle = block.type === "text" || name !== blockLabels[block.type] ? block.title?.trim() : undefined;
+  const Fields = blockFields[block.type] as ComponentType<{ block: Block; onChange: (patch: Partial<Block>) => void }>;
+
+  return (
+    <li
+      ref={setNodeRef}
+      data-testid={`block-item-${block.type}`}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn(
+        "rounded-xl border bg-card text-card-foreground shadow-xs transition-shadow",
+        isDragging && "relative z-10 shadow-lg ring-2 ring-ring/40",
+        expanded && "ring-1 ring-foreground/10",
+      )}
+    >
+      <div className="flex items-center gap-1 p-1.5 pr-3">
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          aria-label={`Перетащить блок «${label}»`}
+          className="flex size-8 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 active:cursor-grabbing"
+        >
+          <GripVertical className="size-4" />
+        </button>
+        <button
+          type="button"
+          onClick={onExpand}
+          aria-expanded={expanded}
+          className={cn(
+            "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm font-medium outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
+            !block.visible && "text-muted-foreground",
+          )}
+        >
+          <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", !expanded && "-rotate-90")} />
+          <span className="truncate">
+            {label}
+            {subtitle && subtitle !== label && <span className="font-normal text-muted-foreground"> · {subtitle}</span>}
+          </span>
+        </button>
+        {onDuplicate && (
+          <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground" aria-label={`Дублировать блок «${label}»`} title="Дублировать" onClick={onDuplicate}>
+            <Copy />
+          </Button>
+        )}
+        {onRemove && (
+          <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-destructive" aria-label={`Удалить блок «${label}»`} title="Удалить" onClick={onRemove}>
+            <Trash2 />
+          </Button>
+        )}
+        <Switch checked={block.visible} onCheckedChange={onToggle} aria-label={`Показывать блок «${label}»`} />
+      </div>
+      {expanded && (
+        <div className="flex flex-col gap-4 border-t p-4">
+          <VariantPicker data={data} block={block} onChange={(variant) => onFieldsChange({ variant })} />
+          <Fields block={block} onChange={onFieldsChange} />
+          <BlockStyle block={block} theme={data.theme} onChange={onFieldsChange} {...ornamentHandlers} />
+        </div>
+      )}
+    </li>
+  );
+}

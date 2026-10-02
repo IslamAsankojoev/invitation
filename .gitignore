@@ -1,0 +1,25 @@
+node_modules
+.next
+.next-*
+next-env.d.ts
+*.tsbuildinfo
+.DS_Store
+
+# Секреты: ключи Google, AUTH_SECRET, строки подключения. Образец без секретов — .env.example (в репозитории).
+.env
+.env*.local
+
+# Базы SQLite и загрузки пользователей
+prisma/*.db
+prisma/*.db-journal
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Тесты
+test-results
+playwright-report
+
+# Архивы «до переделки» и исходники ассетов (готовые файлы — в public/)
+*.tgz
+musics/
+new-sources/
