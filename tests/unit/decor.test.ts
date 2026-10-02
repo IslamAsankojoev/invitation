@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createParticles, decorDrawers, edgeFade, fitParticles, stepParticle } from "@/lib/decor";
+import { burstSparks, createParticles, decorDrawers, edgeFade, fitParticles, hitParticle, MIN_HIT_RADIUS, particleCenter, respawnParticle, sparkColors, stepParticle, stepSparks } from "@/lib/decor";
 
 describe("createParticles", () => {
   const drawer = decorDrawers.image;
@@ -62,5 +62,45 @@ describe("fitParticles", () => {
   it("с нулевого размера ничего не растягивает", () => {
     const [p] = createParticles(1, 400, 800, decorDrawers.petals, 1, () => 0.5);
     expect(fitParticles([p], { width: 0, height: 0 }, { width: 400, height: 800 })[0]).toMatchObject({ x: p.x, y: p.y });
+  });
+});
+
+describe("мини-игра: частицы лопаются от касания", () => {
+  const drawer = decorDrawers.snow;
+  const flake = (x: number, y: number, size = 2) => ({ x, y, size, speed: 30, rotation: 0, spin: 0, phase: 0, alpha: 1 });
+
+  it("попадание — ближайшая частица; мелкую снежинку можно задеть пальцем (радиус не меньше 22 px)", () => {
+    const particles = [flake(100, 100), flake(130, 100), flake(300, 300)];
+    expect(hitParticle(particles, drawer, 118, 100)).toBe(1);
+    expect(hitParticle(particles, drawer, 100 - MIN_HIT_RADIUS + 1, 100)).toBe(0);
+    expect(hitParticle(particles, drawer, 100 - MIN_HIT_RADIUS - 1, 100)).toBe(-1);
+    expect(hitParticle(particles, drawer, 200, 200)).toBe(-1);
+  });
+
+  it("попадание учитывает покачивание частицы, как она нарисована", () => {
+    const p = { ...flake(100, 100), phase: Math.PI / 2 };
+    const c = particleCenter(p, decorDrawers.petals);
+    expect(c.x).toBeCloseTo(100 + decorDrawers.petals.sway * 0.3);
+    expect(hitParticle([p], decorDrawers.petals, c.x, c.y)).toBe(0);
+  });
+
+  it("лопнувшая частица возвращается выше экрана — декор не редеет", () => {
+    const p = flake(100, 400);
+    respawnParticle(p, 390, () => 0.5);
+    expect(p.y).toBeLessThan(0);
+    expect(p.x).toBe(195);
+  });
+
+  it("хлопок: конфетти в цветах декора разлетаются и падают, потом исчезают", () => {
+    let sparks = burstSparks(50, 50, "#c0392b", 12, () => 0.5);
+    expect(sparks).toHaveLength(12);
+    expect(new Set(sparks.map((s) => s.color))).toEqual(new Set(sparkColors("#c0392b")));
+    expect(sparkColors("#c0392b")).not.toContain("#ffffff"); // белое конфетти не видно на светлой бумаге
+    const piece = sparks[0];
+    const startY = piece.y;
+    for (let t = 0; t < 0.6; t += 0.05) sparks = stepSparks(sparks, 0.05);
+    expect(piece.y).toBeGreaterThan(startY); // гравитация
+    for (let t = 0; t < 2; t += 0.05) sparks = stepSparks(sparks, 0.05);
+    expect(sparks).toHaveLength(0);
   });
 });

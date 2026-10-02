@@ -1,3 +1,4 @@
+import { mixHex } from "./color";
 import type { DecorType } from "./schema";
 
 export const decorLabels: Record<DecorType, string> = {
@@ -168,6 +169,104 @@ export function drawParticles(
     ctx.rotate(p.rotation);
     if (drawer.flip) ctx.scale(0.35 + Math.abs(Math.cos(p.phase * 1.3)) * 0.65, 1);
     drawer.draw(ctx, p, image);
+    ctx.restore();
+  }
+}
+
+// ---------- Мини-игра: частица лопается от касания ----------
+
+/** Где частица нарисована сейчас (с учётом покачивания, как в drawParticles). */
+export const particleCenter = (p: Particle, drawer: DecorDrawer) => ({ x: p.x + Math.sin(p.phase) * drawer.sway * 0.3, y: p.y });
+
+/** Минимальный радиус попадания, px: снежинку в 2 px пальцем иначе не задеть. */
+export const MIN_HIT_RADIUS = 22;
+
+/** Ближайшая к точке касания частица в пределах радиуса попадания; -1 — мимо. */
+export function hitParticle(particles: Particle[], drawer: DecorDrawer, x: number, y: number): number {
+  let best = -1;
+  let bestDist = Infinity;
+  particles.forEach((p, i) => {
+    const c = particleCenter(p, drawer);
+    const dist = Math.hypot(c.x - x, c.y - y);
+    if (dist <= Math.max(MIN_HIT_RADIUS, p.size * 2) && dist < bestDist) {
+      best = i;
+      bestDist = dist;
+    }
+  });
+  return best;
+}
+
+/** Лопнувшая частица возвращается наверх в случайном месте — декор не редеет. */
+export function respawnParticle(p: Particle, width: number, rand: () => number = Math.random): void {
+  p.y = -p.size * 2 - rand() * 40;
+  p.x = rand() * width;
+}
+
+/** Кусочек конфетти от лопнувшей частицы. Живёт life секунд. */
+export type Spark = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  rotation: number;
+  spin: number;
+  color: string;
+  age: number;
+  life: number;
+};
+
+/** Цвета конфетти: цвет декора, темнее, светлее и два оттенка золота — заметно и на светлой, и на тёмной палитре. */
+export const sparkColors = (color: string) => [color, mixHex(color, "#000000", 0.3), mixHex(color, "#ffffff", 0.3), "#e3b54a", "#c48a2c"];
+
+/** Хлопок: веер конфетти во все стороны (чуть больше вверх). */
+export function burstSparks(x: number, y: number, color: string, count = 22, rand: () => number = Math.random): Spark[] {
+  const colors = sparkColors(color);
+  return Array.from({ length: count }, (_, i) => {
+      const angle = (i / count) * Math.PI * 2 + rand() * 0.4;
+      const power = 110 + rand() * 170;
+      return {
+        x,
+        y,
+        vx: Math.cos(angle) * power,
+        vy: Math.sin(angle) * power - 90,
+        size: 5 + rand() * 5,
+        rotation: rand() * Math.PI,
+        spin: (rand() - 0.5) * 18,
+        color: colors[i % colors.length],
+        age: 0,
+      life: 0.8 + rand() * 0.5,
+    };
+  });
+}
+
+const GRAVITY = 520;
+
+/** Продвигает конфетти на dt секунд (гравитация, сопротивление воздуха) и убирает догоревшие. */
+export function stepSparks(sparks: Spark[], dt: number): Spark[] {
+  const drag = Math.pow(0.18, dt);
+  for (const s of sparks) {
+    s.age += dt;
+    s.vx *= drag;
+    s.vy = s.vy * drag + GRAVITY * dt;
+    s.x += s.vx * dt;
+    s.y += s.vy * dt;
+    s.rotation += s.spin * dt;
+  }
+  return sparks.filter((s) => s.age < s.life);
+}
+
+export function drawSparks(ctx: CanvasRenderingContext2D, sparks: Spark[]): void {
+  for (const s of sparks) {
+    const t = s.age / s.life;
+    ctx.save();
+    ctx.globalAlpha = 1 - t;
+    ctx.translate(s.x, s.y);
+    ctx.rotate(s.rotation);
+    // Сжатие по X — конфетти переворачивается в воздухе.
+    ctx.scale(Math.abs(Math.cos(s.rotation * 1.7)) * 0.8 + 0.2, 1);
+    ctx.fillStyle = s.color;
+    ctx.fillRect(-s.size / 2, -s.size / 4, s.size, s.size / 2);
     ctx.restore();
   }
 }

@@ -250,6 +250,8 @@ export const themeSchema = z.object({
     size: z.number().min(0.5, "Размер декора от 0.5 до 3").max(3, "Размер декора от 0.5 до 3").default(1),
     /** Множитель скорости падения: 1 — стандартная. */
     speed: z.number().min(0.3, "Скорость декора от 0.3 до 3").max(3, "Скорость декора от 0.3 до 3").default(1),
+    /** Мини-игра: частица лопается конфетти от касания. Не задано — включено (false — выключено). */
+    pop: z.boolean().optional(),
   }),
   envelope: z
     .object({ ornament: imageUrl.nullable(), style: z.enum(ENVELOPE_STYLES).default("seal") })

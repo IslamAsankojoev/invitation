@@ -423,4 +423,16 @@ describe("Editor: добавление, копирование и удалени
       expect(screen.getByRole("button", { name: "Песня «Своя песня» — загружена раньше" })).toHaveAttribute("aria-pressed", "true");
     });
   });
+
+  it("мини-игра с декором включена по умолчанию и выключается переключателем", async () => {
+    const user = userEvent.setup();
+    const data = createDefaultInvitation();
+    data.theme.decor = { ...data.theme.decor, type: "petals", density: 10 };
+    render(<Editor id="inv1" token="secret" initialSlug="demo" initialData={data} />);
+    const layer = () => screen.getByTestId("decor-layer");
+    expect(layer()).toHaveAttribute("data-pop", "true");
+    await user.click(screen.getByRole("tab", { name: "Оформление" }));
+    await user.click(screen.getByRole("switch", { name: "Лопаются от касания" }));
+    expect(layer()).not.toHaveAttribute("data-pop");
+  });
 });

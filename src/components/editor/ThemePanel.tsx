@@ -6,6 +6,7 @@ import { TextureLayer } from "@/components/invitation/TextureLayer";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Switch } from "@/components/ui/switch";
 import { findBlock } from "@/lib/blocks";
 import { splitNames } from "@/lib/calendar";
 import { decorLabels } from "@/lib/decor";
@@ -55,6 +56,7 @@ export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
   const sampleName = splitNames(findBlock(data, "hero")?.names ?? "Анна")[0].split(" ")[0] || "Анна";
   const decorId = useId();
   const colorId = useId();
+  const popId = useId();
 
   return (
     <div className="flex flex-col gap-4">
@@ -291,6 +293,11 @@ export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
                 onChange={(speed) => setDecor({ speed: Math.round(speed * 10) / 10 })}
               />
             </div>
+            <Field orientation="horizontal">
+              <Switch id={popId} checked={theme.decor.pop !== false} onCheckedChange={(pop) => setDecor({ pop })} />
+              <FieldLabel htmlFor={popId}>Лопаются от касания</FieldLabel>
+            </Field>
+            <FieldDescription className="-mt-2">Мини-игра для гостей: нажмите на частицу — она лопнет конфетти. Попробуйте прямо в превью.</FieldDescription>
           </>
         )}
       </Group>

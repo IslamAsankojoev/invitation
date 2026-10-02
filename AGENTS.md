@@ -55,7 +55,7 @@ build`, регион функций `dub1` (vercel.json) — рядом с ба�
 `NEXT_DIST_DIR=.next-build npx next build` (отдельная папка, чтобы не мешать запущенному dev-серверу; после сборки
 верни `tsconfig.json`/`next-env.d.ts`, Next дописывает туда `.next-build/types`).
 
-Текущее состояние: **286 тестов Vitest, E2E и `next build` проходят** (после шаблонов по примерам). Края, фоновые
+Текущее состояние: **291 тест Vitest, E2E и `next build` проходят** (после шаблонов по примерам). Края, фоновые
 картинки, ширина и стиль текста всё ещё без своих тестов — см. «Долг по тестам» в `next-blocks.md`.
 
 Если порт 3000 занят другим dev-сервером — в `.claude/launch.json` есть `dev-3200` (своя папка `.next-3200`).
@@ -143,7 +143,7 @@ InvitationData
 │  ├─ background: url | null            фоновое фото страницы
 │  ├─ texture: none | halftone | speckle | grain | linen | grid | diagonal | hearts | diamonds | flourish | stars | watercolor
 │  ├─ decor: { type: none|image|petals|sakura|confetti|snow, image: url|null, color: #hex, density 0–60, size 0.5–3,
-│  │           speed 0.3–3 }
+│  │           speed 0.3–3, pop?: boolean (мини-игра; не задано = включено) }
 │  ├─ envelope: { ornament: url|null, style: seal|veil|flap|curtains|book }  картинка в углах и вид заставки
 │  ├─ headings: caps | names          заголовки блоков: капитель Tenor Sans или шрифтом имён (см. §5.7)
 │  ├─ motion: { style: elegant|soft|playful|cinematic|none, speed 0.5–2 }  стиль и скорость анимаций
@@ -357,7 +357,11 @@ InvitationData
   (`ProgramBlock`, только растёт), точки `data-lit`; место — шторка и блик `inv-btn-shine`; анкета — перелистывание
   цифры (WAAPI), салют `heartBurst`, экран «Спасибо!» с «Изменить ответ».
 - Падающий декор остаётся canvas (`DecorLayer`): переворот `flip`, проявление/угасание у краёв `edgeFade`,
-  скорость `decor.speed`. «perMinute/maxOnScreen» эталона у нас = плотность (частицы переиспользуются).
+  скорость `decor.speed`. **Мини-игра** (`decor.pop !== false`, Switch «Лопаются от касания»): касание частицы —
+  она лопается конфетти (`hitParticle` с радиусом не меньше `MIN_HIT_RADIUS` = 22 px, `burstSparks`/`stepSparks`/
+  `drawSparks` в lib/decor.ts, цвета `sparkColors` — без белого) и снова падает сверху (`respawnParticle`). Касания
+  ловятся `pointerdown` на window (холст остаётся `pointer-events: none` — кнопки и прокрутка работают), в превью
+  редактора — только внутри рамки телефона. Кольцо-вспышку пользователь отверг — только конфетти. «perMinute/maxOnScreen» эталона у нас = плотность (частицы переиспользуются).
 - Проверка в браузерной панели: если панель скрыта, таймлайн анимаций и rAF заморожены — перематывай
   `document.getAnimations()` вручную, а кадр обновляй сменой размера окна (`resize_window`).
 
@@ -501,6 +505,8 @@ InvitationData
     `tests/auth-mock.ts` (после каждого теста сбрасывается). E2E запускает сервер с пустыми `AUTH_GOOGLE_*`
     (playwright.config.ts) — иначе ключи из `.env` включили бы вход и сценарий по token упёрся бы в «Войдите». Проверить Auth.js вживую без Google: вставить в БД
     `User` + `Session` и поставить cookie `authjs.session-token` = sessionToken.
+22. **`next build` в папку `.next` ломает запущенный `npm run dev`** (страницы отдают 500): собирай с
+    `NEXT_DIST_DIR=.next-build`, а после локального `npm run vercel-build` перезапусти dev и удали `.next`.
 
 ## 8. Тесты
 
