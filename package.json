@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "prisma migrate deploy && next dev",
     "build": "next build",
-    "vercel-build": "prisma migrate deploy && next build",
+    "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",

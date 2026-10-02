@@ -26,3 +26,4 @@ new-sources/
 
 # Продовые строки подключения
 .env.supabase
+.env.vercel
