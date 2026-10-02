@@ -1,9 +1,12 @@
 import { execSync } from "node:child_process";
 
-// Создаёт/синхронизирует схему отдельной тестовой БД. Данные API-тесты чистят сами (deleteMany).
+// Применяет миграции к тестовой базе (Postgres из docker-compose.yml). Данные API-тесты чистят сами (deleteMany).
 export default function setup() {
-  execSync("npx prisma db push --skip-generate", {
-    env: { ...process.env, DATABASE_URL: "file:./test.db" },
-    stdio: "ignore",
-  });
+  const url = process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5433/wedding_test";
+  try {
+    execSync("npx prisma migrate deploy", { env: { ...process.env, DATABASE_URL: url, DIRECT_URL: url }, stdio: "pipe" });
+  } catch (e) {
+    const out = String((e as { stderr?: Buffer }).stderr ?? e);
+    throw new Error(`Тестовая база недоступна — запущен ли Postgres? npm run db:up\n${out}`);
+  }
 }

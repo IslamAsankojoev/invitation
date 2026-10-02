@@ -28,23 +28,34 @@ MVP-конструктор пригласительных сайтов (свад
 ## 2. Стек и команды
 
 Next.js 15 (App Router, webpack) · React 19 · TypeScript strict · Tailwind CSS 4 · **shadcn/ui** (база Radix,
-стиль `radix-vega`, иконки lucide) · Prisma 6 + SQLite · Auth.js 5 (next-auth beta, вход через Google) · Zod 3 · dnd-kit · Vitest 3 + React Testing Library ·
+стиль `radix-vega`, иконки lucide) · Prisma 6 + PostgreSQL (прод — Supabase, локально — Docker) · Auth.js 5 (next-auth beta, вход через Google) · Zod 3 · dnd-kit · Vitest 3 + React Testing Library ·
 Playwright. Node 20. TypeScript закреплён на **5.x** (TS 7 ломает Next 15).
 
 ```bash
 npm install          # + prisma generate
-npm run dev          # :3000, сам делает prisma db push
+npm run db:up        # локальный Postgres в Docker (порт 5433; базы wedding, wedding_test, wedding_e2e)
+npm run dev          # :3000, сначала prisma migrate deploy
+npm run db:migrate   # новая миграция после правки schema.prisma (prisma migrate dev --name …)
 npm run db:seed      # 12 демо (по шаблону): /i/demo, /i/demo-<id шаблона> (rose-garden, boarding-pass, lago…)
-npm test             # unit + компоненты + API (Vitest), БД prisma/test.db
-npm run test:e2e     # Playwright, Pixel 7, свой dev-сервер :3100, БД prisma/e2e.db, сборка в .next-e2e
+npm run db:deploy:prod  # миграции в Supabase (строки из .env.supabase); на Vercel это делает vercel-build
+npm run storage:setup   # создать/обновить бакет uploads в Supabase Storage (ключи из .env.supabase)
+npm test             # unit + компоненты + API (Vitest), база wedding_test
+npm run test:e2e     # Playwright, Pixel 7, свой dev-сервер :3100, база wedding_e2e, сборка в .next-e2e
 npm run typecheck
 ```
+
+**Базы.** Прод — Supabase (`eu-west-1`, Data API выключен, RLS включён; Prisma ходит как владелец). Строки
+подключения прода — в `.env.supabase` (в .gitignore) и в переменных Vercel: `DATABASE_URL` через пулер (6543,
+`pgbouncer=true`), `DIRECT_URL` — прямое (5432) для миграций; `SUPABASE_URL` + `SUPABASE_SECRET_KEY` — хранилище фото
+(публичный бакет `uploads`, только картинки ≤ 5 МБ; запись — секретным ключом только с сервера). `.env` указывает на локальный Docker — разработка и
+тесты **никогда** не ходят в Supabase (тесты чистят таблицы). Vercel: `vercel-build` = `prisma migrate deploy && next
+build`, регион функций `dub1` (vercel.json) — рядом с базой. Старый `prisma/dev.db` (SQLite) больше не используется.
 
 Перед сдачей задачи всегда: `npx tsc --noEmit`, `npm test`, `npm run test:e2e`; для крупных правок ещё
 `NEXT_DIST_DIR=.next-build npx next build` (отдельная папка, чтобы не мешать запущенному dev-серверу; после сборки
 верни `tsconfig.json`/`next-env.d.ts`, Next дописывает туда `.next-build/types`).
 
-Текущее состояние: **279 тестов Vitest, E2E и `next build` проходят** (после шаблонов по примерам). Края, фоновые
+Текущее состояние: **286 тестов Vitest, E2E и `next build` проходят** (после шаблонов по примерам). Края, фоновые
 картинки, ширина и стиль текста всё ещё без своих тестов — см. «Долг по тестам» в `next-blocks.md`.
 
 Если порт 3000 занят другим dev-сервером — в `.claude/launch.json` есть `dev-3200` (своя папка `.next-3200`).
@@ -52,10 +63,12 @@ npm run typecheck
 ## 3. Карта кода
 
 ```
-prisma/schema.prisma        Invitation(id, slug unique, editToken, userId?, data: String(JSON), timestamps), Rsvp,
+prisma/schema.prisma        Invitation(id, slug unique, editToken, userId?, data: Json, timestamps), Rsvp,
                             User/Account/Session/VerificationToken (Auth.js)
 src/auth.ts                 Auth.js: Google + PrismaAdapter, сессии в БД; без ключей провайдеров нет
+prisma/migrations/          миграции (prisma migrate) — менять схему только через новую миграцию
 prisma/seed.ts              демо на каждый шаблон
+docker-compose.yml          локальный Postgres; docker/init-db.sql создаёт базы для тестов
 public/library/*.webp       встроенная библиотека картинок (цветы, банты, лепестки, бумага), ~1 МБ
 public/library/bot-*.webp   старинная ботаника (Редуте и др., public domain/CC0), источники — public/library/CREDITS.md;
                             вырезаны из сканов scripts/botanical-cutout.mjs
@@ -101,6 +114,8 @@ src/lib/                    логика без UI, покрыта unit-тест
   session.ts      authEnabled() (заданы AUTH_GOOGLE_ID/SECRET), currentUser() — в тестах подменяется
   access.ts       canEdit (token или владелец), ownershipOf, claimDecision — чистые правила доступа
   music.ts        встроенные песни, DEFAULT_MUSIC_URL, findTrack, флаг CUSTOM_MUSIC_ENABLED (своя музыка выключена)
+  images.ts       optimizeImage: sharp → поворот по EXIF, ≤ 1600 px, WebP, без метаданных (GIF — анимированный WebP)
+  storage.ts      Storage: LocalStorage (public/uploads) или SupabaseStorage (@supabase/storage-js) — по наличию ключей
   countdown.ts ics.ts slug.ts rsvp.ts upload.ts storage.ts rateLimit.ts invitations.ts db.ts utils.ts
 src/components/
   ui/             shadcn-компоненты (принадлежат проекту, их можно править)
@@ -114,7 +129,7 @@ tests/unit, tests/components, tests/api, tests/e2e, tests/fixtures/test.mp3
 
 ## 4. Модель данных (`src/lib/schema.ts`)
 
-Приглашение хранится одной JSON-строкой `Invitation.data` и **всегда** проходит `invitationDataSchema` при чтении
+Приглашение хранится одним JSON-полем `Invitation.data` (jsonb) и **всегда** проходит `invitationDataSchema` при чтении
 (`lib/invitations.ts → fromRow`) и записи (PATCH). Тип `InvitationData = z.infer<…>` (выходной тип: поля с
 `.default()` в нём обязательны).
 
@@ -292,7 +307,10 @@ InvitationData
 - Рваный край: `GET /api/edges/torn?v=&seed=0…2147483646&side=top|bottom&layer=mask|paper` → webp. Картинка —
   чистая функция параметров: кэш в памяти (≤400, параллельные запросы одного зерна считаются один раз) и
   `Cache-Control: immutable`; первый запрос зерна ~0.1 с. Открыт без token (как upload), 400 на кривые параметры.
-- Upload: `image/*` ≤ 5 МБ, `audio/mpeg` ≤ 10 МБ — сейчас отклоняется, пока `CUSTOM_MUSIC_ENABLED = false` (`lib/upload.ts`), сохраняется через интерфейс `Storage`
+- Upload: `image/*` ≤ 4 МБ (Vercel принимает запрос до 4.5 МБ), `audio/mpeg` ≤ 10 МБ — сейчас отклоняется, пока
+  `CUSTOM_MUSIC_ENABLED = false` (`lib/upload.ts`). Фото сжимается дважды: в браузере `shrinkImage` (editor/shrinkImage.ts:
+  ≤ 1600 px, JPEG или WebP с прозрачностью; фото с телефона 5–10 МБ → ~1 МБ) и на сервере `optimizeImage` → WebP.
+  Нечитаемая картинка — 400, сбой хранилища — 502. Файл — `inv/<id приглашения>/<uuid>.webp` (чистить по приглашению)., сохраняется через интерфейс `Storage`
   (`LocalStorage` → `public/uploads`). Только в своё приглашение: `?id=&token=` или владелец (404/403). Клиент берёт
   id и token из `UploadTargetContext` (кладёт `Editor`, хук `useUploadFile` в `editor/api.ts`).
 - «Всего гостей» = сумма `guestsCount` только у пришедших. CSV с BOM для Excel.
@@ -454,14 +472,17 @@ InvitationData
    `window.location.assign`.
 9. dnd-kit KeyboardSensor подписывается на клавиши асинхронно: в E2E жмём ↑ по одному и ждём объявление
    «Блок «Программа» над блоком «…»» (`toPass`).
-10. Prisma запрещает `db push --force-reset` из ИИ-агентов без согласия пользователя — не обходи. Тестовые БД не
-    сбрасываются: API-тесты чистят таблицы сами (`resetDb`).
+10. Prisma запрещает `db push --force-reset`/`migrate reset` из ИИ-агентов без согласия пользователя — не обходи.
+    Тестовые базы не сбрасываются: API-тесты чистят таблицы сами (`resetDb`). Тесты падают с «Тестовая база
+    недоступна» — не запущен Docker (`npm run db:up`).
 11. `next start` **не отдаёт** файлы, загруженные в `public/` после сборки → E2E идёт против `next dev`; для
     продакшена нужен S3 (реализовать `Storage`).
 12. Загрузки в `public/uploads` (и E2E тоже) копятся — это ожидаемо, папка в `.gitignore`.
 13. Даты — локальное время без часового пояса (`"YYYY-MM-DDTHH:mm"`); форматирование парсит строку вручную, чтобы
     сервер и клиент совпадали; в .ics — «плавающее» время.
-14. Проект **не под git**. Перед крупными переделками делай архив (так делали: `before-shadcn.tgz`).
+14. Проект под git: https://github.com/IslamAsankojoev/invitation (ветка `main`). Секреты — только в `.env` (в
+    `.gitignore`; GitHub push protection отклоняет ключи Google), образец — `.env.example`. Архивы `*.tgz`, исходники
+    `musics/` и `new-sources/` в репозиторий не идут. Старые архивы «до переделки» остались локально.
 15. **Телефон: адресная строка меняет высоту окна при прокрутке.** Всё `fixed` на весь экран с `h-full`/`100vh`
     получает resize почти каждый кадр. Поэтому `DecorLayer` высотой `h-lvh` и при resize не пересоздаёт частицы, а
     подгоняет их (`fitParticles`) — иначе частицы «прыгали» и холст растягивался (эффект «полёта в космосе»).
@@ -540,8 +561,9 @@ InvitationData
 
 ## 10. Для продакшена (не сделано)
 
-Ключи Google OAuth (вход уже сделан), S3/Supabase через интерфейс `Storage`, Postgres +
-`prisma migrate` (поле `data` → `Json`), rate limit в Redis, чистка неиспользуемых файлов, CAPTCHA.
+`schemaVersion` и фикстуры реальных
+приглашений, бэкапы (pg_dump по расписанию) и пинг против засыпания бесплатного Supabase, аналитика, деплой на
+Vercel (Postgres + migrate уже сделаны), rate limit в Redis, чистка неиспользуемых файлов, CAPTCHA.
 
 ## 11. История решений (кратко)
 
@@ -584,3 +606,5 @@ InvitationData
 19. Аккаунты: вход через Google (Auth.js, пользователи в нашей БД), «Сохранить в аккаунт», «Мои приглашения»,
     владелец заходит без token, загрузка файлов только в своё приглашение. Архив до переделки — `before-auth.tgz`.
     Затем: ссылки/«Открыть»/ответы гостей — только владельцу; музыка — только встроенные песни (своя выключена).
+20. Git + GitHub, переход с SQLite на PostgreSQL: прод — Supabase, локально и в тестах — Docker; `data` → jsonb,
+    миграции `prisma migrate`, vercel.json (регион dub1). Фото — Supabase Storage со сжатием в браузере и на сервере.

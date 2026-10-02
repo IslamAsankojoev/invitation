@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { createDefaultInvitation } from "./defaults";
 import { invitationDataSchema, type InvitationData } from "./schema";
@@ -14,7 +15,10 @@ export type Invitation = {
   updatedAt: Date;
 };
 
-type Row = { id: string; slug: string; editToken: string; userId: string | null; data: string; updatedAt: Date };
+type Row = { id: string; slug: string; editToken: string; userId: string | null; data: Prisma.JsonValue; updatedAt: Date };
+
+/** InvitationData — обычный JSON-объект (схема Zod гарантирует), Prisma просто нужен его тип. */
+const toJson = (data: InvitationData) => data as unknown as Prisma.InputJsonValue;
 
 function fromRow(row: Row): Invitation {
   return {
@@ -22,7 +26,7 @@ function fromRow(row: Row): Invitation {
     slug: row.slug,
     editToken: row.editToken,
     userId: row.userId,
-    data: invitationDataSchema.parse(JSON.parse(row.data)),
+    data: invitationDataSchema.parse(row.data),
     updatedAt: row.updatedAt,
   };
 }
@@ -35,7 +39,7 @@ export async function createInvitation(
   let finalSlug = slug ?? randomSlug();
   while (!slug && (await isSlugTaken(finalSlug))) finalSlug = randomSlug();
   const row = await prisma.invitation.create({
-    data: { slug: finalSlug, editToken: randomBytes(24).toString("hex"), data: JSON.stringify(data), userId },
+    data: { slug: finalSlug, editToken: randomBytes(24).toString("hex"), data: toJson(data), userId },
   });
   return fromRow(row);
 }
@@ -80,7 +84,7 @@ export async function isSlugTaken(slug: string, exceptId?: string): Promise<bool
 export async function updateInvitation(id: string, patch: { data?: InvitationData; slug?: string }): Promise<Invitation> {
   const row = await prisma.invitation.update({
     where: { id },
-    data: { slug: patch.slug, data: patch.data ? JSON.stringify(patch.data) : undefined },
+    data: { slug: patch.slug, data: patch.data ? toJson(patch.data) : undefined },
   });
   return fromRow(row);
 }

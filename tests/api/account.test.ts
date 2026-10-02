@@ -5,6 +5,7 @@ import { GET as CLAIM } from "@/app/edit/[id]/claim/route";
 import { createInvitation, getInvitationById, listUserInvitations } from "@/lib/invitations";
 import { storage } from "@/lib/storage";
 import { signInAs } from "../auth-mock";
+import { pngOf } from "../image-fixtures";
 import { createUser, jsonRequest, resetDb } from "./helpers";
 
 beforeEach(resetDb);
@@ -62,10 +63,11 @@ describe("аккаунты", () => {
   });
 
   it("загрузка файла — только в своё приглашение: по token или владельцу", async () => {
-    vi.spyOn(storage, "save").mockResolvedValue("/uploads/x.png");
+    vi.spyOn(storage, "save").mockResolvedValue("/uploads/x.webp");
+    const png = await pngOf(20, 20);
     const upload = (query: string) => {
       const form = new FormData();
-      form.append("file", new File([new Uint8Array(10)], "a.png", { type: "image/png" }));
+      form.append("file", new File([png], "a.png", { type: "image/png" }));
       return UPLOAD(new Request(`http://localhost/api/upload${query}`, { method: "POST", body: form }));
     };
     await createUser("u1");

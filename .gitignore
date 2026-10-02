@@ -23,3 +23,6 @@ playwright-report
 *.tgz
 musics/
 new-sources/
+
+# Продовые строки подключения
+.env.supabase

@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 import type { InvitationData } from "@/lib/schema";
 import { checkUpload } from "@/lib/upload";
+import { shrinkImage } from "./shrinkImage";
 
 async function errorMessage(res: Response): Promise<string> {
   const body = await res.json().catch(() => null);
@@ -26,7 +27,8 @@ export function useUploadFile() {
   return (file: File) => uploadFile(file, target);
 }
 
-export async function uploadFile(file: File, target: UploadTarget | null): Promise<string> {
+export async function uploadFile(original: File, target: UploadTarget | null): Promise<string> {
+  const file = await shrinkImage(original);
   const error = checkUpload(file.type, file.size);
   if (error) throw new Error(error);
   const form = new FormData();

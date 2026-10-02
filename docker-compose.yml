@@ -1,0 +1,16 @@
+# Локальный Postgres для разработки и тестов (прод — Supabase). Порт 5433, чтобы не мешать другому Postgres.
+# Базы: wedding (npm run dev), wedding_test (Vitest), wedding_e2e (Playwright) — создаются при первом запуске.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: wedding
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+volumes:
+  pgdata:
