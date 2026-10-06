@@ -1,7 +1,7 @@
 "use client";
 
 import { Ban, ChevronRight, FlipHorizontal2, Image as ImageIcon, Minus, Palette, Plus, RotateCcw, Shuffle, Sparkles, Trash2, X } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -13,7 +13,8 @@ import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { blockLabels, createOrnament, defaultTitles, MAX_ORNAMENTS } from "@/lib/blocks";
 import { blockEdges, blockHasFill, edgeLabels, edgeMaskStyle, edgesVisible, newEdgeSeed, tornPaperStyle, type EdgeSide } from "@/lib/edges";
-import { mixHex } from "@/lib/color";
+import { BLOCK_STYLES, blockStyleLabels, blockStylePatch, blockStyleSpec, matchBlockStyle, type BlockStyleId } from "@/lib/blockStyles";
+import { isDarkColor, mixHex } from "@/lib/color";
 import { FULL_WIDTH_SURFACES, isPanelSurface, ORNAMENT_CATEGORIES, surfaceGroups, surfaceLabels, surfaceLayer, surfaceThumb, takesBgColor } from "@/lib/library";
 import { ORNAMENT_SIZE_MAX, ORNAMENT_SIZE_MIN, POSITION_GRID, positionLabels, stepOrnamentSize } from "@/lib/ornaments";
 import { premiumSurfaces } from "@/lib/premium";
@@ -102,15 +103,82 @@ function SurfaceSwatch({ surface, className }: { surface: Surface; className?: s
   );
 }
 
-/**
- * Фон блока: в панели — только выбранный фон и «Выбрать»; все фоны — в окне, по категориям (как украшения).
- */
-function SurfacePicker({ theme, value, onChange }: { theme: Theme; value: Surface; onChange: (s: Surface) => void }) {
-  const [open, setOpen] = useState(false);
+/** Окно со всеми фонами блока по категориям (как у украшений): выбор закрывает окно. */
+function SurfaceDialog({
+  theme,
+  value,
+  open,
+  onOpenChange,
+  onChange,
+}: {
+  theme: Theme;
+  value: Surface;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onChange: (s: Surface) => void;
+}) {
   const groupOf = (s: Surface) => surfaceGroups.find((g) => g.items.includes(s))?.label ?? surfaceGroups[0].label;
   const [group, setGroup] = useState(groupOf(value));
+  const [wasOpen, setWasOpen] = useState(open);
+  // Открыли заново — показываем группу выбранного фона.
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setGroup(groupOf(value));
+  }
   const items = surfaceGroups.find((g) => g.label === group)?.items ?? [];
-  const vars = themeStyle(theme);
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[85svh] flex-col gap-4 sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Фон блока</DialogTitle>
+          <DialogDescription>Бумага, карточки и предметы, на которых лежит текст блока.</DialogDescription>
+        </DialogHeader>
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={group}
+          onValueChange={(v) => v && setGroup(v)}
+          aria-label="Категория фона"
+          className="flex-wrap"
+        >
+          {surfaceGroups.map((g) => (
+            <ToggleGroupItem key={g.label} value={g.label}>
+              {g.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+        {/* Прокрутка — у обёртки, а не у сетки: иначе во flex-окне строки сжимаются и плитки налезают. */}
+        <div className="-mx-1 min-h-0 overflow-y-auto px-1 pb-1">
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4" role="group" aria-label="Фоны" style={themeStyle(theme)}>
+            {items.map((s) => (
+              <button
+                key={s}
+                type="button"
+                aria-pressed={value === s}
+                aria-label={surfaceLabels[s]}
+                title={surfaceLabels[s]}
+                onClick={() => {
+                  onChange(s);
+                  onOpenChange(false);
+                }}
+                className="relative flex flex-col overflow-hidden rounded-lg border text-left text-[11px] text-muted-foreground outline-none transition hover:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-pressed:border-primary aria-pressed:ring-2 aria-pressed:ring-primary/30"
+              >
+                <SurfaceSwatch surface={s} className="aspect-[4/3]" />
+                <span className="block truncate bg-background px-1.5 py-1">{surfaceLabels[s]}</span>
+                {premiumSurfaces.includes(s) && <ProBadge className="absolute top-1 right-1" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Фон блока в «Тонкой настройке»: выбранный фон, «Выбрать» (окно со всеми фонами), «Убрать». */
+function SurfacePicker({ theme, value, onChange }: { theme: Theme; value: Surface; onChange: (s: Surface) => void }) {
+  const [open, setOpen] = useState(false);
   return (
     <div className="flex flex-col gap-2">
       <FieldLabel>Фон блока</FieldLabel>
@@ -120,16 +188,7 @@ function SurfacePicker({ theme, value, onChange }: { theme: Theme; value: Surfac
           <span className="truncate">{surfaceLabels[value]}</span>
           {premiumSurfaces.includes(value) && <ProBadge />}
         </span>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          aria-label={`Фон блока: ${surfaceLabels[value]}. Выбрать`}
-          onClick={() => {
-            setGroup(groupOf(value));
-            setOpen(true);
-          }}
-        >
+        <Button type="button" variant="outline" size="sm" aria-label={`Фон блока: ${surfaceLabels[value]}. Выбрать`} onClick={() => setOpen(true)}>
           <ImageIcon /> Выбрать
         </Button>
         {value !== "plain" && (
@@ -138,53 +197,79 @@ function SurfacePicker({ theme, value, onChange }: { theme: Theme; value: Surfac
           </Button>
         )}
       </div>
+      <SurfaceDialog theme={theme} value={value} open={open} onOpenChange={setOpen} onChange={onChange} />
+    </div>
+  );
+}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="flex max-h-[85svh] flex-col gap-4 sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Фон блока</DialogTitle>
-            <DialogDescription>Бумага, карточки и предметы, на которых лежит текст блока.</DialogDescription>
-          </DialogHeader>
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            size="sm"
-            value={group}
-            onValueChange={(v) => v && setGroup(v)}
-            aria-label="Категория фона"
-            className="flex-wrap"
+/** Схема готового стиля в цветах палитры: фон, цвет, края и «строчки текста». */
+function BlockStyleSwatch({ id, theme }: { id: BlockStyleId; theme: Theme }) {
+  const spec = blockStyleSpec(id, theme);
+  // Фиксированные зёрна: образец рваной бумаги не прыгает при каждой перерисовке.
+  const edges = { top: spec.edgeTop, bottom: spec.edgeBottom, topSeed: 7, bottomSeed: 11 };
+  const cut = spec.edgeTop !== "none" || spec.edgeBottom !== "none";
+  const layer: CSSProperties =
+    spec.surface === "card"
+      ? {
+          background: "color-mix(in srgb, var(--bg) 55%, white)",
+          border: cut ? undefined : "1px solid color-mix(in srgb, var(--accent) 30%, transparent)",
+          borderRadius: cut ? 0 : 10,
+        }
+      : spec.surface === "paper"
+        ? surfaceLayer("paper").style
+        : { background: spec.bgColor ?? "transparent" };
+  const dark = !!spec.bgColor && isDarkColor(spec.bgColor);
+  return (
+    <span className="relative block h-14 overflow-hidden" style={{ background: "var(--bg)" }}>
+      <span className={cn("absolute", spec.surface === "card" || spec.surface === "paper" ? "inset-x-2 inset-y-1.5" : "inset-x-0 inset-y-1.5")}>
+        {spec.edgeTop === "torn" && <span style={tornPaperStyle("top", edges.topSeed, 0.4)} />}
+        {spec.edgeBottom === "torn" && <span style={tornPaperStyle("bottom", edges.bottomSeed, 0.4)} />}
+        <span className="absolute inset-0" style={{ ...layer, ...(cut ? edgeMaskStyle(edges, 0.4) : {}) }} />
+        <span className="absolute inset-x-0 top-1/2 flex -translate-y-1/2 flex-col items-center gap-1" style={{ color: dark ? "#fff" : "var(--text)" }}>
+          <span className="h-0.5 w-1/2 rounded-full bg-current opacity-50" />
+          <span className="h-0.5 w-1/3 rounded-full bg-current opacity-30" />
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/**
+ * Готовые стили фона блока (уровень 2): один клик — фон, цвет и края вместе (lib/blockStyles.ts). Последняя плитка —
+ * окно со всеми фонами. Своё сочетание (из «Тонкой настройки» или шаблона) — ни одна плитка не выделена.
+ */
+function BlockStylePicker({ block, theme, onChange }: { block: Block; theme: Theme; onChange: (patch: Partial<Block>) => void }) {
+  const [all, setAll] = useState(false);
+  const current = matchBlockStyle(block, theme);
+  const tile =
+    "relative flex flex-col overflow-hidden rounded-lg border text-left text-[11px] text-muted-foreground outline-none transition hover:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-pressed:border-primary aria-pressed:ring-2 aria-pressed:ring-primary/30";
+  return (
+    <div className="flex flex-col gap-2">
+      <FieldLabel>Фон блока</FieldLabel>
+      {!current && <p className="text-xs text-muted-foreground">Сейчас свой фон: {surfaceLabels[block.surface]}. Подробнее — в «Тонкой настройке».</p>}
+      <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Готовые фоны блока" style={themeStyle(theme)}>
+        {BLOCK_STYLES.map((id) => (
+          <button
+            key={id}
+            type="button"
+            aria-pressed={current === id}
+            aria-label={`Фон «${blockStyleLabels[id]}»`}
+            onClick={() => onChange(blockStylePatch(id, theme))}
+            className={tile}
           >
-            {surfaceGroups.map((g) => (
-              <ToggleGroupItem key={g.label} value={g.label}>
-                {g.label}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-          {/* Прокрутка — у обёртки, а не у сетки: иначе во flex-окне строки сжимаются и плитки налезают. */}
-          <div className="-mx-1 min-h-0 overflow-y-auto px-1 pb-1">
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4" role="group" aria-label="Фоны" style={vars}>
-              {items.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  aria-pressed={value === s}
-                  aria-label={surfaceLabels[s]}
-                  title={surfaceLabels[s]}
-                  onClick={() => {
-                    onChange(s);
-                    setOpen(false);
-                  }}
-                  className="relative flex flex-col overflow-hidden rounded-lg border text-left text-[11px] text-muted-foreground outline-none transition hover:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-pressed:border-primary aria-pressed:ring-2 aria-pressed:ring-primary/30"
-                >
-                  <SurfaceSwatch surface={s} className="aspect-[4/3]" />
-                  <span className="block truncate bg-background px-1.5 py-1">{surfaceLabels[s]}</span>
-                  {premiumSurfaces.includes(s) && <ProBadge className="absolute top-1 right-1" />}
-                </button>
-              ))}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+            <BlockStyleSwatch id={id} theme={theme} />
+            {/* Подпись в две строки: «Цветная полоса» в узкой плитке иначе обрезалась бы. */}
+            <span className="block flex-1 bg-background px-1 py-1 leading-tight">{blockStyleLabels[id]}</span>
+          </button>
+        ))}
+        <button type="button" onClick={() => setAll(true)} className={tile}>
+          <span className="flex h-14 items-center justify-center bg-muted/50">
+            <ImageIcon className="size-5" />
+          </span>
+          <span className="block flex-1 bg-background px-1 py-1 leading-tight">Все фоны…</span>
+        </button>
+      </div>
+      <SurfaceDialog theme={theme} value={block.surface} open={all} onOpenChange={setAll} onChange={(surface) => onChange({ surface })} />
     </div>
   );
 }
@@ -422,6 +507,8 @@ export function BlockView({ block, theme, onChange, onAddOrnament, onUpdateOrnam
 
   return (
     <>
+      <BlockStylePicker block={block} theme={theme} onChange={onChange} />
+
       {block.type === "photo" && (
         <Segmented<PhotoHeight>
           label="Высота фото"

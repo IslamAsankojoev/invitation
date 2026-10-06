@@ -335,6 +335,32 @@ describe("Editor: раскрытый блок — сначала текст, о�
     expect(preview.querySelector('[data-block="countdown"]')).toHaveTextContent("до встречи");
   });
 
+  it("готовые фоны блока: один клик — фон, цвет и края вместе; «Все фоны…» открывает окно со всеми", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    const countdown = () => screen.getByTestId("preview").querySelector<HTMLElement>('[data-block="countdown"]')!;
+    await openBlockView(user, "Обратный отсчёт");
+    expect(screen.getByRole("button", { name: "Фон «Без фона»" })).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(screen.getByRole("button", { name: "Фон «Тёмная полоса»" }));
+    expect(countdown()).toHaveClass("inv-fill-dark");
+    expect(screen.getByRole("button", { name: "Фон «Тёмная полоса»" })).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(screen.getByRole("button", { name: "Фон «Рваная бумага»" }));
+    expect(countdown()).toHaveAttribute("data-surface", "card");
+    expect(countdown()).not.toHaveClass("inv-fill-dark");
+    expect(within(countdown()).getByTestId("edges")).toHaveAttribute("data-edge-top", "torn");
+
+    // Своё сочетание — ни одна плитка не выделена, подсказка ведёт в «Тонкую настройку».
+    await user.click(screen.getByRole("button", { name: "Все фоны…" }));
+    const dialog = screen.getByRole("dialog", { name: "Фон блока" });
+    await user.click(within(dialog).getByRole("radio", { name: "Листы и свитки" }));
+    await user.click(within(dialog).getByRole("button", { name: "Тетрадный лист" }));
+    expect(countdown()).toHaveAttribute("data-surface", "notebook");
+    expect(within(screen.getByRole("group", { name: "Готовые фоны блока" })).queryAllByRole("button", { pressed: true })).toHaveLength(0);
+    expect(screen.getByText(/Сейчас свой фон: Тетрадный лист/)).toBeInTheDocument();
+  });
+
   it("недействующие настройки скрыты: края — только у блока с заливкой или панелью", async () => {
     const user = userEvent.setup();
     renderEditor();
