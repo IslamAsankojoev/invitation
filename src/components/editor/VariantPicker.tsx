@@ -10,17 +10,19 @@ import { variantLabels, type VariantOf } from "@/lib/variants";
 import { ProBadge } from "./controls";
 
 const PREVIEW_WIDTH = 390;
-const SCALE = 0.44;
+/** Миниатюры мелкие (3 в ряд): «Вид блока» — не главное в блоке, он не должен занимать полэкрана. */
+const SCALE = 0.3;
 
 type Props = { data: InvitationData; block: Block; onChange: (variant: Block["variant"]) => void };
 
 /** Плитки «Вид блока»: в каждой — настоящий блок этого вида в миниатюре, без анимаций. */
 export function VariantPicker({ data, block, onChange }: Props) {
   const variants = BLOCK_VARIANTS[block.type] as readonly string[];
+  if (variants.length < 2) return null;
   return (
     <div className="flex flex-col gap-2">
       <FieldLabel>Вид блока</FieldLabel>
-      <div className="grid grid-cols-2 gap-2" role="group" aria-label="Вид блока">
+      <div className="grid grid-cols-3 gap-2" role="group" aria-label="Вид блока">
         {variants.map((v) => {
           const label = (variantLabels[block.type] as Record<string, string>)[v];
           const selected = block.variant === v;
@@ -35,7 +37,7 @@ export function VariantPicker({ data, block, onChange }: Props) {
               )}
             >
               <VariantThumb data={data} id={block.id} type={block.type} variant={v} />
-              <span className="flex items-center justify-between gap-1 border-t px-2 py-1.5 text-xs">
+              <span className="flex items-center justify-between gap-1 border-t px-1.5 py-1 text-[11px] leading-tight">
                 <span className="truncate">{label}</span>
                 {isPremiumVariant(block.type, v as VariantOf<BlockType>) && <ProBadge />}
               </span>
@@ -60,7 +62,8 @@ const VariantThumb = memo(function VariantThumb({ data, id, type, variant }: { d
     () => ({ ...data, blocks: data.blocks.map((b) => ({ ...b, visible: b.id === id, ...(b.id === id ? { variant } : {}) }) as Block) }),
     [data, id, variant],
   );
-  const height = type === "hero" ? 560 : 340;
+  // У обложки видна верхняя часть — по ней виды и различаются.
+  const height = type === "hero" ? 430 : 340;
   return (
     <div aria-hidden="true" inert className={cn("pointer-events-none relative overflow-hidden")} style={{ height: height * SCALE }}>
       <div className="absolute top-0 left-1/2 origin-top" style={{ width: PREVIEW_WIDTH, height, transform: `translateX(-50%) scale(${SCALE})` }}>

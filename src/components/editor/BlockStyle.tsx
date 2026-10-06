@@ -1,10 +1,11 @@
 "use client";
 
-import { Ban, FlipHorizontal2, Image as ImageIcon, Palette, Plus, RotateCcw, Shuffle, Sparkles, Trash2, X } from "lucide-react";
+import { Ban, ChevronRight, FlipHorizontal2, Image as ImageIcon, Palette, Plus, RotateCcw, Shuffle, Sparkles, Trash2, X } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Slider } from "@/components/ui/slider";
@@ -20,18 +21,20 @@ import {
   EDGES,
   ENTRANCES,
   ORNAMENT_POSITIONS,
+  PHOTO_HEIGHTS,
   type Block,
   type Edge,
   type Entrance,
   type Ornament,
   type OrnamentPosition,
+  type PhotoHeight,
   type Surface,
   type Theme,
 } from "@/lib/schema";
-import { headingsMode, palettes, themeStyle } from "@/lib/theme";
-import { entranceLabels } from "@/lib/variants";
+import { palettes, themeStyle } from "@/lib/theme";
+import { entranceLabels, photoHeightLabels } from "@/lib/variants";
 import { cn } from "@/lib/utils";
-import { checker, Group, ImagePicker, ProBadge, Segmented, UploadField } from "./controls";
+import { AddFieldButton, checker, ImagePicker, ProBadge, Segmented, UploadField } from "./controls";
 import { TextStylePicker } from "./TextStylePicker";
 import { withTextStyle, type TextKey } from "@/lib/textStyle";
 import { OrnamentMotionFields } from "./OrnamentMotionFields";
@@ -210,14 +213,11 @@ function EdgePicker({ theme, block, onChange }: { theme: Theme; block: Block; on
       set: (edgeBottom, edgeBottomSeed) => (edgeBottomSeed === undefined ? { edgeBottom } : { edgeBottom, edgeBottomSeed }),
     },
   ];
+  // Края режут только панели и заливку — у остальных фонов настройка ничего бы не меняла, поэтому её нет.
+  if (!visible) return null;
   return (
     <div className="flex flex-col gap-2">
-      <FieldLabel>Края блока</FieldLabel>
-      {!visible && (
-        <p className="text-xs text-muted-foreground">
-          Края видны у блока с фоном «Карточка», «Калька» или «Мятая бумага» и у обложки с фото во весь экран.
-        </p>
-      )}
+      <FieldLabel>Края сверху и снизу</FieldLabel>
       {sides.map(({ side, label, value, seed, set }) => (
         <div key={side} className="flex flex-col gap-1">
           <div className="flex min-h-6 items-center justify-between gap-2">
@@ -343,19 +343,77 @@ function BgColorPicker({ theme, block, onChange }: { theme: Theme; block: Block;
   );
 }
 
-/** Оформление любого блока: заголовок, фон, украшения. */
-export function BlockStyle({ block, theme, onChange, onAddOrnament, onUpdateOrnament, onRemoveOrnament }: Props) {
-  const [picking, setPicking] = useState(false);
+/** У главного экрана и фото во всю ширину заголовка нет. */
+const isTitled = (block: Block) => block.type !== "hero" && !(block.type === "photo" && block.variant === "classic");
+
+/**
+ * Заголовок блока и строка под ним — это текст, поэтому они первыми в «Тексте и фото».
+ * Пустая строка под заголовком свёрнута в кнопку «＋», чтобы не занимать место.
+ */
+export function BlockTitleFields({ block, onChange }: { block: Block; onChange: (patch: Partial<Block>) => void }) {
   const titleId = useId();
   const scriptId = useId();
-  const entranceId = useId();
-  const label = blockLabels[block.type];
+  const [showScript, setShowScript] = useState(false);
+  if (!isTitled(block)) return null;
   const styleOf = (key: TextKey) => ({
     value: block.textStyles[key],
     onChange: (patch: Partial<Block["textStyles"][string]>) => onChange({ textStyles: withTextStyle(block.textStyles, key, patch) }),
   });
-  // Главный экран и фото во всю ширину рисуются без заголовка.
-  const titled = block.type !== "hero" && !(block.type === "photo" && block.variant === "classic");
+  return (
+    <>
+      <Field>
+        <FieldLabel htmlFor={titleId}>Заголовок</FieldLabel>
+        <div className="flex gap-2">
+          <Input
+            id={titleId}
+            value={block.title ?? defaultTitles[block.type]}
+            placeholder="Без заголовка"
+            onChange={(e) => onChange({ title: e.target.value })}
+          />
+          {block.title !== undefined && block.title !== defaultTitles[block.type] && (
+            <Button type="button" variant="ghost" size="icon" aria-label="Сбросить заголовок" title="Сбросить" onClick={() => onChange({ title: undefined })}>
+              <RotateCcw />
+            </Button>
+          )}
+          <TextStylePicker label="Заголовок" {...styleOf("title")} />
+        </div>
+      </Field>
+      {showScript || block.scriptLine ? (
+        <Field>
+          <FieldLabel htmlFor={scriptId}>Строка под заголовком</FieldLabel>
+          <div className="flex gap-2">
+            <Input
+              id={scriptId}
+              autoFocus={showScript && !block.scriptLine}
+              value={block.scriptLine ?? ""}
+              placeholder="Например: своё присутствие"
+              onChange={(e) => onChange({ scriptLine: e.target.value || undefined })}
+            />
+            <TextStylePicker label="Строка под заголовком" {...styleOf("scriptLine")} />
+          </div>
+        </Field>
+      ) : (
+        <AddFieldButton onClick={() => setShowScript(true)}>Строка под заголовком</AddFieldButton>
+      )}
+    </>
+  );
+}
+
+type ViewProps = Props & {
+  /** «Тонкая настройка» раскрыта — состояние общее для всех блоков (держит Editor). */
+  fineOpen: boolean;
+  onFineOpenChange: (open: boolean) => void;
+};
+
+/**
+ * Подвкладка «Вид» (без «Вида блока» — его плитки рисует BlockItem): особое для типа, украшения и свёрнутая
+ * «Тонкая настройка» — фон, края, картинка, ширина, появление. Недействующие сейчас настройки не показываются.
+ */
+export function BlockView({ block, theme, onChange, onAddOrnament, onUpdateOrnament, onRemoveOrnament, fineOpen, onFineOpenChange }: ViewProps) {
+  const [picking, setPicking] = useState(false);
+  const entranceId = useId();
+  const widthId = useId();
+  const label = blockLabels[block.type];
   // Новое украшение ставим в первый свободный угол.
   const nextPosition =
     (["top-right", "bottom-left", "top-left", "bottom-right"] as OrnamentPosition[]).find(
@@ -363,130 +421,21 @@ export function BlockStyle({ block, theme, onChange, onAddOrnament, onUpdateOrna
     ) ?? "right";
 
   return (
-    <Group title="Оформление блока">
-      {titled && (
-        <Field>
-          <FieldLabel htmlFor={titleId}>Заголовок</FieldLabel>
-          <div className="flex gap-2">
-            <Input
-              id={titleId}
-              value={block.title ?? defaultTitles[block.type]}
-              placeholder="Без заголовка"
-              onChange={(e) => onChange({ title: e.target.value })}
-            />
-            {block.title !== undefined && block.title !== defaultTitles[block.type] && (
-              <Button type="button" variant="ghost" size="icon" aria-label="Сбросить заголовок" title="Сбросить" onClick={() => onChange({ title: undefined })}>
-                <RotateCcw />
-              </Button>
-            )}
-            <TextStylePicker label="Заголовок" {...styleOf("title")} />
-          </div>
-        </Field>
-      )}
-      {titled && (
-        <Field>
-          <FieldLabel htmlFor={scriptId}>
-            {headingsMode(theme) === "script" ? "Строка капителью под заголовком" : "Строка от руки под заголовком"}
-          </FieldLabel>
-          <div className="flex gap-2">
-            <Input
-              id={scriptId}
-              value={block.scriptLine ?? ""}
-              placeholder="Например: своё присутствие"
-              onChange={(e) => onChange({ scriptLine: e.target.value || undefined })}
-            />
-            <TextStylePicker label="Строка от руки" {...styleOf("scriptLine")} />
-          </div>
-        </Field>
-      )}
-
-      <SurfacePicker theme={theme} value={block.surface} onChange={(surface) => onChange({ surface })} />
-      {block.surface !== "plain" && (
-        <LabeledSlider
-          label="Прозрачность фона"
-          ariaLabel="Прозрачность фона блока"
-          valueLabel={`${Math.round(block.surfaceOpacity * 100)}%`}
-          value={Math.round(block.surfaceOpacity * 100)}
-          min={10}
-          max={100}
-          step={5}
-          onChange={(v) => onChange({ surfaceOpacity: v / 100 })}
+    <>
+      {block.type === "photo" && (
+        <Segmented<PhotoHeight>
+          label="Высота фото"
+          value={block.height}
+          options={Object.fromEntries(PHOTO_HEIGHTS.map((h) => [h, photoHeightLabels[h]])) as Record<PhotoHeight, string>}
+          onChange={(height) => onChange({ height } as Partial<Block>)}
         />
       )}
-      {takesBgColor(block.surface) && <BgColorPicker theme={theme} block={block} onChange={(bgColor) => onChange({ bgColor })} />}
-      <UploadField label="Фоновая картинка" value={block.bgImage} onChange={(bgImage) => onChange({ bgImage })} />
-      {block.bgImage && (
-        <LabeledSlider
-          label="Приглушить картинку"
-          ariaLabel="Приглушить фоновую картинку"
-          valueLabel={`${Math.round(block.bgDim * 100)}%`}
-          value={Math.round(block.bgDim * 100)}
-          min={0}
-          max={90}
-          step={5}
-          onChange={(v) => onChange({ bgDim: v / 100 })}
-        />
-      )}
-      {block.bgImage && (
-        <LabeledSlider
-          label="Размыть картинку"
-          ariaLabel="Размыть фоновую картинку"
-          valueLabel={block.bgBlur ? `${block.bgBlur} px` : "нет"}
-          value={block.bgBlur}
-          min={0}
-          max={24}
-          step={1}
-          onChange={(bgBlur) => onChange({ bgBlur })}
-        />
-      )}
-      {block.bgImage && (
-        <LabeledSlider
-          label="Затемнить картинку"
-          ariaLabel="Затемнить фоновую картинку"
-          valueLabel={`${Math.round(block.bgDarken * 100)}%`}
-          value={Math.round(block.bgDarken * 100)}
-          min={0}
-          max={90}
-          step={5}
-          onChange={(v) => onChange({ bgDarken: v / 100 })}
-        />
-      )}
-      <EdgePicker theme={theme} block={block} onChange={onChange} />
-      <div className="flex flex-col gap-1.5">
-        <Segmented
-          label="Ширина блока"
-          value={block.width}
-          options={{ content: "По контенту", full: "Во всю ширину" }}
-          onChange={(width) => onChange({ width })}
-        />
-        <p className="text-xs text-muted-foreground">
-          {FULL_WIDTH_SURFACES.includes(block.surface)
-            ? "Во всю ширину растягиваются фон, картинка и края, текст остаётся в колонке. Заметно на компьютере — в превью телефона блок одинаковый."
-            : "У листов, стикеров, рам и тарелок ширина всегда по контенту."}
-        </p>
-      </div>
-
-      <Field>
-        <FieldLabel htmlFor={entranceId}>Появление блока</FieldLabel>
-        <NativeSelect
-          id={entranceId}
-          className="w-full"
-          value={block.entrance}
-          onChange={(e) => onChange({ entrance: e.target.value as Entrance })}
-        >
-          {ENTRANCES.map((e) => (
-            <NativeSelectOption key={e} value={e}>
-              {entranceLabels[e]}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
-      </Field>
 
       <div className="flex flex-col gap-2">
         <FieldLabel>
           Украшения{" "}
           <span className="font-normal text-muted-foreground">
-            {block.ornaments.length}/{MAX_ORNAMENTS}
+            {block.ornaments.length} из {MAX_ORNAMENTS}
           </span>
         </FieldLabel>
         <ul className="flex flex-col gap-2">
@@ -518,7 +467,94 @@ export function BlockStyle({ block, theme, onChange, onAddOrnament, onUpdateOrna
           setPicking(false);
         }}
       />
-    </Group>
+
+      <Collapsible open={fineOpen} onOpenChange={onFineOpenChange} className="border-t pt-2">
+        <CollapsibleTrigger asChild>
+          <Button type="button" variant="ghost" size="sm" className="-ml-2 text-muted-foreground">
+            <ChevronRight className={cn("transition-transform", fineOpen && "rotate-90")} /> Тонкая настройка
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="flex flex-col gap-4 pt-3">
+          <SurfacePicker theme={theme} value={block.surface} onChange={(surface) => onChange({ surface })} />
+          {block.surface !== "plain" && (
+            <LabeledSlider
+              label="Прозрачность фона"
+              ariaLabel="Прозрачность фона блока"
+              valueLabel={`${Math.round(block.surfaceOpacity * 100)}%`}
+              value={Math.round(block.surfaceOpacity * 100)}
+              min={10}
+              max={100}
+              step={5}
+              onChange={(v) => onChange({ surfaceOpacity: v / 100 })}
+            />
+          )}
+          {takesBgColor(block.surface) && <BgColorPicker theme={theme} block={block} onChange={(bgColor) => onChange({ bgColor })} />}
+          <EdgePicker theme={theme} block={block} onChange={onChange} />
+          <UploadField label="Картинка на фоне блока" value={block.bgImage} onChange={(bgImage) => onChange({ bgImage })} />
+          {block.bgImage && (
+            <LabeledSlider
+              label="Приглушить картинку"
+              ariaLabel="Приглушить фоновую картинку"
+              valueLabel={`${Math.round(block.bgDim * 100)}%`}
+              value={Math.round(block.bgDim * 100)}
+              min={0}
+              max={90}
+              step={5}
+              onChange={(v) => onChange({ bgDim: v / 100 })}
+            />
+          )}
+          {block.bgImage && (
+            <LabeledSlider
+              label="Размыть картинку"
+              ariaLabel="Размыть фоновую картинку"
+              valueLabel={block.bgBlur ? `${block.bgBlur} px` : "нет"}
+              value={block.bgBlur}
+              min={0}
+              max={24}
+              step={1}
+              onChange={(bgBlur) => onChange({ bgBlur })}
+            />
+          )}
+          {block.bgImage && (
+            <LabeledSlider
+              label="Затемнить картинку"
+              ariaLabel="Затемнить фоновую картинку"
+              valueLabel={`${Math.round(block.bgDarken * 100)}%`}
+              value={Math.round(block.bgDarken * 100)}
+              min={0}
+              max={90}
+              step={5}
+              onChange={(v) => onChange({ bgDarken: v / 100 })}
+            />
+          )}
+          {/* У листов, рам и тарелок ширина всегда по контенту — переключатель им не нужен. */}
+          {FULL_WIDTH_SURFACES.includes(block.surface) && (
+            <Field orientation="horizontal">
+              <Switch id={widthId} checked={block.width === "full"} onCheckedChange={(full) => onChange({ width: full ? "full" : "content" })} />
+              <div className="flex flex-col gap-0.5">
+                <FieldLabel htmlFor={widthId}>Растянуть фон на всю ширину экрана</FieldLabel>
+                <FieldDescription>Видно на компьютере</FieldDescription>
+              </div>
+            </Field>
+          )}
+          <Field>
+            <FieldLabel htmlFor={entranceId}>Как блок появляется</FieldLabel>
+            <NativeSelect
+              id={entranceId}
+              className="w-full"
+              value={block.entrance}
+              onChange={(e) => onChange({ entrance: e.target.value as Entrance })}
+            >
+              {ENTRANCES.map((e) => (
+                <NativeSelectOption key={e} value={e}>
+                  {entranceLabels[e]}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </Field>
+        </CollapsibleContent>
+      </Collapsible>
+    </>
   );
 }
 

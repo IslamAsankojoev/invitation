@@ -41,6 +41,8 @@ test("создать → настроить → открыть → послуш�
 
   // 4а. Украшение из библиотеки на блок «Место» и фон «Бумага»
   await page.getByRole("button", { name: "Место", exact: true }).click();
+  // Оформление блока — на подвкладке «Вид» (сначала блок открывается на «Тексте и фото»).
+  await page.getByTestId("block-item-location").getByRole("tab", { name: "Вид" }).click();
   await page.getByRole("button", { name: "Добавить украшение" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Красные розы" }).click();
   // В шаблоне у «Места» уже есть своё украшение — новое добавляется последним.
@@ -48,6 +50,7 @@ test("создать → настроить → открыть → послуш�
     "src",
     "/library/red-roses.webp",
   );
+  await page.getByTestId("block-item-location").getByRole("button", { name: "Тонкая настройка" }).click();
   await page.getByTestId("block-item-location").getByRole("button", { name: /^Фон блока: .*Выбрать$/ }).click();
   const surfaces = page.getByRole("dialog", { name: "Фон блока" });
   await surfaces.getByRole("radio", { name: "Простые" }).click();

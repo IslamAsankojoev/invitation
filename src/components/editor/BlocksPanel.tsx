@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   addOrnament,
   blockById,
@@ -48,7 +49,7 @@ import { createBlock } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import { AddBlockDialog } from "./AddBlockDialog";
 import { blockFields } from "./BlockFields";
-import { BlockStyle } from "./BlockStyle";
+import { BlockTitleFields, BlockView } from "./BlockStyle";
 import { VariantPicker } from "./VariantPicker";
 
 type Props = {
@@ -59,7 +60,15 @@ type Props = {
   onExpandedChange: (id: string | null) => void;
   /** Появился новый блок (добавлен или скопирован) — его раскрывают и показывают в превью. */
   onAdded?: (id: string) => void;
+  /** Подвкладка раскрытого блока и «Тонкая настройка» — общие для всех блоков: оформляешь блоки подряд, не переключая. */
+  view?: BlockViewState;
+  onViewChange?: (view: BlockViewState) => void;
 };
+
+/** Подвкладка раскрытого блока: «Текст и фото» или «Вид». */
+export type BlockTab = "content" | "view";
+export type BlockViewState = { tab: BlockTab; fineOpen: boolean };
+const DEFAULT_VIEW: BlockViewState = { tab: "content", fineOpen: false };
 
 /** Объявления для скринридеров при перетаскивании (по умолчанию dnd-kit говорит по-английски). */
 function announcementsFor(data: InvitationData): Announcements {
@@ -76,8 +85,12 @@ function announcementsFor(data: InvitationData): Announcements {
   };
 }
 
-export function BlocksPanel({ data, onChange, expanded, onExpandedChange, onAdded }: Props) {
+export function BlocksPanel({ data, onChange, expanded, onExpandedChange, onAdded, view: viewProp, onViewChange }: Props) {
   const [adding, setAdding] = useState(false);
+  // Без Editor (в тестах панели) состояние подвкладок живёт здесь.
+  const [ownView, setOwnView] = useState(DEFAULT_VIEW);
+  const view = viewProp ?? ownView;
+  const setView = onViewChange ?? setOwnView;
   const [removing, setRemoving] = useState<Block | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -142,6 +155,8 @@ export function BlocksPanel({ data, onChange, expanded, onExpandedChange, onAdde
                 onAddOrnament={(o) => onChange(addOrnament(data, block.id, o))}
                 onUpdateOrnament={(i, patch) => onChange(updateOrnament(data, block.id, i, patch))}
                 onRemoveOrnament={(i) => onChange(removeOrnament(data, block.id, i))}
+                view={view}
+                onViewChange={setView}
               />
             ))}
           </ul>
@@ -189,9 +204,11 @@ type ItemProps = {
   onAddOrnament: (o: Ornament) => void;
   onUpdateOrnament: (index: number, patch: Partial<Ornament>) => void;
   onRemoveOrnament: (index: number) => void;
+  view: BlockViewState;
+  onViewChange: (view: BlockViewState) => void;
 };
 
-function BlockItem({ block, name, data, expanded, onExpand, onToggle, onDuplicate, onRemove, onFieldsChange, ...ornamentHandlers }: ItemProps) {
+function BlockItem({ block, name, data, expanded, onExpand, onToggle, onDuplicate, onRemove, onFieldsChange, view, onViewChange, ...ornamentHandlers }: ItemProps) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: block.id,
   });
@@ -250,11 +267,30 @@ function BlockItem({ block, name, data, expanded, onExpand, onToggle, onDuplicat
         <Switch checked={block.visible} onCheckedChange={onToggle} aria-label={`Показывать блок «${label}»`} />
       </div>
       {expanded && (
-        <div className="flex flex-col gap-4 border-t p-4">
-          <VariantPicker data={data} block={block} onChange={(variant) => onFieldsChange({ variant })} />
-          <Fields block={block} onChange={onFieldsChange} />
-          <BlockStyle block={block} theme={data.theme} onChange={onFieldsChange} {...ornamentHandlers} />
-        </div>
+        // Сначала текст (за ним блок и открывают), оформление — на соседней подвкладке.
+        <Tabs value={view.tab} onValueChange={(tab) => onViewChange({ ...view, tab: tab as BlockTab })} className="gap-0 border-t">
+          <div className="px-4 pt-3">
+            <TabsList className="w-full">
+              <TabsTrigger value="content">Текст и фото</TabsTrigger>
+              <TabsTrigger value="view">Вид</TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent value="content" className="flex flex-col gap-4 p-4">
+            <BlockTitleFields block={block} onChange={onFieldsChange} />
+            <Fields block={block} onChange={onFieldsChange} />
+          </TabsContent>
+          <TabsContent value="view" className="flex flex-col gap-4 p-4">
+            <VariantPicker data={data} block={block} onChange={(variant) => onFieldsChange({ variant })} />
+            <BlockView
+              block={block}
+              theme={data.theme}
+              onChange={onFieldsChange}
+              {...ornamentHandlers}
+              fineOpen={view.fineOpen}
+              onFineOpenChange={(fineOpen) => onViewChange({ ...view, fineOpen })}
+            />
+          </TabsContent>
+        </Tabs>
       )}
     </li>
   );

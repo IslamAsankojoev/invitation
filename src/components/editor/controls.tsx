@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Crown, ImagePlus, Loader2, Upload, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crown, ImagePlus, Loader2, Plus, Upload, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -345,5 +345,14 @@ export function Group({ title, children, className }: { title: string; children:
       </CardHeader>
       <CardContent className="flex flex-col gap-4">{children}</CardContent>
     </Card>
+  );
+}
+
+/** Кнопка «＋ …» вместо пустого необязательного поля: поле появляется по нажатию. */
+export function AddFieldButton({ onClick, children }: { onClick: () => void; children: string }) {
+  return (
+    <Button type="button" variant="ghost" size="sm" className="-ml-2 self-start text-muted-foreground" onClick={onClick}>
+      <Plus /> {children}
+    </Button>
   );
 }

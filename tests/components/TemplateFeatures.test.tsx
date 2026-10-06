@@ -7,6 +7,7 @@ import { InvitationView } from "@/components/invitation/InvitationView";
 import { findBlock, updateBlock } from "@/lib/blocks";
 import { createDefaultInvitation } from "@/lib/defaults";
 import { createFromTemplate, findTemplate } from "@/lib/templates";
+import { openBlockView } from "./editorHelpers";
 
 const section = (container: HTMLElement, type: string) => container.querySelector<HTMLElement>(`[data-block="${type}"]`)!;
 
@@ -74,7 +75,7 @@ describe("Редактор: цвет фона и заголовки", () => {
     const user = userEvent.setup();
     render(<Editor id="inv1" token="secret" initialSlug="demo" initialData={createDefaultInvitation()} />);
     // У блоков с фоном-предметом (бумага) выбора цвета нет — берём блок без фона.
-    await user.click(screen.getByRole("button", { name: "Обратный отсчёт" }));
+    await openBlockView(user, "Обратный отсчёт", { fine: true });
     const swatches = within(screen.getByRole("group", { name: "Цвет фона блока" }));
     const buttons = swatches.getAllByRole("button");
     await user.click(buttons[buttons.length - 1]); // самый тёмный — цвет текста палитры

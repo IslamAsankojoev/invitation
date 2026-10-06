@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor, type EditorAccount } from "@/components/editor/Editor";
 import { createDefaultInvitation } from "@/lib/defaults";
+import { openBlockView } from "./editorHelpers";
 
 beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 200 })));
@@ -17,7 +18,7 @@ describe("Editor", () => {
     const user = userEvent.setup();
     const { container } = renderEditor();
     const preview = screen.getByTestId("preview");
-    await user.click(screen.getByRole("button", { name: "Главный экран" }));
+    await openBlockView(user, "Главный экран");
     expect(container.querySelectorAll("button button")).toHaveLength(0);
     await user.click(screen.getByRole("button", { name: "Вид «Арка с фото»" }));
     expect(screen.getByRole("button", { name: "Вид «Арка с фото»" })).toHaveAttribute("aria-pressed", "true");
@@ -127,7 +128,7 @@ describe("Editor", () => {
     const location = () => preview.querySelector('[data-block="location"]')!;
     expect(location().querySelector("img[data-ornament]")).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Место" }));
+    await openBlockView(user, "Место");
     await user.click(screen.getByRole("button", { name: "Добавить украшение" }));
     const dialog = screen.getByRole("dialog", { name: "Украшение для блока «Место»" });
     await user.click(within(dialog).getByRole("button", { name: "Гардении" }));
@@ -165,7 +166,7 @@ describe("Editor", () => {
     const user = userEvent.setup();
     renderEditor();
     const decor = () => screen.getByTestId("preview").querySelector<HTMLElement>('[data-block="location"] [data-decor]')!;
-    await user.click(screen.getByRole("button", { name: "Место" }));
+    await openBlockView(user, "Место");
     await user.click(screen.getByRole("button", { name: "Добавить украшение" }));
     await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Гардении" }));
     const before = decor();
@@ -256,8 +257,8 @@ describe("Editor", () => {
     const user = userEvent.setup();
     renderEditor();
     const location = () => screen.getByTestId("preview").querySelector<HTMLElement>('[data-block="location"]')!;
-    await user.click(screen.getByRole("button", { name: "Место" }));
-    // Фон выбирается в окне по категориям, как украшения.
+    // Фон целиком — в «Тонкой настройке» подвкладки «Вид»; выбирается в окне по категориям, как украшения.
+    await openBlockView(user, "Место", { fine: true });
     await user.click(screen.getByRole("button", { name: /^Фон блока: .*Выбрать$/ }));
     const dialog = screen.getByRole("dialog", { name: "Фон блока" });
     await user.click(within(dialog).getByRole("radio", { name: "Листы и свитки" }));
@@ -279,6 +280,53 @@ describe("Editor", () => {
   });
 });
 
+describe("Editor: раскрытый блок — сначала текст, оформление на «Виде»", () => {
+  it("блок открывается на «Тексте и фото»; выбранная подвкладка и «Тонкая настройка» переносятся на следующий блок", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(screen.getByRole("button", { name: "Главный экран" }));
+    expect(screen.getByRole("tab", { name: "Текст и фото" })).toHaveAttribute("aria-selected", "true");
+    // Текст — сразу, оформления не видно.
+    expect(screen.getByLabelText("Имена")).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Вид блока" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Вид" }));
+    expect(screen.getByRole("group", { name: "Вид блока" })).toBeInTheDocument();
+    // «Тонкая настройка» свёрнута.
+    expect(screen.queryByRole("combobox", { name: "Как блок появляется" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Тонкая настройка" }));
+    expect(screen.getByRole("combobox", { name: "Как блок появляется" })).toBeInTheDocument();
+
+    // Следующий блок открывается там же — удобно оформлять блоки подряд.
+    await user.click(screen.getByRole("button", { name: "Программа" }));
+    expect(screen.getByRole("tab", { name: "Вид" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("combobox", { name: "Как блок появляется" })).toBeInTheDocument();
+  });
+
+  it("заголовок — в «Тексте и фото»; пустая строка под заголовком свёрнута в «＋»", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(screen.getByRole("button", { name: "Обратный отсчёт" }));
+    expect(screen.getByLabelText("Заголовок")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Строка под заголовком")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Строка под заголовком" }));
+    await user.keyboard("до встречи");
+    const preview = screen.getByTestId("preview");
+    expect(preview.querySelector('[data-block="countdown"]')).toHaveTextContent("до встречи");
+  });
+
+  it("недействующие настройки скрыты: края — только у блока с заливкой или панелью", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await openBlockView(user, "Обратный отсчёт", { fine: true });
+    // Без фона и без цвета края нечего резать — настройки нет (раньше была с объяснением «почему не работает»).
+    expect(screen.queryByRole("radiogroup", { name: "Верхний край" })).not.toBeInTheDocument();
+    const swatches = within(screen.getByRole("group", { name: "Цвет фона блока" })).getAllByRole("button");
+    await user.click(swatches[1]);
+    expect(screen.getByRole("radiogroup", { name: "Верхний край" })).toBeInTheDocument();
+  });
+});
+
 describe("Editor: добавление, копирование и удаление блоков", () => {
   it("«Добавить блок» → тип → блок под открытым, раскрыт и виден в превью", async () => {
     const user = userEvent.setup();
@@ -295,7 +343,10 @@ describe("Editor: добавление, копирование и удалени
     expect(types.indexOf("text")).toBe(types.indexOf("program") + 1);
     expect(preview.querySelector('[data-block="text"]')).toHaveTextContent("Подарки");
     expect(screen.getByRole("button", { name: /^Текст/ })).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByLabelText("Подпись кнопки")).toBeInTheDocument();
+    // Кнопки у «Подарков» нет — вместо пустых полей «＋ Кнопка со ссылкой».
+    expect(screen.queryByLabelText("Подпись кнопки")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Кнопка со ссылкой" }));
+    expect(screen.getByLabelText("Подпись кнопки")).toHaveFocus();
   });
 
   it("«Дублировать» кладёт копию под блок, «Удалить» спрашивает подтверждение", async () => {

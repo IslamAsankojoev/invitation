@@ -21,7 +21,7 @@ import type { SessionUser } from "@/lib/session";
 import { formatZodErrors, invitationDataSchema, type InvitationData } from "@/lib/schema";
 import { patchInvitation, UploadTargetContext } from "./api";
 import { AccountRequired } from "./AccountRequired";
-import { BlocksPanel } from "./BlocksPanel";
+import { BlocksPanel, type BlockViewState } from "./BlocksPanel";
 import { IntroPreview } from "./IntroPreview";
 import { LinkPanel } from "./LinkPanel";
 import { MusicPanel } from "./MusicPanel";
@@ -125,6 +125,8 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
   const phoneScale = usePhoneScale(phoneFitRef);
   // Раскрытый блок — по id; сначала все свёрнуты, чтобы сразу был виден весь список блоков.
   const [expanded, setExpanded] = useState<string | null>(null);
+  /** Подвкладка раскрытого блока и «Тонкая настройка» — одни на все блоки, на время сессии. */
+  const [blockView, setBlockView] = useState<BlockViewState>({ tab: "content", fineOpen: false });
   /** Превью само прокручивается к блоку, который открыли для редактирования (прокручивать вручную тоже можно). */
   const [follow, setFollow] = useState(true);
   /** Смена ключа пересоздаёт превью — анимации проигрываются заново. */
@@ -260,7 +262,15 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
                 и прокручивались с ней, а не растягивали страницу ниже экрана. */}
             <div className="relative flex-1 p-4 lg:overflow-y-auto">
               <TabsContent value="Блоки">
-                <BlocksPanel data={data} onChange={setData} expanded={expanded} onExpandedChange={expand} onAdded={added} />
+                <BlocksPanel
+                  data={data}
+                  onChange={setData}
+                  expanded={expanded}
+                  onExpandedChange={expand}
+                  onAdded={added}
+                  view={blockView}
+                  onViewChange={setBlockView}
+                />
               </TabsContent>
               <TabsContent value="Оформление">
                 <ThemePanel data={data} onChange={setData} onPreviewIntro={() => setIntro(true)} />

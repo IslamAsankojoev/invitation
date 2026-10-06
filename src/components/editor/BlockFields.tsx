@@ -1,7 +1,7 @@
 "use client";
 
 import { Plus, Trash2, X } from "lucide-react";
-import { useId, type ComponentProps, type ComponentType } from "react";
+import { useId, useState, type ComponentProps, type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -11,20 +11,18 @@ import { Switch } from "@/components/ui/switch";
 import {
   MAX_CONTACTS,
   MAX_GALLERY_PHOTOS,
-  PHOTO_HEIGHTS,
   PROGRAM_ICONS,
   TEXT_ICONS,
   type BlockOf,
   type BlockType,
   type Contact,
-  type PhotoHeight,
   type ProgramIcon,
   type TextIcon,
   type TextStyle,
 } from "@/lib/schema";
 import { withTextStyle, type TextKey } from "@/lib/textStyle";
-import { photoHeightLabels, programIconLabels, textIconLabels } from "@/lib/variants";
-import { PhotoListField, Segmented, UploadField } from "./controls";
+import { programIconLabels, textIconLabels } from "@/lib/variants";
+import { AddFieldButton, PhotoListField, UploadField } from "./controls";
 import { TextStylePicker } from "./TextStylePicker";
 
 type FieldsProps<T extends BlockType> = {
@@ -294,6 +292,8 @@ function RsvpFields({ block, onChange }: FieldsProps<"rsvp">) {
 
 function TextFields(props: FieldsProps<"text">) {
   const { block, onChange } = props;
+  // Кнопка нужна редко — пока её нет, вместо двух пустых полей одна строка «＋ Кнопка со ссылкой».
+  const [showButton, setShowButton] = useState(false);
   return (
     <>
       <Field>
@@ -313,21 +313,28 @@ function TextFields(props: FieldsProps<"text">) {
         </NativeSelect>
       </Field>
       <TextField textStyle={styleOf(props, "text")} label="Текст" multiline value={block.text} onChange={(text) => onChange({ text })} />
-      <TextField
-        textStyle={styleOf(props, "button")}
-        label="Подпись кнопки"
-        placeholder="Подробнее"
-        value={block.buttonLabel ?? ""}
-        onChange={(buttonLabel) => onChange({ buttonLabel: buttonLabel || undefined })}
-      />
-      <TextField
-        label="Ссылка кнопки"
-        type="url"
-        placeholder="https://… или tel:+7…"
-        description="Без ссылки кнопки не будет"
-        value={block.buttonUrl ?? ""}
-        onChange={(buttonUrl) => onChange({ buttonUrl: buttonUrl.trim() || undefined })}
-      />
+      {showButton || block.buttonLabel || block.buttonUrl ? (
+        <>
+          <TextField
+            textStyle={styleOf(props, "button")}
+            label="Подпись кнопки"
+            placeholder="Подробнее"
+            autoFocus={showButton && !block.buttonLabel}
+            value={block.buttonLabel ?? ""}
+            onChange={(buttonLabel) => onChange({ buttonLabel: buttonLabel || undefined })}
+          />
+          <TextField
+            label="Ссылка кнопки"
+            type="url"
+            placeholder="https://… или tel:+7…"
+            description="Без ссылки кнопки не будет"
+            value={block.buttonUrl ?? ""}
+            onChange={(buttonUrl) => onChange({ buttonUrl: buttonUrl.trim() || undefined })}
+          />
+        </>
+      ) : (
+        <AddFieldButton onClick={() => setShowButton(true)}>Кнопка со ссылкой</AddFieldButton>
+      )}
     </>
   );
 }
@@ -343,12 +350,6 @@ function PhotoFields(props: FieldsProps<"photo">) {
         placeholder="Необязательно"
         value={block.caption ?? ""}
         onChange={(caption) => onChange({ caption: caption || undefined })}
-      />
-      <Segmented<PhotoHeight>
-        label="Высота фото"
-        value={block.height}
-        options={Object.fromEntries(PHOTO_HEIGHTS.map((h) => [h, photoHeightLabels[h]])) as Record<PhotoHeight, string>}
-        onChange={(height) => onChange({ height })}
       />
     </>
   );
