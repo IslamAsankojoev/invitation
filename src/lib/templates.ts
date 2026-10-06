@@ -1,6 +1,7 @@
 import { createOrnament, newBlockId } from "./blocks";
 import { library } from "./library";
 import type { Block, BlockOf, BlockType, BlockWidth, Edge, Entrance, Headings, InvitationData, Ornament, OrnamentPosition, Surface, TextIcon, Theme } from "./schema";
+import { SCHEMA_VERSION } from "./migrations";
 import { DEFAULT_MUSIC_URL } from "./music";
 import { DEFAULT_ORNAMENT_MOTION } from "./schema";
 import type { VariantOf } from "./variants";
@@ -970,7 +971,10 @@ export function createBlock(data: InvitationData, type: BlockType, presetId?: st
 
 /** Новое приглашение по шаблону — с примером текстов (и структурой шаблона, если она есть). */
 export function createFromTemplate(template: Template): InvitationData {
-  return applyTemplate({ theme: themeOf(template), music: { url: DEFAULT_MUSIC_URL, loop: true }, blocks: sampleBlocks(template) }, template);
+  return applyTemplate(
+    { schemaVersion: SCHEMA_VERSION, theme: themeOf(template), music: { url: DEFAULT_MUSIC_URL, loop: true }, blocks: sampleBlocks(template) },
+    template,
+  );
 }
 
 /**

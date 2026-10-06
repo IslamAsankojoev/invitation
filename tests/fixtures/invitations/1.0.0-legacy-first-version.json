@@ -1,0 +1,14 @@
+{
+  "theme": { "palette": "blush", "font": "serif", "background": null, "decor": { "type": "petals", "color": "#e8a0b0", "density": 25 } },
+  "music": { "url": null, "loop": true },
+  "blocks": [
+    { "type": "hero", "visible": true, "names": "Анна & Иван", "date": "2027-06-19T16:00" },
+    { "type": "countdown", "visible": true },
+    { "type": "calendar", "visible": true },
+    { "type": "story", "visible": true, "text": "Мы познакомились весной." },
+    { "type": "program", "visible": true, "items": [{ "time": "16:00", "title": "Сбор гостей" }] },
+    { "type": "location", "visible": true, "placeName": "Ресторан «Сад»", "address": "ул. Цветочная, 1" },
+    { "type": "dresscode", "visible": false, "text": "Пастельные тона", "colors": ["#f5e6e0", "#d8c3a5"] },
+    { "type": "rsvp", "visible": true }
+  ]
+}

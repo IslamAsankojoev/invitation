@@ -78,9 +78,11 @@ export function DecorLayer({ decor, contained = false }: Props) {
     let sparks: Spark[] = [];
     function onPointerDown(e: PointerEvent) {
       const box = canvas!.getBoundingClientRect();
-      const x = e.clientX - box.left;
-      const y = e.clientY - box.top;
-      if (x < 0 || y < 0 || x > box.width || y > box.height) return;
+      if (!box.width || !box.height) return;
+      // Превью в редакторе может быть уменьшено transform'ом — переводим касание в координаты холста.
+      const x = ((e.clientX - box.left) * width) / box.width;
+      const y = ((e.clientY - box.top) * height) / box.height;
+      if (x < 0 || y < 0 || x > width || y > height) return;
       const i = hitParticle(particles, drawer, x, y);
       if (i < 0) return;
       const c = particleCenter(particles[i], drawer);

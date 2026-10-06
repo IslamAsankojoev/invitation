@@ -9,7 +9,7 @@ import type { InvitationData } from "@/lib/schema";
 import { themeStyle } from "@/lib/theme";
 
 /** Заставка поверх превью в рамке телефона: проигрывается целиком, по нажатию на печать уходит и закрывается. */
-export function IntroPreview({ data, onClose }: { data: InvitationData; onClose: () => void }) {
+export function IntroPreview({ data, onOpen, onClose }: { data: InvitationData; onOpen?: () => void; onClose: () => void }) {
   const [leaving, setLeaving] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const hero = findBlock(data, "hero");
@@ -29,6 +29,7 @@ export function IntroPreview({ data, onClose }: { data: InvitationData; onClose:
         variant={style}
         leaving={leaving}
         onOpen={() => {
+          onOpen?.(); // нажатие на печать — жест пользователя: тут можно включить музыку, как у гостя
           setLeaving(true);
           timer.current = setTimeout(onClose, prefersReducedMotion() ? 0 : INTRO_LEAVE_MS[style]);
         }}

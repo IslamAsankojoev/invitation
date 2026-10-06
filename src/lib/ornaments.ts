@@ -75,12 +75,14 @@ export const idleHasAmplitude = (idle: OrnamentIdle) => idle !== "spin" && idle 
  * Скорость в данных — «во сколько раз быстрее», а в CSS длительность умножается на --oe-k/--oi-k.
  * Соседние украшения с общей анимацией качаются вразнобой: у чётных движение медленнее и в обратную сторону.
  */
-export function ornamentMotionProps(o: Pick<Ornament, "src" | "position" | "motion">, common: OrnamentMotion, index: number) {
+export function ornamentMotionProps(o: Ornament, common: OrnamentMotion, index: number) {
   const m = ornamentMotionOf(o, common);
   const alt = index % 2 === 1;
+  const { src, position, size, rotate, flip, opacity } = o;
   return {
-    // Новый ключ при смене появления: украшение монтируется заново и проигрывает появление — видно в превью редактора.
-    key: `${index}-${m.enter}-${m.enterSpeed}`,
+    // Ключ — все настройки украшения и его анимации: поменяли любую — украшение монтируется заново и проигрывает
+    // появление и движение с начала (видно в превью редактора). У гостя данные не меняются — ключ постоянный.
+    key: `${index}-${JSON.stringify({ src, position, size, rotate, flip, opacity, m })}`,
     wrapper: {
       "data-decor": ornamentFrom(o.position),
       "data-enter": m.enter,

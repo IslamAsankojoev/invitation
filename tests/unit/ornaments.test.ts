@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createOrnament } from "@/lib/blocks";
 import { idleHasAmplitude, ornamentMotionOf, ornamentMotionProps, resolveIdle } from "@/lib/ornaments";
-import { DEFAULT_ORNAMENT_MOTION, type OrnamentMotion } from "@/lib/schema";
+import { DEFAULT_ORNAMENT_MOTION, type Ornament, type OrnamentMotion } from "@/lib/schema";
 
 const common: OrnamentMotion = { ...DEFAULT_ORNAMENT_MOTION };
 const own: OrnamentMotion = { enter: "grow", enterSpeed: 2, idle: "float", idleSpeed: 0.5, idleAmplitude: 2.5 };
@@ -42,12 +42,21 @@ describe("анимация украшений", () => {
     expect(image.style).toMatchObject({ "--oi-k": 1.3 });
   });
 
-  it("смена появления меняет ключ (украшение проигрывает появление заново), смена движения — нет", () => {
+  it("любая настройка украшения или его анимации меняет ключ — украшение проигрывает анимацию заново", () => {
     const o = createOrnament("/library/gardenia.webp");
-    const key = (m: OrnamentMotion) => ornamentMotionProps({ ...o, motion: m }, common, 0).key;
-    expect(key({ ...common, enter: "zoom" })).not.toBe(key(common));
-    expect(key({ ...common, enterSpeed: 2 })).not.toBe(key(common));
-    expect(key({ ...common, idle: "spin" })).toBe(key(common));
+    const key = (patch: Partial<Ornament>, m: OrnamentMotion = common) => ornamentMotionProps({ ...o, ...patch, motion: m }, common, 0).key;
+    const base = key({});
+    expect(key({}, { ...common, enter: "zoom" })).not.toBe(base);
+    expect(key({}, { ...common, enterSpeed: 2 })).not.toBe(base);
+    expect(key({}, { ...common, idle: "spin" })).not.toBe(base);
+    expect(key({}, { ...common, idleAmplitude: 2 })).not.toBe(base);
+    for (const patch of [{ size: o.size + 10 }, { rotate: 15 }, { flip: !o.flip }, { opacity: 0.5 }, { position: "center" as const }]) {
+      expect(key(patch)).not.toBe(base);
+    }
+    // Общая анимация из темы — тоже настройка украшения без своей.
+    expect(ornamentMotionProps(o, { ...common, idle: "float" }, 0).key).not.toBe(ornamentMotionProps(o, common, 0).key);
+    // Ничего не поменялось — ключ тот же (у гостя украшения не перемонтируются).
+    expect(key({})).toBe(base);
   });
 
   it("у вращения и «стоит на месте» нет размаха", () => {

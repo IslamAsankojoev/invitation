@@ -3,28 +3,51 @@
 Организатор настраивает приглашение в редакторе → изменения автосохраняются → он получает ссылку →
 гость открывает страницу, слушает музыку и отправляет ответ (RSVP) → организатор видит список ответов.
 
-Стек: Next.js 15 (App Router) · TypeScript strict · Tailwind CSS 4 · shadcn/ui (Radix) · Prisma + SQLite · Zod · dnd-kit ·
-Vitest + React Testing Library · Playwright.
+Стек: Next.js 15 (App Router) · TypeScript strict · Tailwind CSS 4 · shadcn/ui (Radix) · Prisma + PostgreSQL
+(прод — Supabase, локально — Docker) · Auth.js (вход через Google) · Zod · dnd-kit · Vitest + React Testing Library ·
+Playwright. Деплой — Vercel.
 
 ## Запуск
 
 ```bash
 npm install          # заодно генерирует Prisma Client
-npm run db:seed      # создаёт БД и демо-приглашение, печатает ссылки
-npm run dev          # http://localhost:3000
+npm run db:up        # локальный Postgres в Docker (нужен запущенный Docker Desktop / OrbStack)
+npm run dev          # http://localhost:3000 (сначала применяет миграции)
+npm run db:seed      # по желанию: демо-приглашение на каждый шаблон
 ```
 
-`npm run dev` сам синхронизирует схему БД (`prisma db push`), так что `db:seed` для старта не обязателен.
+Переменные окружения — по образцу `.env.example` (`.env` в git не попадает). Продовые строки Supabase хранятся
+в `.env.supabase` и в настройках Vercel; локальная разработка и тесты в Supabase не ходят.
 
 | Команда | Что делает |
 | --- | --- |
-| `npm run dev` | Dev-сервер на :3000 (БД `prisma/dev.db`) |
-| `npm test` | Unit-, компонентные и API-тесты (Vitest, отдельная БД `prisma/test.db`) |
-| `npm run test:e2e` | Playwright, мобильный viewport (Pixel 7). Сам поднимает dev-сервер на :3100 с БД `prisma/e2e.db` |
-| `npm run db:seed` | Пересоздаёт по демо-приглашению на каждый шаблон (`/i/demo`, `/i/demo-rose-garden`, `/i/demo-golden-autumn`, `/i/demo-starry-night`, `/i/demo-eucalyptus`, `/i/demo-art-deco`, `/i/demo-lavender-provence`, `/i/demo-marble-olive`) и печатает ссылки на редактор, публичную страницу и ответы |
+| `npm run dev` | Dev-сервер на :3000 (база `wedding` в локальном Postgres) |
+| `npm test` | Unit-, компонентные и API-тесты (Vitest, база `wedding_test`) |
+| `npm run test:e2e` | Playwright, мобильный viewport (Pixel 7). Сам поднимает dev-сервер на :3100 с базой `wedding_e2e` |
+| `npm run db:migrate` | Новая миграция базы после правки `prisma/schema.prisma` |
+| `npm run db:deploy:prod` | Миграции в Supabase (на Vercel это делает `vercel-build` сам) |
+| `npm run schema:snapshot` | Слепок формата приглашения для текущей версии — см. «Версия формата приглашения» |
 | `npm run typecheck` | `tsc --noEmit` |
 
 Перед первым `npm run test:e2e` установите браузер: `npx playwright install chromium`.
+
+## ⚠️ Версия формата приглашения — проверять при каждой правке `src/lib/schema.ts`
+
+Приглашение хранится в базе одним JSON. У него есть версия формата `schemaVersion` (semver, например `1.3.0`);
+текущая — `SCHEMA_VERSION` в `src/lib/migrations.ts`. Это версия **данных приглашения**, а не сайта: дизайн, редактор,
+API версию не меняют — только изменения формата (поля, списки значений вроде палитр/шрифтов/фонов/видов блоков,
+границы, значения по умолчанию).
+
+| Что изменили в формате | Что поднять | Миграция |
+| --- | --- | --- |
+| Добавили поле **со значением по умолчанию**, новое значение в список, новый тип блока, расширили границы | минор `1.4.0 → 1.5.0` | не нужна |
+| Удалили/переименовали поле, сменили тип или смысл, убрали значение из списка, сузили границы, поменяли значение по умолчанию | мажор `1.5.0 → 2.0.0` | **обязательна** |
+
+Порядок: правка `schema.ts` → поднять `SCHEMA_VERSION` (при мажоре — миграция в `migrations`) →
+`npm run schema:snapshot` → `npm test`. Забыть нельзя: тест `tests/unit/schemaVersion.test.ts` сравнивает формат со
+слепком прошлой версии и падает с подсказкой, что именно изменилось и какую часть версии поднимать. Старые приглашения
+при чтении автоматически проходят миграции до текущей версии. Фикстуры прошлых форматов
+(`tests/fixtures/invitations/`) не редактировать — только добавлять. Подробно — `AGENTS.md`, §4.1.
 
 ## Страницы и API
 
@@ -191,7 +214,8 @@ tests/
    Фон, заголовок и украшения редактор добавит сам.
 5. **Значение по умолчанию** — добавьте блок в массив `blocks` в `createDefaultInvitation()` (`src/lib/defaults.ts`),
    иначе в новых приглашениях его не будет. У старых приглашений блока нет, пока его не добавят в данные.
-6. **Тесты** — проверьте, что дефолтное приглашение валидно, и добавьте тип в ожидаемый порядок в
+6. **Версия формата** — новый тип блока = минорная версия: поднимите `SCHEMA_VERSION`, `npm run schema:snapshot`.
+7. **Тесты** — проверьте, что дефолтное приглашение валидно, и добавьте тип в ожидаемый порядок в
    `tests/components/InvitationView.test.tsx`. Запустите `npm test`.
 
 ## Как добавить новый вид декора

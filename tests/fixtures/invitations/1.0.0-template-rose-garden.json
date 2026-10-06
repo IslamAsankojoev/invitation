@@ -1,0 +1,300 @@
+{
+  "schemaVersion": "1.0.0",
+  "theme": {
+    "headings": "caps",
+    "ornamentMotion": {
+      "enter": "auto",
+      "enterSpeed": 1,
+      "idle": "auto",
+      "idleSpeed": 1,
+      "idleAmplitude": 1
+    },
+    "palette": "blush",
+    "font": "marck",
+    "bodyFont": "lora",
+    "background": null,
+    "texture": "watercolor",
+    "decor": {
+      "type": "image",
+      "image": "/library/petal-pink.webp",
+      "color": "#e8a0b0",
+      "density": 18,
+      "size": 1.1,
+      "speed": 1
+    },
+    "envelope": {
+      "ornament": "/library/rose-lilac.webp",
+      "style": "veil"
+    },
+    "motion": {
+      "style": "soft",
+      "speed": 1
+    }
+  },
+  "music": {
+    "url": "/music/perfect.mp3",
+    "loop": true
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "id": "b-hero",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/pink-roses.webp",
+          "position": "top-right",
+          "size": 165,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1
+        },
+        {
+          "src": "/library/peach-rose.webp",
+          "position": "bottom-left",
+          "size": 170,
+          "rotate": 0,
+          "flip": true,
+          "opacity": 1
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "names": "Анна & Иван",
+      "date": "2027-06-19T16:00",
+      "label": "Приглашение на свадьбу",
+      "subtitle": "Приглашаем вас разделить с нами этот день",
+      "photo": null
+    },
+    {
+      "type": "countdown",
+      "id": "b-countdown",
+      "visible": true,
+      "variant": "classic",
+      "surface": "card",
+      "surfaceOpacity": 0.85,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0
+    },
+    {
+      "type": "calendar",
+      "id": "b-calendar",
+      "visible": true,
+      "variant": "classic",
+      "surface": "card",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/rose-lilac.webp",
+          "position": "top-left",
+          "size": 85,
+          "rotate": -15,
+          "flip": false,
+          "opacity": 0.9
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0
+    },
+    {
+      "type": "story",
+      "id": "b-story",
+      "visible": true,
+      "variant": "classic",
+      "surface": "crumpled",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/pink-roses.webp",
+          "position": "bottom-right",
+          "size": 110,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "",
+      "text": "Мы познакомились весной, и с тех пор не расстаёмся. Будем счастливы видеть вас рядом в самый важный для нас день.",
+      "photo": null
+    },
+    {
+      "type": "program",
+      "id": "b-program",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/peach-rose.webp",
+          "position": "right",
+          "size": 130,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.8
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "items": [
+        {
+          "time": "16:00",
+          "title": "Сбор гостей",
+          "description": "Фуршет и приветственные напитки"
+        },
+        {
+          "time": "16:30",
+          "title": "Церемония",
+          "description": "Торжественная регистрация"
+        },
+        {
+          "time": "18:00",
+          "title": "Праздничный ужин",
+          "description": "Банкет и поздравления"
+        }
+      ]
+    },
+    {
+      "type": "dresscode",
+      "id": "b-dresscode",
+      "visible": true,
+      "variant": "classic",
+      "surface": "card",
+      "surfaceOpacity": 0.85,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "text": "Будем рады, если вы поддержите цветовую гамму праздника",
+      "colors": [
+        "#fbe3e6",
+        "#f2b8c0",
+        "#d98c99",
+        "#b86b7a",
+        "#8a9a7b"
+      ]
+    },
+    {
+      "type": "location",
+      "id": "b-location",
+      "visible": true,
+      "variant": "classic",
+      "surface": "card",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/pink-roses.webp",
+          "position": "top-left",
+          "size": 100,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "placeName": "Ресторан «Сад»",
+      "address": "г. Москва, ул. Садовая, 1",
+      "photo": null
+    },
+    {
+      "type": "rsvp",
+      "id": "b-rsvp",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/rose-lilac.webp",
+          "position": "top-right",
+          "size": 105,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1
+        },
+        {
+          "src": "/library/pink-roses.webp",
+          "position": "bottom-left",
+          "size": 120,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.8
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Подтвердите, пожалуйста,",
+      "scriptLine": "своё присутствие"
+    }
+  ]
+}

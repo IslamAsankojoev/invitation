@@ -11,7 +11,8 @@ test("создать → настроить → открыть → послуш�
   const editorUrl = new URL(page.url());
   const saveStatus = page.getByTestId("save-status");
 
-  // 2. Имена и дата
+  // 2. Имена и дата (блоки сначала свёрнуты — открываем главный экран)
+  await page.getByRole("button", { name: "Главный экран", exact: true }).click();
   await page.getByLabel("Имена", { exact: true }).fill("Мария & Пётр");
   await page.getByLabel("Дата и время").fill("2027-08-20T17:30");
   await expect(page.getByTestId("preview").getByTestId("hero-names")).toHaveText("Мария & Пётр");

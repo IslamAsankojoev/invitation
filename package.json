@@ -15,6 +15,7 @@
     "db:seed": "prisma migrate deploy && tsx prisma/seed.ts",
     "db:deploy:prod": "sh -c 'set -a && . ./.env.supabase && set +a && prisma migrate deploy'",
     "storage:setup": "sh -c 'set -a && . ./.env.supabase && set +a && node scripts/supabase-bucket.mjs'",
+    "schema:snapshot": "tsx scripts/schema-snapshot.ts",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate"
   },
@@ -52,6 +53,7 @@
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.7"
+    "vitest": "^3.2.7",
+    "zod-to-json-schema": "^3.25.2"
   }
 }

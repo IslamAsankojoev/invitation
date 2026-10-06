@@ -17,7 +17,7 @@ describe("встроенная музыка", () => {
 
   it("новое приглашение сразу с песней по умолчанию", () => {
     expect(createFromTemplate(findTemplate("rose-garden")!).music).toEqual({ url: DEFAULT_MUSIC_URL, loop: true });
-    expect(findTrack(DEFAULT_MUSIC_URL)?.title).toBe("Perfect");
+    expect(findTrack(DEFAULT_MUSIC_URL)?.title).toBe("Die With A Smile");
     expect(findTrack("/uploads/old.mp3")).toBeNull();
   });
 

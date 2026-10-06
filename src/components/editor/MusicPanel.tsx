@@ -33,7 +33,17 @@ export function MusicPanel({ data, onChange }: Props) {
   const [playing, setPlaying] = useState<string | null>(null);
   useEffect(() => {
     const el = audio.current;
-    return () => el?.pause();
+    // Заиграла музыка в превью — прослушивание останавливаем, чтобы песни не накладывались.
+    const onOtherPlay = (e: Event) => {
+      if (!el || e.target === el || !(e.target instanceof HTMLMediaElement)) return;
+      el.pause();
+      setPlaying(null);
+    };
+    document.addEventListener("play", onOtherPlay, true);
+    return () => {
+      document.removeEventListener("play", onOtherPlay, true);
+      el?.pause();
+    };
   }, []);
   function toggle(src: string) {
     const el = audio.current;

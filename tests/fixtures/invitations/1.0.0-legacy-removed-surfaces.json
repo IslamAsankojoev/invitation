@@ -1,0 +1,17 @@
+{
+  "theme": {
+    "palette": "cream", "font": "script", "bodyFont": "auto", "background": null, "texture": "grain",
+    "decor": { "type": "image", "image": "/library/petal-red.webp", "color": "#c0392b", "density": 14, "size": 1 },
+    "envelope": { "ornament": "/library/rose-lilac.webp" }
+  },
+  "music": { "url": "/uploads/old-song.mp3", "loop": false },
+  "blocks": [
+    { "type": "hero", "visible": true, "names": "Мария & Пётр", "date": "2027-08-20T15:30", "surface": "torn",
+      "ornaments": [{ "src": "/library/twine-bow.webp", "position": "top-right", "size": 120, "rotate": 10, "flip": false, "opacity": 1 }] },
+    { "type": "story", "visible": true, "text": "История", "surface": "kraft", "surfaceOpacity": 0.8 },
+    { "type": "story", "visible": true, "text": "Вторая история без id", "surface": "marble" },
+    { "type": "location", "visible": true, "placeName": "Усадьба", "address": "Подмосковье", "surface": "fabric",
+      "ornaments": [{ "src": "/library/gardenia.webp", "position": "bottom-left", "size": 160, "rotate": 0, "flip": true, "opacity": 0.9 }] },
+    { "type": "rsvp", "visible": true, "deadline": "2027-07-01" }
+  ]
+}

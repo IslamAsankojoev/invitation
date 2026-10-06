@@ -6,14 +6,17 @@ import { AccountMenu } from "@/components/account/AccountMenu";
 import { DecorLayer } from "@/components/invitation/DecorLayer";
 import { InvitationView } from "@/components/invitation/InvitationView";
 import { prefersReducedMotion } from "@/components/invitation/motion";
+import { MusicButton, useInvitationMusic } from "@/components/invitation/music";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Iphone } from "@/components/ui/iphone";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { accountGate, type ClaimNext, type Ownership } from "@/lib/access";
 import { premiumUsage } from "@/lib/premium";
+import { themeStyle } from "@/lib/theme";
 import type { SessionUser } from "@/lib/session";
 import { formatZodErrors, invitationDataSchema, type InvitationData } from "@/lib/schema";
 import { patchInvitation, UploadTargetContext } from "./api";
@@ -69,9 +72,38 @@ function previewScrollTop(box: HTMLElement, el: HTMLElement): number {
   const blocks = Array.from(box.querySelectorAll("[data-block]"));
   if (el === blocks[0]) return 0;
   if (el === blocks[blocks.length - 1]) return max;
-  const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+  // Телефон может быть уменьшен transform'ом: экранные пиксели переводим в пиксели вёрстки.
+  const boxRect = box.getBoundingClientRect();
+  const k = boxRect.height ? box.clientHeight / boxRect.height : 1;
+  const top = (el.getBoundingClientRect().top - boxRect.top) * k + box.scrollTop;
   const gap = Math.min(80, box.clientHeight * 0.12);
   return Math.min(max, Math.max(0, top - gap));
+}
+
+/**
+ * Телефон-превью (Magic UI iPhone, пропорции 433×882) в натуральную величину: экран ≈ 402 px — как у iPhone 16 Pro.
+ * Не помещается — уменьшаем телефон целиком (transform), а не сужаем экран: иначе вёрстка приглашения съезжала бы.
+ */
+const PHONE_W = 431;
+const PHONE_H = Math.round((PHONE_W * 882) / 433);
+
+/** Масштаб телефона под место: по ширине всегда, по высоте — только на десктопе (там превью без прокрутки). */
+function usePhoneScale(fit: React.RefObject<HTMLDivElement | null>) {
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const el = fit.current;
+    if (!el) return;
+    const update = () => {
+      const desktop = window.matchMedia("(min-width: 1024px)").matches;
+      const s = Math.min(1, el.clientWidth / PHONE_W, desktop ? el.clientHeight / PHONE_H : 1);
+      if (s > 0) setScale(s);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [fit]);
+  return scale;
 }
 
 /** Плашка «PRO-оформление» над вкладками. Пока тарифов нет — скрыта; значки PRO на плитках остаются. */
@@ -84,11 +116,15 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
   const save = useCallback((d: InvitationData) => patchInvitation(id, token, { data: d }), [id, token]);
   const { status, errors } = useAutosave(data, save, validate, 800);
   const statusInfo = statusView[status];
+  const musicUrl = data.music.url;
+  const music = useInvitationMusic(musicUrl);
   const premium = useMemo(() => (SHOW_PREMIUM_ALERT ? premiumUsage(data) : []), [data]);
 
   const previewRef = useRef<HTMLDivElement>(null);
-  // Раскрытый блок — по id; сначала открыт главный экран.
-  const [expanded, setExpanded] = useState<string | null>(() => initialData.blocks.find((b) => b.type === "hero")?.id ?? null);
+  const phoneFitRef = useRef<HTMLDivElement>(null);
+  const phoneScale = usePhoneScale(phoneFitRef);
+  // Раскрытый блок — по id; сначала все свёрнуты, чтобы сразу был виден весь список блоков.
+  const [expanded, setExpanded] = useState<string | null>(null);
   /** Превью само прокручивается к блоку, который открыли для редактирования (прокручивать вручную тоже можно). */
   const [follow, setFollow] = useState(true);
   /** Смена ключа пересоздаёт превью — анимации проигрываются заново. */
@@ -144,12 +180,11 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
       <div className="min-h-svh bg-muted/60 lg:grid lg:h-svh lg:grid-cols-[460px_1fr]">
         <aside className="flex flex-col border-r bg-background lg:h-svh">
           <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
+            {/* <a href="/" aria-label="На главную" className="shrink-0">
+              <img src="/logo.webp" alt="" width={44} height={32} className="h-8 w-auto" />
+            </a> */}
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <h1 className="text-base leading-none font-semibold">Редактор приглашения</h1>
-              <Badge role="status" data-testid="save-status" variant={statusInfo.variant} className="w-fit">
-                {statusInfo.icon}
-                {statusInfo.text}
-              </Badge>
             </div>
             <nav className="flex gap-2">
               {gate ? (
@@ -240,27 +275,57 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
           </Tabs>
         </aside>
 
-        <section aria-label="Превью" className="flex flex-col items-center justify-center gap-3 p-4 lg:p-8">
-          <div className="flex w-full max-w-[390px] items-center justify-between gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={reloadPreview}>
-              <RotateCw /> Перезагрузить
+        {/* overflow-hidden: уменьшенный transform'ом телефон браузер учитывает в прокрутке по исходному размеру
+            (431×878) — без обрезки на телефоне страницу можно было увести вправо и вниз. */}
+        <section aria-label="Превью" className="flex flex-col items-center gap-3 overflow-hidden px-2 pt-4 pb-10 lg:h-svh lg:min-h-0 lg:p-8">
+          <div className="flex w-full max-w-[433px] flex-wrap items-center gap-2">
+            <Button type="button" variant="outline" size="icon-sm" onClick={reloadPreview} aria-label="Перезагрузить" title="Перезагрузить превью">
+              <RotateCw />
             </Button>
+            <Badge role="status" data-testid="save-status" variant={statusInfo.variant}>
+              {statusInfo.icon}
+              {statusInfo.text}
+            </Badge>
             <label
-              className="flex cursor-pointer items-center gap-2 text-sm"
+              className="ml-auto flex cursor-pointer items-center gap-2 text-sm"
               title="Прокручивать превью к блоку, который открыт в редакторе"
             >
               <Switch checked={follow} onCheckedChange={toggleFollow} aria-label="Следовать за редактируемым блоком" />
               Следовать за контентом
             </label>
           </div>
-          <div className="relative h-[760px] max-h-[calc(100svh-6.75rem)] w-full max-w-[390px] overflow-hidden rounded-[44px] border-[10px] border-neutral-900 bg-neutral-900 shadow-2xl">
-            <div className="relative h-full overflow-hidden rounded-[34px]">
+          <div ref={phoneFitRef} className="flex w-full justify-center lg:min-h-0 lg:flex-1 lg:items-center">
+            <div className="shrink-0" style={{ width: PHONE_W * phoneScale, height: PHONE_H * phoneScale }}>
+          <Iphone
+            className="drop-shadow-2xl"
+            style={{ width: PHONE_W, transform: `scale(${phoneScale})`, transformOrigin: "top left" }}
+          >
+            <div className="relative h-full">
               <div ref={previewRef} className="h-full overflow-y-auto" data-testid="preview">
                 <InvitationView key={previewKey} data={data} slug={slug} preview />
               </div>
               <DecorLayer key={previewKey} decor={data.theme.decor} contained />
+              {/* Музыка — как у гостя: включается печатью заставки или кнопкой-эквалайзером. */}
+              {musicUrl && (
+                <>
+                  <audio {...music.audioProps} src={musicUrl} loop={data.music.loop} preload="auto" data-testid="preview-music" />
+                  {/* Переменные палитры: снаружи приглашения --accent — токен shadcn. */}
+                  <div style={themeStyle(data.theme)} className="absolute right-4 bottom-4 z-20">
+                    <MusicButton playing={music.playing} onClick={music.toggle} />
+                  </div>
+                </>
+              )}
               {/* key по виду: сменили вид — заставка проигрывается заново. */}
-              {intro && <IntroPreview key={data.theme.envelope.style} data={data} onClose={() => setIntro(false)} />}
+              {intro && (
+                <IntroPreview
+                  key={data.theme.envelope.style}
+                  data={data}
+                  onOpen={() => musicUrl && !music.playing && music.play()}
+                  onClose={() => setIntro(false)}
+                />
+              )}
+            </div>
+          </Iphone>
             </div>
           </div>
         </section>

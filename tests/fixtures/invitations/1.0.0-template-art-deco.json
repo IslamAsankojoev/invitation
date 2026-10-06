@@ -1,0 +1,308 @@
+{
+  "schemaVersion": "1.0.0",
+  "theme": {
+    "headings": "caps",
+    "ornamentMotion": {
+      "enter": "auto",
+      "enterSpeed": 1,
+      "idle": "auto",
+      "idleSpeed": 1,
+      "idleAmplitude": 1
+    },
+    "palette": "noir",
+    "font": "playfair-sc",
+    "bodyFont": "jost",
+    "background": null,
+    "texture": "diamonds",
+    "decor": {
+      "type": "confetti",
+      "image": null,
+      "color": "#c9a45c",
+      "density": 14,
+      "size": 0.8,
+      "speed": 0.7
+    },
+    "envelope": {
+      "ornament": "/library/stars-gold.svg",
+      "style": "seal"
+    },
+    "motion": {
+      "style": "cinematic",
+      "speed": 1
+    }
+  },
+  "music": {
+    "url": "/music/perfect.mp3",
+    "loop": true
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "id": "b-hero",
+      "visible": true,
+      "variant": "minimal",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/frame-deco.svg",
+          "position": "center",
+          "size": 340,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.95
+        },
+        {
+          "src": "/library/stars-gold.svg",
+          "position": "top-right",
+          "size": 110,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.9
+        },
+        {
+          "src": "/library/stars-gold.svg",
+          "position": "bottom-left",
+          "size": 120,
+          "rotate": 180,
+          "flip": false,
+          "opacity": 0.8
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "names": "Анна & Иван",
+      "date": "2027-06-19T16:00",
+      "label": "Приглашение на свадьбу",
+      "subtitle": "Приглашаем вас разделить с нами этот день",
+      "photo": null
+    },
+    {
+      "type": "countdown",
+      "id": "b-countdown",
+      "visible": true,
+      "variant": "cards",
+      "surface": "card",
+      "surfaceOpacity": 0.1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0
+    },
+    {
+      "type": "calendar",
+      "id": "b-calendar",
+      "visible": true,
+      "variant": "tearoff",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/divider-swirl.svg",
+          "position": "top",
+          "size": 220,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.9
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0
+    },
+    {
+      "type": "story",
+      "id": "b-story",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/divider-dots.svg",
+          "position": "bottom",
+          "size": 200,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.8
+        }
+      ],
+      "entrance": "blur",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "",
+      "text": "Мы познакомились весной, и с тех пор не расстаёмся. Будем счастливы видеть вас рядом в самый важный для нас день.",
+      "photo": null
+    },
+    {
+      "type": "program",
+      "id": "b-program",
+      "visible": true,
+      "variant": "classic",
+      "surface": "card",
+      "surfaceOpacity": 0.1,
+      "ornaments": [
+        {
+          "src": "/library/stars-gold.svg",
+          "position": "top-right",
+          "size": 90,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.8
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "items": [
+        {
+          "time": "16:00",
+          "title": "Сбор гостей",
+          "description": "Фуршет и приветственные напитки"
+        },
+        {
+          "time": "16:30",
+          "title": "Церемония",
+          "description": "Торжественная регистрация"
+        },
+        {
+          "time": "18:00",
+          "title": "Праздничный ужин",
+          "description": "Банкет и поздравления"
+        }
+      ]
+    },
+    {
+      "type": "dresscode",
+      "id": "b-dresscode",
+      "visible": true,
+      "variant": "chips",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "text": "Будем рады, если вы поддержите цветовую гамму праздника",
+      "colors": [
+        "#efe7d6",
+        "#c9a45c",
+        "#6d1f2a",
+        "#1f3b33",
+        "#3a342b"
+      ]
+    },
+    {
+      "type": "location",
+      "id": "b-location",
+      "visible": true,
+      "variant": "minimal",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/stars-gold.svg",
+          "position": "top-left",
+          "size": 90,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.8
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "placeName": "Ресторан «Сад»",
+      "address": "г. Москва, ул. Садовая, 1",
+      "photo": null
+    },
+    {
+      "type": "rsvp",
+      "id": "b-rsvp",
+      "visible": true,
+      "variant": "classic",
+      "surface": "frame",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/divider-swirl.svg",
+          "position": "top",
+          "size": 200,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.9
+        },
+        {
+          "src": "/library/stars-gold.svg",
+          "position": "bottom-right",
+          "size": 100,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.8
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Подтвердите, пожалуйста,",
+      "scriptLine": "своё присутствие"
+    }
+  ]
+}

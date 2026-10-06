@@ -1,4 +1,3 @@
-import { Heart } from "lucide-react";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { TemplateGallery } from "@/components/templates/TemplateGallery";
 import { authEnabled, currentUser } from "@/lib/session";
@@ -18,7 +17,7 @@ export default async function HomePage() {
       )}
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:py-14">
         <header className="flex flex-col items-center gap-3 text-center">
-          <Heart className="size-6 text-primary" />
+          <img src="/logo.webp" alt="Keleber" width={96} height={69} className="h-16 w-auto" />
           <h1 className="text-5xl sm:text-6xl" style={{ fontFamily: "var(--font-great-vibes), cursive" }}>
             Пригласительный сайт
           </h1>

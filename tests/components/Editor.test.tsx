@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor, type EditorAccount } from "@/components/editor/Editor";
@@ -17,6 +17,7 @@ describe("Editor", () => {
     const user = userEvent.setup();
     const { container } = renderEditor();
     const preview = screen.getByTestId("preview");
+    await user.click(screen.getByRole("button", { name: "Главный экран" }));
     expect(container.querySelectorAll("button button")).toHaveLength(0);
     await user.click(screen.getByRole("button", { name: "Вид «Арка с фото»" }));
     expect(screen.getByRole("button", { name: "Вид «Арка с фото»" })).toHaveAttribute("aria-pressed", "true");
@@ -47,7 +48,7 @@ describe("Editor", () => {
     const preview = screen.getByTestId("preview");
     const scrollTo = vi.spyOn(preview, "scrollTo");
     const header = (label: string) => screen.getByRole("button", { name: label });
-    expect(header("Главный экран")).toHaveAttribute("aria-expanded", "true");
+    expect(header("Главный экран")).toHaveAttribute("aria-expanded", "false"); // сначала все свёрнуты
 
     await user.click(header("Программа"));
     expect(header("Программа")).toHaveAttribute("aria-expanded", "true");
@@ -92,6 +93,7 @@ describe("Editor", () => {
     renderEditor();
     const preview = screen.getByTestId("preview");
     expect(within(preview).getByTestId("hero-names")).toHaveTextContent("Анна & Иван");
+    await user.click(screen.getByRole("button", { name: "Главный экран" }));
 
     const input = screen.getByLabelText("Имена");
     await user.clear(input);
@@ -112,6 +114,7 @@ describe("Editor", () => {
   it("пустые имена показывают ошибку и не сохраняются", async () => {
     const user = userEvent.setup();
     renderEditor();
+    await user.click(screen.getByRole("button", { name: "Главный экран" }));
     await user.clear(screen.getByLabelText("Имена"));
     expect(screen.getByTestId("save-status")).toHaveTextContent("Есть ошибки");
     expect(screen.getByRole("alert")).toHaveTextContent("Укажите имена");
@@ -156,6 +159,26 @@ describe("Editor", () => {
 
     await user.click(screen.getByRole("button", { name: "Удалить украшение 1" }));
     expect(location().querySelector("img[data-ornament]")).toBeNull();
+  });
+
+  it("любая правка украшения — после паузы оно перемонтируется и проигрывает анимацию заново", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    const decor = () => screen.getByTestId("preview").querySelector<HTMLElement>('[data-block="location"] [data-decor]')!;
+    await user.click(screen.getByRole("button", { name: "Место" }));
+    await user.click(screen.getByRole("button", { name: "Добавить украшение" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Гардении" }));
+    const before = decor();
+    expect(before).toHaveAttribute("data-revealed");
+
+    await user.selectOptions(screen.getByLabelText("Положение украшения 1"), "bottom-left");
+    // Пока правка идёт — тот же элемент, изменения видны сразу.
+    expect(decor()).toBe(before);
+    expect(decor().style.left).toBe("0px");
+    // После паузы — новый элемент, и он снова показан (анимация с начала).
+    await act(() => new Promise((r) => setTimeout(r, 500)));
+    expect(decor()).not.toBe(before);
+    await waitFor(() => expect(decor()).toHaveAttribute("data-revealed"));
   });
 
   it("шрифты и текстура выбираются в «Оформлении» и сразу применяются к превью", async () => {
@@ -207,6 +230,7 @@ describe("Editor", () => {
     const user = userEvent.setup();
     renderEditor();
     const invitation = () => within(screen.getByTestId("preview")).getByTestId("invitation");
+    await user.click(screen.getByRole("button", { name: "Главный экран" }));
     await user.clear(screen.getByLabelText("Имена"));
     await user.type(screen.getByLabelText("Имена"), "Мария & Пётр");
 
@@ -388,7 +412,7 @@ describe("Editor: добавление, копирование и удалени
       expect(screen.getByText(/Загрузить свою музыку пока нельзя/)).toBeInTheDocument();
       expect(screen.queryByLabelText("Загрузить mp3")).not.toBeInTheDocument();
       // У нового приглашения песня уже выбрана — первая из списка.
-      expect(screen.getByRole("button", { name: "Песня «Perfect» — Ed Sheeran" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "Песня «Die With A Smile» — Lady Gaga, Bruno Mars" })).toHaveAttribute("aria-pressed", "true");
 
       await user.click(screen.getByRole("button", { name: "Песня «A Thousand Years» — Christina Perri" }));
       expect(screen.getByRole("button", { name: "Песня «A Thousand Years» — Christina Perri" })).toHaveAttribute("aria-pressed", "true");
@@ -412,6 +436,36 @@ describe("Editor: добавление, копирование и удалени
       expect(audio.paused).toBe(false);
       await user.click(screen.getByRole("button", { name: "Остановить «Marry You»" }));
       expect(audio.paused).toBe(true);
+    });
+
+    it("музыка в превью — как у гостя: кнопка-эквалайзер, печать заставки включает, «Послушать» глушит", async () => {
+      const user = userEvent.setup();
+      renderEditor();
+      const audio = screen.getByTestId("preview-music") as HTMLAudioElement;
+      expect(audio.getAttribute("src")).toBe("/music/die-with-a-smile.mp3");
+      expect(audio.paused).toBe(true);
+
+      await user.click(screen.getByRole("button", { name: "Включить музыку" }));
+      expect(audio.paused).toBe(false);
+      await user.click(screen.getByRole("button", { name: "Выключить музыку" }));
+      expect(audio.paused).toBe(true);
+
+      // Нажатие на печать в «Посмотреть заставку» включает музыку.
+      await user.click(screen.getByRole("tab", { name: "Оформление" }));
+      await user.click(screen.getByRole("button", { name: "Посмотреть заставку" }));
+      await user.click(within(screen.getByTestId("intro-preview")).getByRole("button", { name: "Открыть приглашение" }));
+      expect(audio.paused).toBe(false);
+
+      // «Послушать» другую песню — музыка превью замолкает, песни не накладываются.
+      await user.click(screen.getByRole("tab", { name: "Музыка" }));
+      await user.click(screen.getByRole("button", { name: "Послушать «Marry You»" }));
+      expect(audio.paused).toBe(true);
+      expect(screen.getByRole("button", { name: "Включить музыку" })).toBeInTheDocument();
+
+      // И наоборот: включили музыку превью — прослушивание останавливается.
+      await user.click(screen.getByRole("button", { name: "Включить музыку" }));
+      expect((screen.getByTestId("music-preview") as HTMLAudioElement).paused).toBe(true);
+      expect(screen.getByRole("button", { name: "Послушать «Marry You»" })).toBeInTheDocument();
     });
 
     it("песня, загруженная до ограничения, остаётся и видна отдельной строкой", async () => {

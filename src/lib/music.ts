@@ -9,11 +9,18 @@ export type MusicTrack = { id: string; title: string; artist: string; src: strin
 const track = (id: string, title: string, artist: string): MusicTrack => ({ id, title, artist, src: `/music/${id}.mp3` });
 
 export const musicTracks: MusicTrack[] = [
+  track("die-with-a-smile", "Die With A Smile", "Lady Gaga, Bruno Mars"),
+  track("die-with-a-smile-cover", "Die With A Smile (кавер)", "Little boy cover"),
   track("perfect", "Perfect", "Ed Sheeran"),
   track("a-thousand-years", "A Thousand Years", "Christina Perri"),
   track("cant-help-falling-in-love", "Can't Help Falling in Love", "Elvis Presley"),
   track("marry-you", "Marry You", "Bruno Mars"),
   track("ozgocho-kun", "Өзгөчө күн", "Jax 02.14"),
+  track("love-story", "Love Story", "Indila"),
+  track("alem", "Alem", "Temirlan & Yernat"),
+  track("erke-sary", "Эрке Сары", "Ордо Сахна"),
+  track("comptine", "Comptine d'un autre été", "Yann Tiersen"),
+  track("idea-10", "Idea 10", "Gibran Alcocer"),
 ];
 
 /** Песня нового приглашения. */

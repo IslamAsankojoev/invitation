@@ -23,8 +23,8 @@ export default async function MyInvitationsPage() {
     <main className="min-h-svh bg-muted/60">
       <div className="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-8">
         <header className="flex items-center justify-between gap-3">
-          <a href="/" className="text-sm text-muted-foreground hover:text-foreground">
-            ← Шаблоны
+          <a href="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <img src="/logo.webp" alt="" width={40} height={29} className="h-7 w-auto" /> ← Шаблоны
           </a>
           <AccountMenu user={user} />
         </header>

@@ -1,14 +1,14 @@
 "use client";
 
-import { useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { blockTitle } from "@/lib/blocks";
 import { blockEdges, edgeHeight, edgeMaskStyle, edgePad, edgesVisible, tornPaperStyle } from "@/lib/edges";
 import { isDarkColor } from "@/lib/color";
 import { darkSurfaces, isFullWidth, isPanelSurface, lightSurfaces, surfaceImages, surfaceLayer, surfaceObjects, takesBgColor, tintedPanel } from "@/lib/library";
 import { ornamentImageStyle, ornamentMotionProps, ornamentStyle } from "@/lib/ornaments";
 import { textStyle } from "@/lib/textStyle";
-import type { Block } from "@/lib/schema";
-import { useOrnamentMotion, useReveal } from "./motion";
+import type { Block, Ornament, OrnamentMotion } from "@/lib/schema";
+import { replayReveal, useMotion, useOrnamentMotion, useReveal } from "./motion";
 
 type Props = {
   block: Pick<
@@ -181,15 +181,9 @@ export function Section({ block, children, bare = false, frame = false, fill, ba
           style={edged ? { top: 14 + edgeHeight(top), bottom: 14 + edgeHeight(bottom) } : undefined}
         />
       )}
-      {block.ornaments.map((o, i) => {
-        // Обёртка появляется (выезжает, проявляется…), картинка внутри потом движется (качается, парит…).
-        const { key, wrapper, image } = ornamentMotionProps(o, ornamentMotion, i);
-        return (
-          <span key={key} aria-hidden="true" {...wrapper} style={{ ...ornamentStyle(o), ...wrapper.style }}>
-            <img src={o.src} alt="" data-ornament={i} loading="lazy" {...image} style={{ ...ornamentImageStyle(o), ...image.style }} />
-          </span>
-        );
-      })}
+      {block.ornaments.map((o, i) => (
+        <OrnamentItem key={i} ornament={o} index={i} common={ornamentMotion} />
+      ))}
       <div
         // Во всю ширину растягивается фон блока, а текст остаётся в колонке содержимого.
         className={`relative z-10 ${full ? "mx-auto w-full max-w-[430px]" : ""}`}
@@ -217,5 +211,40 @@ export function Section({ block, children, bare = false, frame = false, fill, ba
         {children}
       </div>
     </section>
+  );
+}
+
+/** Пауза после правки украшения, после которой оно проигрывает анимацию заново (ползунок тянут — не мигает). */
+const ORNAMENT_REPLAY_MS = 400;
+
+/**
+ * Украшение: обёртка появляется (выезжает, проявляется…), картинка внутри потом движется (качается, парит…).
+ * Поменяли любую настройку — после паузы украшение монтируется заново и анимация идёт с начала, а пока правка
+ * идёт (тянут ползунок), изменения видны сразу, без перезапуска.
+ */
+function OrnamentItem({ ornament: o, index, common }: { ornament: Ornament; index: number; common: OrnamentMotion }) {
+  const { key, wrapper, image } = ornamentMotionProps(o, common, index);
+  const motion = useMotion();
+  const [mountKey, setMountKey] = useState(key);
+  const ref = useRef<HTMLSpanElement>(null);
+  const firstMount = useRef(true);
+  useEffect(() => {
+    if (key === mountKey) return;
+    const timer = setTimeout(() => setMountKey(key), ORNAMENT_REPLAY_MS);
+    return () => clearTimeout(timer);
+  }, [key, mountKey]);
+  // Первое появление ведёт useReveal блока (при прокрутке); перемонтированное после правки — показываем сами.
+  useEffect(() => {
+    if (firstMount.current) {
+      firstMount.current = false;
+      return;
+    }
+    if (ref.current) return replayReveal(ref.current, motion);
+  }, [mountKey]); // motion не в зависимостях: перезапуск — только по смене настроек
+
+  return (
+    <span key={mountKey} ref={ref} aria-hidden="true" {...wrapper} style={{ ...ornamentStyle(o), ...wrapper.style }}>
+      <img src={o.src} alt="" data-ornament={index} loading="lazy" {...image} style={{ ...ornamentImageStyle(o), ...image.style }} />
+    </span>
   );
 }

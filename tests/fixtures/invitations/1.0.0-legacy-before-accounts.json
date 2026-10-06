@@ -1,0 +1,18 @@
+{
+  "theme": {
+    "palette": "night", "font": "prata", "bodyFont": "lora", "background": "/uploads/bg.jpg", "texture": "stars",
+    "decor": { "type": "snow", "image": null, "color": "#ffffff", "density": 30, "size": 1.2, "speed": 0.8 },
+    "envelope": { "ornament": null, "style": "veil" },
+    "headings": "caps",
+    "motion": { "style": "cinematic", "speed": 1.2 }
+  },
+  "music": { "url": "/uploads/song.mp3", "loop": true },
+  "blocks": [
+    { "id": "b-hero", "type": "hero", "visible": true, "variant": "arch", "names": "Ольга & Дмитрий", "date": "2028-01-14T18:00",
+      "photo": "/uploads/hero.jpg", "entrance": "zoom" },
+    { "id": "b-text", "type": "text", "visible": true, "variant": "card", "icon": "gift", "text": "Подарки — конвертом",
+      "textStyles": { "text": { "color": "#f0e6d2", "font": "lora" } }, "edgeTop": "torn", "edgeTopSeed": 12345, "surface": "card" },
+    { "id": "b-gallery", "type": "gallery", "visible": true, "variant": "collage", "photos": ["/uploads/1.jpg", "/uploads/2.jpg"] },
+    { "id": "b-rsvp", "type": "rsvp", "visible": true, "variant": "compact" }
+  ]
+}

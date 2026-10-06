@@ -37,6 +37,17 @@ function show(el: HTMLElement) {
   el.dataset.revealed = "1";
 }
 
+/**
+ * Заново смонтированный элемент (украшение после правки в редакторе) показываем через кадр: сначала браузер рисует
+ * скрытое состояние, потом data-revealed запускает появление. Без анимаций — показываем сразу.
+ */
+export function replayReveal(el: HTMLElement, motion: Motion) {
+  if (motion === "paused") return;
+  if (motion === "off" || prefersReducedMotion() || typeof requestAnimationFrame === "undefined") return show(el);
+  let frame = requestAnimationFrame(() => (frame = requestAnimationFrame(() => show(el))));
+  return () => cancelAnimationFrame(frame);
+}
+
 /** Появление при прокрутке для всех [data-reveal] и [data-decor] внутри ref. instant — показать сразу (блок «без анимации»). */
 export function useReveal(ref: RefObject<HTMLElement | null>, instant = false) {
   const motion = useMotion();

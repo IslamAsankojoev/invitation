@@ -1,3 +1,4 @@
+import { INITIAL_SCHEMA_VERSION, migrateInvitation, SEMVER } from "./migrations";
 import { z } from "zod";
 
 export const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Цвет должен быть в формате #RRGGBB");
@@ -475,7 +476,12 @@ export function withBlockIds(blocks: unknown): unknown {
   });
 }
 
-export const invitationDataSchema = z.object({
+/** Формат приглашения без миграций — для слепка схемы (schemaDiff) и типов. */
+export const invitationDataObject = z.object({
+  /** Версия формата (semver) — см. lib/migrations.ts и правило в AGENTS.md. */
+  // По умолчанию — постоянное 1.0.0 (данные без версии), а не SCHEMA_VERSION: иначе слепок менялся бы при каждом
+  // поднятии версии. Текущую версию проставляет migrateInvitation до проверки.
+  schemaVersion: z.string().regex(SEMVER, "Неверная версия формата").default(INITIAL_SCHEMA_VERSION),
   theme: themeSchema,
   music: musicSchema,
   blocks: z.preprocess(
@@ -499,7 +505,13 @@ export const invitationDataSchema = z.object({
   ),
 });
 
-export type InvitationData = z.infer<typeof invitationDataSchema>;
+/**
+ * Приглашение: сначала старые данные приводятся к текущему формату (migrateInvitation), потом проверяются.
+ * Всё чтение и запись приглашений идёт через эту схему.
+ */
+export const invitationDataSchema = z.preprocess((raw) => migrateInvitation(raw), invitationDataObject);
+
+export type InvitationData = z.infer<typeof invitationDataObject>;
 export type Theme = z.infer<typeof themeSchema>;
 export type Palette = Theme["palette"];
 export type Font = Theme["font"];
