@@ -1,7 +1,7 @@
 "use client";
 
-import { AlertCircle, Check, CircleCheck, Crown, ExternalLink, Loader2, MousePointerClick, RotateCw, Users, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { AlertCircle, Check, ChevronDown, CircleCheck, Crown, ExternalLink, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, RotateCw, Users, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { DecorLayer } from "@/components/invitation/DecorLayer";
 import { InvitationView } from "@/components/invitation/InvitationView";
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Iphone } from "@/components/ui/iphone";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import { accountGate, type ClaimNext, type Ownership } from "@/lib/access";
 import { premiumUsage } from "@/lib/premium";
 import { themeStyle } from "@/lib/theme";
@@ -87,24 +88,45 @@ function previewScrollTop(box: HTMLElement, el: HTMLElement): number {
 const PHONE_W = 431;
 const PHONE_H = Math.round((PHONE_W * 882) / 433);
 
-/** Масштаб телефона под место: по ширине всегда, по высоте — только на десктопе (там превью без прокрутки). */
-function usePhoneScale(fit: React.RefObject<HTMLDivElement | null>) {
+/** Масштаб телефона-превью под место (на компьютере): по ширине и высоте области превью. */
+function usePhoneScale(fit: React.RefObject<HTMLDivElement | null>, enabled: boolean) {
   const [scale, setScale] = useState(1);
   useEffect(() => {
     const el = fit.current;
-    if (!el) return;
+    if (!enabled || !el) return;
     const update = () => {
-      const desktop = window.matchMedia("(min-width: 1024px)").matches;
-      const s = Math.min(1, el.clientWidth / PHONE_W, desktop ? el.clientHeight / PHONE_H : 1);
+      const s = Math.min(1, el.clientWidth / PHONE_W, el.clientHeight / PHONE_H);
       if (s > 0) setScale(s);
     };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [fit]);
+  }, [fit, enabled]);
   return scale;
 }
+
+const DESKTOP_QUERY = "(min-width: 1024px)";
+/** Компьютер (≥ 1024 px) или телефон. На сервере — компьютер; после гидратации — как на самом деле. */
+function useIsDesktop() {
+  return useSyncExternalStore(
+    (onChange) => {
+      const m = window.matchMedia(DESKTOP_QUERY);
+      m.addEventListener("change", onChange);
+      return () => m.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia(DESKTOP_QUERY).matches,
+    () => true,
+  );
+}
+
+/** Иконки кнопок нижней панели на телефоне. */
+const tabIcons: Record<(typeof TABS)[number], ComponentType<{ className?: string }>> = {
+  Блоки: LayoutList,
+  Оформление: Palette,
+  Музыка: Music,
+  Ссылка: Link2,
+};
 
 /** Ключ localStorage: подсказку «нажмите на блок в превью» уже закрыли. */
 const PICK_TIP_KEY = "editor-pick-tip";
@@ -125,7 +147,10 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
 
   const previewRef = useRef<HTMLDivElement>(null);
   const phoneFitRef = useRef<HTMLDivElement>(null);
-  const phoneScale = usePhoneScale(phoneFitRef);
+  const desktop = useIsDesktop();
+  const phoneScale = usePhoneScale(phoneFitRef, desktop);
+  /** Телефон: панель — шторка снизу, открыта или нет. На компьютере не используется (панель всегда слева). */
+  const [sheet, setSheet] = useState(!!notice);
   // Раскрытый блок — по id; сначала все свёрнуты, чтобы сразу был виден весь список блоков.
   const [expanded, setExpanded] = useState<string | null>(null);
   /** Подвкладка раскрытого блока и «Тонкая настройка» — одни на все блоки, на время сессии. */
@@ -209,6 +234,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
     e.stopPropagation();
     const blockId = section.dataset.blockId;
     setTab("Блоки");
+    setSheet(true);
     setIntro(false);
     setExpanded(blockId);
     panelScrollTo.current = blockId;
@@ -225,16 +251,63 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
     previewRef.current?.scrollTo({ top: 0 });
   }
 
+  /** Экран превью: приглашение, декор, музыка, заставка. На компьютере — внутри iPhone, на телефоне — во всю ширину. */
+  const previewScreen = (
+    // isolate: слои приглашения (заливка выбранного блока, украшения) не выходят поверх шторки и нижней панели.
+    <div className="relative isolate h-full">
+      <div ref={previewRef} className="editor-pick h-full overflow-y-auto" data-testid="preview" onClickCapture={pickFromPreview}>
+        <InvitationView key={previewKey} data={data} slug={slug} preview selectedBlockId={expanded} />
+      </div>
+      <DecorLayer key={previewKey} decor={data.theme.decor} contained />
+      {/* Музыка — как у гостя: включается печатью заставки или кнопкой-эквалайзером. */}
+      {musicUrl && (
+        <>
+          <audio {...music.audioProps} src={musicUrl} loop={data.music.loop} preload="auto" data-testid="preview-music" />
+          {/* Переменные палитры: снаружи приглашения --accent — токен shadcn. */}
+          <div style={themeStyle(data.theme)} className="absolute right-4 bottom-4 z-20">
+            <MusicButton playing={music.playing} onClick={music.toggle} />
+          </div>
+        </>
+      )}
+      {/* key по виду: сменили вид — заставка проигрывается заново. */}
+      {intro && (
+        <IntroPreview
+          key={data.theme.envelope.style}
+          data={data}
+          onOpen={() => musicUrl && !music.playing && music.play()}
+          onClose={() => setIntro(false)}
+        />
+      )}
+    </div>
+  );
+
   return (
     <UploadTargetContext.Provider value={uploadTarget}>
-      <div className="min-h-svh bg-muted/60 lg:grid lg:h-svh lg:grid-cols-[460px_1fr]">
-        <aside className="flex flex-col border-r bg-background lg:h-svh">
-          <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-background/95 px-4 py-3 backdrop-blur">
+      {/* Телефон: превью на весь экран, панель — шторка снизу (editor-ux.md, этап 7). Компьютер: панель слева. */}
+      <div className="flex h-svh flex-col bg-muted/60 lg:grid lg:grid-cols-[460px_1fr]">
+        {/* Невидимая подложка под шторкой: нажатие вне шторки закрывает её, как у обычного drawer. */}
+        {sheet && <div aria-hidden="true" data-testid="sheet-backdrop" className="fixed inset-0 z-30 lg:hidden" onClick={() => setSheet(false)} />}
+        <aside
+          aria-label="Панель редактора"
+          className={cn(
+            "fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 flex h-[62svh] flex-col rounded-t-2xl border-t bg-background shadow-[0_-12px_40px_rgb(0_0_0/0.18)] transition-[translate,visibility] duration-300",
+            "lg:static lg:z-auto lg:h-svh lg:translate-y-0 lg:visible lg:rounded-none lg:border-t-0 lg:border-r lg:shadow-none",
+            !sheet && "invisible translate-y-[calc(100%+4rem)]",
+          )}
+        >
+          <div className="relative flex justify-center py-2 lg:hidden">
+            <span className="h-1.5 w-10 rounded-full bg-muted-foreground/30" />
+            <Button type="button" variant="ghost" size="icon-xs" className="absolute top-1 right-2" aria-label="Свернуть панель" onClick={() => setSheet(false)}>
+              <ChevronDown />
+            </Button>
+          </div>
+          <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-background/95 px-4 pb-3 backdrop-blur lg:pt-3">
             {/* <a href="/" aria-label="На главную" className="shrink-0">
               <img src="/logo.webp" alt="" width={44} height={32} className="h-8 w-auto" />
             </a> */}
+            {/* В шторке на телефоне заголовок не нужен и сжимался бы рядом с кнопками — там он только для скринридеров. */}
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <h1 className="text-base leading-none font-semibold">Редактор приглашения</h1>
+              <h1 className="sr-only text-base leading-none font-semibold lg:not-sr-only">Редактор приглашения</h1>
             </div>
             <nav className="flex gap-2">
               {gate ? (
@@ -315,7 +388,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
 
             {/* relative — чтобы абсолютные элементы внутри (скрытые input.sr-only загрузок) считались от панели
                 и прокручивались с ней, а не растягивали страницу ниже экрана. */}
-            <div className="relative flex-1 p-4 lg:overflow-y-auto">
+            <div className="relative min-h-0 flex-1 overflow-y-auto p-4">
               <TabsContent value="Блоки">
                 <BlocksPanel
                   data={data}
@@ -342,8 +415,11 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
 
         {/* overflow-hidden: уменьшенный transform'ом телефон браузер учитывает в прокрутке по исходному размеру
             (431×878) — без обрезки на телефоне страницу можно было увести вправо и вниз. */}
-        <section aria-label="Превью" className="flex flex-col items-center gap-3 overflow-hidden px-2 pt-4 pb-10 lg:h-svh lg:min-h-0 lg:p-8">
-          <div className="flex w-full max-w-[433px] flex-wrap items-center gap-2">
+        <section
+          aria-label="Превью"
+          className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-hidden pt-2 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:h-svh lg:gap-3 lg:p-8"
+        >
+          <div className="flex w-full max-w-[433px] flex-wrap items-center gap-2 px-3 lg:px-0">
             <Button type="button" variant="outline" size="icon-sm" onClick={reloadPreview} aria-label="Перезагрузить" title="Перезагрузить превью">
               <RotateCw />
             </Button>
@@ -360,7 +436,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
             </label>
           </div>
           {pickTip && (
-            <p role="note" className="flex w-full max-w-[433px] items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm">
+            <p role="note" className="mx-3 flex w-[calc(100%-1.5rem)] max-w-[433px] items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm lg:mx-0 lg:w-full">
               <MousePointerClick className="size-4 shrink-0 text-primary" />
               <span className="flex-1">Нажмите на любой блок в превью, чтобы изменить его</span>
               <Button type="button" variant="ghost" size="icon-xs" aria-label="Закрыть подсказку" onClick={closePickTip}>
@@ -368,41 +444,44 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
               </Button>
             </p>
           )}
-          <div ref={phoneFitRef} className="flex w-full justify-center lg:min-h-0 lg:flex-1 lg:items-center">
-            <div className="shrink-0" style={{ width: PHONE_W * phoneScale, height: PHONE_H * phoneScale }}>
-          <Iphone
-            className="drop-shadow-2xl"
-            style={{ width: PHONE_W, transform: `scale(${phoneScale})`, transformOrigin: "top left" }}
-          >
-            <div className="relative h-full">
-              <div ref={previewRef} className="editor-pick h-full overflow-y-auto" data-testid="preview" onClickCapture={pickFromPreview}>
-                <InvitationView key={previewKey} data={data} slug={slug} preview selectedBlockId={expanded} />
+          {desktop ? (
+            <div ref={phoneFitRef} className="flex w-full min-h-0 flex-1 items-center justify-center">
+              <div className="shrink-0" style={{ width: PHONE_W * phoneScale, height: PHONE_H * phoneScale }}>
+                <Iphone className="drop-shadow-2xl" style={{ width: PHONE_W, transform: `scale(${phoneScale})`, transformOrigin: "top left" }}>
+                  {previewScreen}
+                </Iphone>
               </div>
-              <DecorLayer key={previewKey} decor={data.theme.decor} contained />
-              {/* Музыка — как у гостя: включается печатью заставки или кнопкой-эквалайзером. */}
-              {musicUrl && (
-                <>
-                  <audio {...music.audioProps} src={musicUrl} loop={data.music.loop} preload="auto" data-testid="preview-music" />
-                  {/* Переменные палитры: снаружи приглашения --accent — токен shadcn. */}
-                  <div style={themeStyle(data.theme)} className="absolute right-4 bottom-4 z-20">
-                    <MusicButton playing={music.playing} onClick={music.toggle} />
-                  </div>
-                </>
-              )}
-              {/* key по виду: сменили вид — заставка проигрывается заново. */}
-              {intro && (
-                <IntroPreview
-                  key={data.theme.envelope.style}
-                  data={data}
-                  onOpen={() => musicUrl && !music.playing && music.play()}
-                  onClose={() => setIntro(false)}
-                />
-              )}
             </div>
-          </Iphone>
-            </div>
-          </div>
+          ) : (
+            // На телефоне рамка не нужна: превью во всю ширину — ровно как увидит гость.
+            <div className="relative min-h-0 w-full flex-1 overflow-hidden border-y bg-background">{previewScreen}</div>
+          )}
         </section>
+
+        <nav aria-label="Разделы редактора" className="fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 border-t bg-background pb-[env(safe-area-inset-bottom)] lg:hidden">
+          {TABS.map((t) => {
+            const Icon = tabIcons[t];
+            const active = sheet && tab === t;
+            return (
+              <button
+                key={t}
+                type="button"
+                aria-pressed={active}
+                aria-label={`Панель «${t}»`}
+                onClick={() => {
+                  setIntro(false);
+                  if (active) return setSheet(false);
+                  setTab(t);
+                  setSheet(true);
+                }}
+                className="flex h-16 flex-col items-center justify-center gap-1 text-[11px] text-muted-foreground outline-none aria-pressed:text-foreground focus-visible:bg-muted"
+              >
+                <Icon className="size-5" />
+                {t}
+              </button>
+            );
+          })}
+        </nav>
       </div>
       {account && gate && (
         <Dialog open={gateFor !== null} onOpenChange={(open) => !open && setGateFor(null)}>

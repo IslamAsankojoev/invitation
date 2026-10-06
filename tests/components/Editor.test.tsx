@@ -374,6 +374,42 @@ describe("Editor: раскрытый блок — сначала текст, о�
   });
 });
 
+describe("Editor на телефоне: превью на весь экран, панель — шторка снизу", () => {
+  // В тестах matchMedia ничего не совпадает — это раскладка телефона.
+  beforeEach(() => localStorage.clear());
+  const sheet = () => screen.getByRole("complementary", { name: "Панель редактора" });
+
+  it("кнопки снизу открывают и закрывают шторку с нужным разделом", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    expect(sheet()).toHaveClass("invisible");
+    await user.click(screen.getByRole("button", { name: "Панель «Оформление»" }));
+    expect(sheet()).not.toHaveClass("invisible");
+    expect(screen.getByRole("tab", { name: "Оформление" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("button", { name: "Панель «Оформление»" })).toHaveAttribute("aria-pressed", "true");
+    // Повторное нажатие — свернуть; так же и кнопкой в шторке.
+    await user.click(screen.getByRole("button", { name: "Панель «Оформление»" }));
+    expect(sheet()).toHaveClass("invisible");
+    await user.click(screen.getByRole("button", { name: "Панель «Музыка»" }));
+    await user.click(screen.getByRole("button", { name: "Свернуть панель" }));
+    expect(sheet()).toHaveClass("invisible");
+    // Как drawer: нажатие вне шторки (невидимая подложка) закрывает её.
+    await user.click(screen.getByRole("button", { name: "Панель «Блоки»" }));
+    expect(sheet()).not.toHaveClass("invisible");
+    await user.click(screen.getByTestId("sheet-backdrop"));
+    expect(sheet()).toHaveClass("invisible");
+    expect(screen.queryByTestId("sheet-backdrop")).not.toBeInTheDocument();
+  });
+
+  it("нажатие на блок в превью открывает шторку с этим блоком", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(screen.getByTestId("preview").querySelector<HTMLElement>('[data-block="program"]')!);
+    expect(sheet()).not.toHaveClass("invisible");
+    expect(screen.getByRole("button", { name: "Программа" })).toHaveAttribute("aria-expanded", "true");
+  });
+});
+
 describe("Editor: сводки в списке блоков и «Что осталось заполнить»", () => {
   beforeEach(() => localStorage.clear());
 

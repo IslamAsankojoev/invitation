@@ -11,6 +11,8 @@ test("создать → настроить → открыть → послуш�
   const editorUrl = new URL(page.url());
   const saveStatus = page.getByTestId("save-status");
 
+  // На телефоне панель — шторка снизу: открываем «Блоки».
+  await page.getByRole("button", { name: "Панель «Блоки»" }).click();
   // 2. Имена и дата (блоки сначала свёрнуты — открываем главный экран)
   await page.getByRole("button", { name: "Главный экран", exact: true }).click();
   await page.getByLabel("Имена", { exact: true }).fill("Мария & Пётр");
