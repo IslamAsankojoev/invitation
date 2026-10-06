@@ -448,6 +448,14 @@ body {
   color: var(--accent);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
+/* Пока конверт закрыт, письмо видно по бокам между клапаном и передней стенкой — надписи и украшения на нём
+   проявляются, только когда письмо выезжает (иначе «от …» и розы торчали бы из закрытого конверта). */
+.inv-env-letter > * {
+  transition: opacity 0.4s ease 0.5s;
+}
+.inv-intro-flap:not([data-leaving]) .inv-env-letter > * {
+  opacity: 0;
+}
 .inv-env-front {
   z-index: 2;
   background: color-mix(in srgb, var(--accent) 16%, #fffdf8);
@@ -457,6 +465,8 @@ body {
   z-index: 3;
   transform-origin: top;
   background: color-mix(in srgb, var(--accent) 26%, #fffdf8);
+  /* Верхние углы скруглены как у конверта (rounded-md): иначе острые углы треугольника торчат за скруглением. */
+  border-radius: 0.375rem 0.375rem 0 0;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
   filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.15));
 }

@@ -126,8 +126,36 @@ export function Envelope({ names, label, date, ornament, hasMusic, variant = "se
           // Конверт: печать на клапане, при открытии клапан откидывается и из конверта выезжает письмо.
           <div className="inv-env relative mt-10 mb-16 h-[150px] w-[230px]">
             <div aria-hidden="true" className="inv-env-back absolute inset-0 rounded-md" />
-            <div aria-hidden="true" className="inv-env-letter absolute inset-x-3 top-3 bottom-2 flex items-start justify-center rounded-sm pt-4 text-2xl">
-              <span style={{ fontFamily: "var(--font-title)" }}>♡</span>
+            {/* На письме — «Приглашение» и «от …» от руки (Great Vibes всегда рукописный, шрифт имён может быть печатным),
+                в верхних углах — украшение конверта из шаблона, без него — сердечки. Низ письма остаётся в конверте. */}
+            <div aria-hidden="true" className="inv-env-letter absolute inset-x-3 top-3 bottom-2 flex flex-col items-center overflow-hidden rounded-sm pt-3">
+              {ornament ? (
+                <>
+                  <img src={ornament} alt="" className="absolute -top-4 -right-6 w-12 rotate-12 opacity-85" />
+                  <img src={ornament} alt="" className="absolute -top-4 -left-6 w-12 -scale-x-100 -rotate-12 opacity-85" />
+                </>
+              ) : (
+                <>
+                  <span className="absolute top-1.5 left-2.5 text-[10px] opacity-50">♡</span>
+                  <span className="absolute top-5 left-5 text-[7px] opacity-35">♡</span>
+                  <span className="absolute top-1.5 right-2.5 text-[10px] opacity-50">♡</span>
+                  <span className="absolute top-5 right-5 text-[7px] opacity-35">♡</span>
+                </>
+              )}
+              <span className="relative z-10 text-[26px] leading-none" style={{ fontFamily: "var(--font-great-vibes), cursive" }}>
+                Приглашение
+              </span>
+              <span className="relative z-10 mt-1 flex items-center gap-1.5 text-[9px] opacity-60">
+                <span className="h-px w-6 bg-current" />♡<span className="h-px w-6 bg-current" />
+              </span>
+              {names.trim() && (
+                <span
+                  className="relative z-10 mt-0.5 line-clamp-2 px-6 text-center text-[17px] leading-tight text-[var(--text)] opacity-85"
+                  style={{ fontFamily: "var(--font-great-vibes), cursive" }}
+                >
+                  от {names.trim()}
+                </span>
+              )}
             </div>
             <div aria-hidden="true" className="inv-env-front absolute inset-0 rounded-md" />
             <div aria-hidden="true" className="inv-env-flap absolute inset-x-0 top-0 h-[90px]" />
