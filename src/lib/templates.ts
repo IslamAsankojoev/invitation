@@ -949,7 +949,7 @@ function sampleBlocks(template: Template): Block[] {
 }
 
 /** Шаблон, по которому, судя по теме, оформлено приглашение (шаблон в данных не хранится). */
-const guessTemplate = (theme: Theme) =>
+export const guessTemplate = (theme: Theme) =>
   templates.find((t) => t.theme.palette === theme.palette && t.theme.font === theme.font && t.theme.texture === theme.texture);
 
 const designOf = (block: Block): BlockDesign => designFields(block as unknown as BlockDesign) as BlockDesign;

@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { InvitationData } from "@/lib/schema";
 import { applyTemplate, templates, type Template } from "@/lib/templates";
-import { Group } from "./controls";
 
 type Props = { data: InvitationData; onChange: (data: InvitationData) => void };
 
@@ -23,7 +22,7 @@ export function TemplatePicker({ data, onChange }: Props) {
   const [pending, setPending] = useState<Template | null>(null);
 
   return (
-    <Group title="Шаблон">
+    <div className="flex flex-col gap-3">
       <p className="text-sm text-muted-foreground">
         Начните с готового оформления и настройте его под себя. Тексты и фото сохранятся.
       </p>
@@ -74,6 +73,6 @@ export function TemplatePicker({ data, onChange }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Group>
+    </div>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { burstSparks, createParticles, decorDrawers, edgeFade, fitParticles, hitParticle, MIN_HIT_RADIUS, particleCenter, respawnParticle, sparkColors, stepParticle, stepSparks } from "@/lib/decor";
+import { burstSparks, createParticles, DENSITY_LEVELS, densityLevel, densityOf, decorDrawers, edgeFade, fitParticles, hitParticle, MIN_HIT_RADIUS, particleCenter, respawnParticle, sparkColors, stepParticle, stepSparks } from "@/lib/decor";
 
 describe("createParticles", () => {
   const drawer = decorDrawers.image;
@@ -102,5 +102,22 @@ describe("мини-игра: частицы лопаются от касания
     expect(piece.y).toBeGreaterThan(startY); // гравитация
     for (let t = 0; t < 2; t += 0.05) sparks = stepSparks(sparks, 0.05);
     expect(sparks).toHaveLength(0);
+  });
+});
+
+describe("«Сколько декора»: Мало / Средне / Много", () => {
+  it("уровни растут, укладываются в границы схемы и узнаются обратно", () => {
+    const values = DENSITY_LEVELS.map(densityOf);
+    expect(values).toEqual([...values].sort((a, b) => a - b));
+    for (const level of DENSITY_LEVELS) {
+      expect(densityOf(level)).toBeGreaterThan(0);
+      expect(densityOf(level)).toBeLessThanOrEqual(60);
+      expect(densityLevel(densityOf(level))).toBe(level);
+    }
+  });
+
+  it("своя плотность — ни один уровень", () => {
+    expect(densityLevel(14)).toBeNull();
+    expect(densityLevel(0)).toBeNull();
   });
 });

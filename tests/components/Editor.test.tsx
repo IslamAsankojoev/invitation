@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor, type EditorAccount } from "@/components/editor/Editor";
 import { createDefaultInvitation } from "@/lib/defaults";
-import { openBlockView } from "./editorHelpers";
+import { openBlockView, openThemeSection } from "./editorHelpers";
 
 beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 200 })));
@@ -32,7 +32,7 @@ describe("Editor", () => {
   it("«Посмотреть заставку» проигрывает её в превью, нажатие на печать закрывает", async () => {
     const user = userEvent.setup();
     renderEditor();
-    await user.click(screen.getByRole("tab", { name: "Оформление" }));
+    await openThemeSection(user, "Заставка");
     await user.click(screen.getByRole("button", { name: "Заставка Книга" }));
     const intro = screen.getByTestId("intro-preview");
     expect(within(intro).getByTestId("envelope")).toHaveAttribute("data-style", "book");
@@ -205,7 +205,7 @@ describe("Editor", () => {
   it("шрифты и текстура выбираются в «Оформлении» и сразу применяются к превью", async () => {
     const user = userEvent.setup();
     renderEditor();
-    await user.click(screen.getByRole("tab", { name: "Оформление" }));
+    await openThemeSection(user, "Шрифты");
     const invitation = () => within(screen.getByTestId("preview")).getByTestId("invitation");
 
     // Шрифты — выпадающие списки: кнопка с выбранным шрифтом, в списке каждый шрифт своим начертанием.
@@ -215,12 +215,13 @@ describe("Editor", () => {
     expect(screen.queryByRole("button", { name: "Шрифт имён Pacifico" })).not.toBeInTheDocument(); // список закрылся
     // «Авто» подтянул пару к Lobster
     expect(invitation().style.getPropertyValue("--font-body")).toContain("--font-montserrat");
-    expect(screen.getByRole("button", { name: "Основной текст: Авто · Montserrat" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Основной текст: Авто · Montserrat" }));
+    // Шрифт текста подбирается сам; поменять — в «Тонкой настройке» раздела.
+    await user.click(screen.getByRole("button", { name: "Тонкая настройка" }));
+    await user.click(screen.getByRole("button", { name: "Шрифт текста: Авто · Montserrat" }));
     await user.click(screen.getByRole("button", { name: "Основной шрифт PT Serif" }));
     expect(invitation().style.getPropertyValue("--font-body")).toContain("--font-pt-serif");
 
+    await openThemeSection(user, "Фон страницы");
     await user.click(screen.getByRole("button", { name: "Текстура Сердечки" }));
     expect(within(invitation()).getByTestId("texture")).toHaveAttribute("data-texture", "hearts");
     expect(screen.getByRole("button", { name: "Текстура Сердечки" })).toHaveAttribute("aria-pressed", "true");
@@ -231,7 +232,7 @@ describe("Editor", () => {
     renderEditor();
     const ornaments = () => [...screen.getByTestId("preview").querySelectorAll<HTMLElement>("img[data-ornament]")];
     expect(ornaments().length).toBeGreaterThan(0);
-    await user.click(screen.getByRole("tab", { name: "Оформление" }));
+    await openThemeSection(user, "Анимации", { fine: true });
     await user.selectOptions(screen.getByLabelText("Появление всех украшений"), "blur");
     await user.selectOptions(screen.getByLabelText("Движение всех украшений"), "shimmer");
     const speed = screen.getByRole("slider", { name: "Скорость движения всех украшений" });
@@ -255,7 +256,7 @@ describe("Editor", () => {
     await user.clear(screen.getByLabelText("Имена"));
     await user.type(screen.getByLabelText("Имена"), "Мария & Пётр");
 
-    await user.click(screen.getByRole("tab", { name: "Оформление" }));
+    await openThemeSection(user, "Шаблон");
     // Превью шаблона содержит свои кнопки — плитка не должна оборачивать их в <button>.
     expect(document.querySelectorAll("button button")).toHaveLength(0);
     await user.click(screen.getByRole("button", { name: "Шаблон «Звёздная ночь»" }));
@@ -373,6 +374,41 @@ describe("Editor: раскрытый блок — сначала текст, о�
   });
 });
 
+describe("Editor: «Оформление» — свёрнутые разделы со сводками", () => {
+  it("все разделы свёрнуты, в заголовке видно выбранное; смена значения меняет сводку", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(screen.getByRole("tab", { name: "Оформление" }));
+    const sections = ["Шаблон", "Цвета", "Шрифты", "Заставка", "Падающий декор", "Фон страницы", "Анимации"];
+    for (const title of sections) {
+      expect(screen.getByRole("button", { name: new RegExp(`^${title}`) })).toHaveAttribute("aria-expanded", "false");
+    }
+    expect(screen.getByRole("button", { name: /^Цвета/ })).toHaveTextContent("Кремовая");
+    await openThemeSection(user, "Цвета");
+    await user.click(screen.getByRole("button", { name: /Пудровая/ }));
+    expect(screen.getByRole("button", { name: /^Цвета/ })).toHaveTextContent("Пудровая");
+    // Открыт один раздел за раз.
+    await openThemeSection(user, "Падающий декор");
+    expect(screen.getByRole("button", { name: /^Цвета/ })).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("падающий декор: плитки видов и «Мало / Средне / Много» вместо ползунка; точные числа — в тонкой настройке", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await openThemeSection(user, "Падающий декор");
+    await user.click(screen.getByRole("button", { name: "Декор Снег" }));
+    expect(screen.getByRole("button", { name: /^Падающий декор/ })).toHaveTextContent("Снег");
+    await user.click(within(screen.getByRole("radiogroup", { name: "Сколько" })).getByRole("radio", { name: "Много" }));
+    expect(screen.queryByRole("slider", { name: "Плотность декора" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Тонкая настройка" }));
+    expect(screen.getByRole("slider", { name: "Плотность декора" })).toHaveAttribute("aria-valuenow", "30");
+    // «Нет» — настройки количества пропадают.
+    await user.click(screen.getByRole("button", { name: "Декор Нет" }));
+    expect(screen.queryByRole("radiogroup", { name: "Сколько" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("decor-layer")).not.toBeInTheDocument();
+  });
+});
+
 describe("Editor: добавление, копирование и удаление блоков", () => {
   it("«Добавить блок» → тип → блок под открытым, раскрыт и виден в превью", async () => {
     const user = userEvent.setup();
@@ -423,7 +459,7 @@ describe("Editor: добавление, копирование и удалени
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ url: "/uploads/bg.png" }), { status: 201 }));
     vi.stubGlobal("fetch", fetchMock);
     renderEditor();
-    await user.click(screen.getByRole("tab", { name: "Оформление" }));
+    await openThemeSection(user, "Фон страницы");
     await user.upload(screen.getByLabelText("Фоновое фото"), new File([new Uint8Array(10)], "bg.png", { type: "image/png" }));
     expect(fetchMock).toHaveBeenCalledWith("/api/upload?id=inv1&token=secret", expect.objectContaining({ method: "POST" }));
   });
@@ -548,7 +584,7 @@ describe("Editor: добавление, копирование и удалени
       expect(audio.paused).toBe(true);
 
       // Нажатие на печать в «Посмотреть заставку» включает музыку.
-      await user.click(screen.getByRole("tab", { name: "Оформление" }));
+      await openThemeSection(user, "Заставка");
       await user.click(screen.getByRole("button", { name: "Посмотреть заставку" }));
       await user.click(within(screen.getByTestId("intro-preview")).getByRole("button", { name: "Открыть приглашение" }));
       expect(audio.paused).toBe(false);
@@ -582,8 +618,8 @@ describe("Editor: добавление, копирование и удалени
     render(<Editor id="inv1" token="secret" initialSlug="demo" initialData={data} />);
     const layer = () => screen.getByTestId("decor-layer");
     expect(layer()).toHaveAttribute("data-pop", "true");
-    await user.click(screen.getByRole("tab", { name: "Оформление" }));
-    await user.click(screen.getByRole("switch", { name: "Лопаются от касания" }));
+    await openThemeSection(user, "Падающий декор", { fine: true });
+    await user.click(screen.getByRole("switch", { name: "Мини-игра: лопаются от касания" }));
     expect(layer()).not.toHaveAttribute("data-pop");
   });
 });

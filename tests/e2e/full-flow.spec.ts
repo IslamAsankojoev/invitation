@@ -65,10 +65,14 @@ test("создать → настроить → открыть → послуш�
   await expect(page.getByTestId("preview").locator('[data-block="text"]')).toContainText("Ваше присутствие");
 
   // 5. Декор «petals»
+  // «Оформление» — свёрнутые разделы: раскрываем нужный.
   await page.getByRole("tab", { name: "Оформление" }).click();
-  await page.getByLabel("Декор", { exact: true }).selectOption("petals");
+  await page.getByRole("button", { name: /^Падающий декор/ }).click();
+  await page.getByRole("button", { name: "Декор Лепестки" }).click();
+  await page.getByRole("button", { name: /^Шрифты/ }).click();
   await page.getByRole("button", { name: /^Шрифт имён: / }).click();
   await page.getByRole("button", { name: "Шрифт имён Prata" }).click();
+  await page.getByRole("button", { name: /^Фон страницы/ }).click();
   await page.getByRole("button", { name: "Текстура Узор" }).click();
 
   // 6. Музыка — из встроенного списка (своя загрузка пока выключена)

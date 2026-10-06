@@ -7,7 +7,7 @@ import { InvitationView } from "@/components/invitation/InvitationView";
 import { findBlock, updateBlock } from "@/lib/blocks";
 import { createDefaultInvitation } from "@/lib/defaults";
 import { createFromTemplate, findTemplate } from "@/lib/templates";
-import { openBlockView } from "./editorHelpers";
+import { openBlockView, openThemeSection } from "./editorHelpers";
 
 const section = (container: HTMLElement, type: string) => container.querySelector<HTMLElement>(`[data-block="${type}"]`)!;
 
@@ -89,7 +89,7 @@ describe("Редактор: цвет фона и заголовки", () => {
   it("«Заголовки блоков → Шрифтом имён» меняет вид заголовков в превью", async () => {
     const user = userEvent.setup();
     render(<Editor id="inv1" token="secret" initialSlug="demo" initialData={createDefaultInvitation()} />);
-    await user.click(screen.getByRole("tab", { name: "Оформление" }));
+    await openThemeSection(user, "Шрифты", { fine: true });
     await user.click(within(screen.getByRole("radiogroup", { name: "Заголовки блоков" })).getByRole("radio", { name: "Шрифтом имён" }));
     expect(screen.getByTestId("preview").querySelector('[data-testid="invitation"]')).toHaveAttribute("data-headings", "script");
   });

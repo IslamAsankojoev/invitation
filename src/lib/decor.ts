@@ -10,6 +10,24 @@ export const decorLabels: Record<DecorType, string> = {
   snow: "Снег",
 };
 
+/** Короткие подписи для плиток и сводки «Падающий декор · Лепестки». */
+export const decorShortLabels: Record<DecorType, string> = {
+  none: "Нет",
+  image: "Картинка",
+  petals: "Лепестки",
+  sakura: "Сакура",
+  confetti: "Конфетти",
+  snow: "Снег",
+};
+
+/** «Сколько декора» без чисел: три уровня плотности. Точное число — в «Тонкой настройке». */
+export const DENSITY_LEVELS = ["few", "some", "many"] as const;
+export type DensityLevel = (typeof DENSITY_LEVELS)[number];
+export const densityLevelLabels: Record<DensityLevel, string> = { few: "Мало", some: "Средне", many: "Много" };
+export const densityOf = (level: DensityLevel): number => ({ few: 8, some: 16, many: 30 })[level];
+/** Уровень по плотности; своя плотность (из шаблона или ползунка) — null, ни один уровень не выделен. */
+export const densityLevel = (density: number): DensityLevel | null => DENSITY_LEVELS.find((l) => densityOf(l) === density) ?? null;
+
 export type Particle = {
   x: number;
   y: number;

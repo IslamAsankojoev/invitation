@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Crown, ImagePlus, Loader2, Plus, Upload, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -354,5 +355,20 @@ export function AddFieldButton({ onClick, children }: { onClick: () => void; chi
     <Button type="button" variant="ghost" size="sm" className="-ml-2 self-start text-muted-foreground" onClick={onClick}>
       <Plus /> {children}
     </Button>
+  );
+}
+
+/** Свёрнутая «Тонкая настройка» раздела: точные числа и редкие настройки (уровень 3 из editor-ux.md). */
+export function FineTuning({ label = "Тонкая настройка", children }: { label?: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="border-t pt-2">
+      <CollapsibleTrigger asChild>
+        <Button type="button" variant="ghost" size="sm" className="-ml-2 text-muted-foreground">
+          <ChevronRight className={cn("transition-transform", open && "rotate-90")} /> {label}
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="flex flex-col gap-4 pt-3">{children}</CollapsibleContent>
+    </Collapsible>
   );
 }
