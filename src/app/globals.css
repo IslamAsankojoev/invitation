@@ -1758,6 +1758,31 @@ body {
   }
 }
 
+/* ---------- Редактор: блок в превью выбирается нажатием (editor-ux.md, этап 5) ----------
+   Выделение — лёгкая заливка цветом акцента шаблона (--accent палитры приглашения) слоем поверх блока (::after),
+   без рамки. Только в превью редактора. */
+.editor-pick [data-pick] {
+  cursor: pointer;
+}
+.editor-pick [data-pick]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+@media (hover: hover) {
+  .editor-pick [data-pick]:hover::after {
+    opacity: 0.06;
+  }
+}
+.editor-pick [data-pick][data-selected]::after {
+  opacity: 0.12;
+}
+
 @theme inline {
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);

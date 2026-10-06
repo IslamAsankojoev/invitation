@@ -221,6 +221,7 @@ function BlockItem({ block, name, data, expanded, onExpand, onToggle, onDuplicat
     <li
       ref={setNodeRef}
       data-testid={`block-item-${block.type}`}
+      data-block-item={block.id}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
         "rounded-xl border bg-card text-card-foreground shadow-xs transition-shadow",

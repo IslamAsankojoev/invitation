@@ -13,10 +13,12 @@ type Props = {
   preview?: boolean;
   /** Анимации: гостю — «paused» до открытия конверта, мини-превью шаблонов — «off». */
   motion?: Motion;
+  /** Превью редактора: блок, открытый в панели, — его обёртка помечена data-selected (рамку рисует CSS редактора). */
+  selectedBlockId?: string | null;
 };
 
 /** Общий шаблон приглашения — его видят гости и превью в редакторе. */
-export function InvitationView({ data, slug, preview = false, motion: requested = "on" }: Props) {
+export function InvitationView({ data, slug, preview = false, motion: requested = "on", selectedBlockId }: Props) {
   const ctx: BlockContext = { data, slug, preview };
   const { style, speed } = data.theme.motion;
   // Стиль «Без анимаций» — то же, что статичный режим: всё видно сразу.
@@ -49,7 +51,13 @@ export function InvitationView({ data, slug, preview = false, motion: requested 
             .map((block) => {
               const Component = blockComponents[block.type] as ComponentType<{ block: Block; ctx: BlockContext }>;
               return (
-                <div key={block.id} className={isFullWidth(block) ? "" : "mx-auto max-w-[430px]"}>
+                <div
+                  key={block.id}
+                  // В превью редактора обёртка — цель выбора блока нажатием (рамка наведения и выбранного — editor-pick в globals.css).
+                  data-pick={preview ? block.id : undefined}
+                  data-selected={preview && selectedBlockId === block.id ? "" : undefined}
+                  className={`${isFullWidth(block) ? "" : "mx-auto max-w-[430px]"} ${preview ? "relative" : ""}`}
+                >
                   <Component block={block} ctx={ctx} />
                 </div>
               );

@@ -374,6 +374,60 @@ describe("Editor: раскрытый блок — сначала текст, о�
   });
 });
 
+describe("Editor: нажатие на блок в превью открывает его", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("блок раскрывается в панели (вкладка переключается на «Блоки») и подсвечивается в превью", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    const preview = screen.getByTestId("preview");
+    await user.click(screen.getByRole("tab", { name: "Оформление" }));
+
+    await user.click(preview.querySelector<HTMLElement>('[data-block="location"]')!);
+    expect(screen.getByRole("tab", { name: "Блоки" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("button", { name: "Место" })).toHaveAttribute("aria-expanded", "true");
+    const location = preview.querySelector<HTMLElement>('[data-block="location"]')!;
+    expect(location.closest("[data-pick]")).toHaveAttribute("data-selected");
+    expect(preview.querySelectorAll("[data-selected]")).toHaveLength(1);
+
+    // Открыли другой блок в панели — подсветка переезжает.
+    await user.click(screen.getByRole("button", { name: "Программа" }));
+    expect(preview.querySelector('[data-block="program"]')!.closest("[data-pick]")).toHaveAttribute("data-selected");
+    expect(location.closest("[data-pick]")).not.toHaveAttribute("data-selected");
+  });
+
+  it("кнопки самого приглашения в превью не срабатывают — нажатие только выбирает блок", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    const preview = screen.getByTestId("preview");
+    // Без перехвата кнопка скачала бы .ics через URL.createObjectURL (в jsdom его нет — подставляем на время теста).
+    const createUrl = vi.fn(() => "blob:x");
+    const original = URL.createObjectURL;
+    URL.createObjectURL = createUrl;
+    try {
+      const calendar = within(preview.querySelector<HTMLElement>('[data-block="hero"]')!).getByRole("button", { name: /календар/i });
+      await user.click(calendar);
+    } finally {
+      URL.createObjectURL = original;
+    }
+    expect(createUrl).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Главный экран" })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("подсказка над превью закрывается и больше не показывается", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderEditor();
+    const tip = await screen.findByRole("note");
+    expect(tip).toHaveTextContent("Нажмите на любой блок в превью");
+    await user.click(screen.getByRole("button", { name: "Закрыть подсказку" }));
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+    unmount();
+    renderEditor();
+    await act(() => Promise.resolve());
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
+});
+
 describe("Editor: «Оформление» — свёрнутые разделы со сводками", () => {
   it("все разделы свёрнуты, в заголовке видно выбранное; смена значения меняет сводку", async () => {
     const user = userEvent.setup();

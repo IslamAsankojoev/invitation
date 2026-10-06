@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check, CircleCheck, Crown, ExternalLink, Loader2, RotateCw, Users } from "lucide-react";
+import { AlertCircle, Check, CircleCheck, Crown, ExternalLink, Loader2, MousePointerClick, RotateCw, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { DecorLayer } from "@/components/invitation/DecorLayer";
@@ -106,6 +106,9 @@ function usePhoneScale(fit: React.RefObject<HTMLDivElement | null>) {
   return scale;
 }
 
+/** Ключ localStorage: подсказку «нажмите на блок в превью» уже закрыли. */
+const PICK_TIP_KEY = "editor-pick-tip";
+
 /** Плашка «PRO-оформление» над вкладками. Пока тарифов нет — скрыта; значки PRO на плитках остаются. */
 const SHOW_PREMIUM_ALERT = false;
 
@@ -133,6 +136,25 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
   const [previewKey, setPreviewKey] = useState(0);
   /** Заставка показана поверх превью (кнопка «Посмотреть заставку» в «Оформлении»). */
   const [intro, setIntro] = useState(false);
+  /** Вкладка панели — управляемая: нажатие на блок в превью переключает на «Блоки». */
+  const [tab, setTab] = useState<string>(notice ? "Ссылка" : TABS[0]);
+  /** Подсказка «нажмите на блок в превью» — до первого закрытия (запоминается в браузере). */
+  const [pickTip, setPickTip] = useState(false);
+  useEffect(() => {
+    try {
+      setPickTip(localStorage.getItem(PICK_TIP_KEY) !== "1");
+    } catch {
+      setPickTip(true);
+    }
+  }, []);
+  function closePickTip() {
+    setPickTip(false);
+    try {
+      localStorage.setItem(PICK_TIP_KEY, "1");
+    } catch {
+      // приватный режим — подсказка просто покажется снова
+    }
+  }
 
   const uploadTarget = useMemo(() => ({ id, token }), [id, token]);
   /** Вход включён, а приглашение не своё: «Открыть» и «Гости» сначала просят войти/сохранить (окно с next). */
@@ -166,6 +188,32 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
     scrollPreview(scrollAfterRender.current);
     scrollAfterRender.current = null;
   }, [data, scrollPreview]);
+
+  /** Карточка блока в панели появится после рендера — тогда и прокручиваем панель к ней. */
+  const panelScrollTo = useRef<string | null>(null);
+  useEffect(() => {
+    const id = panelScrollTo.current;
+    if (!id) return;
+    panelScrollTo.current = null;
+    document.querySelector(`[data-block-item="${id}"]`)?.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+  }, [expanded, tab]);
+
+  /**
+   * Нажатие на блок в превью открывает его в панели. Кнопки и ссылки самого приглашения в превью при этом не
+   * срабатывают (захват + stopPropagation). Превью не прокручиваем — человек и так смотрит на этот блок.
+   */
+  function pickFromPreview(e: React.MouseEvent) {
+    const section = (e.target as HTMLElement).closest<HTMLElement>("[data-block-id]");
+    if (!section?.dataset.blockId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const blockId = section.dataset.blockId;
+    setTab("Блоки");
+    setIntro(false);
+    setExpanded(blockId);
+    panelScrollTo.current = blockId;
+    if (pickTip) closePickTip();
+  }
 
   function toggleFollow(on: boolean) {
     setFollow(on);
@@ -216,7 +264,14 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
             </nav>
           </header>
 
-          <Tabs defaultValue={notice ? "Ссылка" : TABS[0]} onValueChange={() => setIntro(false)} className="flex min-h-0 flex-1 flex-col gap-0">
+          <Tabs
+            value={tab}
+            onValueChange={(t) => {
+              setTab(t);
+              setIntro(false);
+            }}
+            className="flex min-h-0 flex-1 flex-col gap-0"
+          >
             <div className="border-b px-4 py-3">
               <TabsList className="w-full">
                 {TABS.map((t) => (
@@ -304,6 +359,15 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
               Следовать за контентом
             </label>
           </div>
+          {pickTip && (
+            <p role="note" className="flex w-full max-w-[433px] items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm">
+              <MousePointerClick className="size-4 shrink-0 text-primary" />
+              <span className="flex-1">Нажмите на любой блок в превью, чтобы изменить его</span>
+              <Button type="button" variant="ghost" size="icon-xs" aria-label="Закрыть подсказку" onClick={closePickTip}>
+                <X />
+              </Button>
+            </p>
+          )}
           <div ref={phoneFitRef} className="flex w-full justify-center lg:min-h-0 lg:flex-1 lg:items-center">
             <div className="shrink-0" style={{ width: PHONE_W * phoneScale, height: PHONE_H * phoneScale }}>
           <Iphone
@@ -311,8 +375,8 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
             style={{ width: PHONE_W, transform: `scale(${phoneScale})`, transformOrigin: "top left" }}
           >
             <div className="relative h-full">
-              <div ref={previewRef} className="h-full overflow-y-auto" data-testid="preview">
-                <InvitationView key={previewKey} data={data} slug={slug} preview />
+              <div ref={previewRef} className="editor-pick h-full overflow-y-auto" data-testid="preview" onClickCapture={pickFromPreview}>
+                <InvitationView key={previewKey} data={data} slug={slug} preview selectedBlockId={expanded} />
               </div>
               <DecorLayer key={previewKey} decor={data.theme.decor} contained />
               {/* Музыка — как у гостя: включается печатью заставки или кнопкой-эквалайзером. */}
