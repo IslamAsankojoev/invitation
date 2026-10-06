@@ -948,6 +948,16 @@ function sampleBlocks(template: Template): Block[] {
   });
 }
 
+/**
+ * Все примеры содержимого блока этого типа: общий пример и примеры из структуры шаблонов. По ним видно, что
+ * организатор ещё не поменял текст («Что осталось заполнить» в редакторе, lib/checklist.ts).
+ */
+export function exampleBlocks(type: BlockType): Block[] {
+  // Примеры не меняются — собираем один раз на тип (список считается при каждой правке в редакторе).
+  return (exampleCache[type] ??= [sampleBlock(type, "example"), ...templates.flatMap((t) => sampleBlocks(t).filter((b) => b.type === type))]);
+}
+const exampleCache: Partial<Record<BlockType, Block[]>> = {};
+
 /** Шаблон, по которому, судя по теме, оформлено приглашение (шаблон в данных не хранится). */
 export const guessTemplate = (theme: Theme) =>
   templates.find((t) => t.theme.palette === theme.palette && t.theme.font === theme.font && t.theme.texture === theme.texture);

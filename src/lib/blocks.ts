@@ -1,3 +1,4 @@
+import { describeDate } from "./calendar";
 import { MAX_BLOCKS, SINGLE_BLOCK_TYPES, type Block, type BlockOf, type BlockType, type InvitationData, type Ornament } from "./schema";
 
 /**
@@ -176,3 +177,54 @@ export const defaultTitles: Record<BlockType, string> = {
 };
 
 export const blockTitle = (block: { type: BlockType; title?: string }) => block.title ?? defaultTitles[block.type];
+
+/** «1 пункт», «3 пункта», «5 пунктов». */
+export function plural(n: number, [one, few, many]: [string, string, string]): string {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  const word = m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
+  return `${n} ${word}`;
+}
+
+const firstWords = (text: string | undefined, max = 48) => {
+  const t = (text ?? "").replace(/\s+/g, " ").trim();
+  return t.length > max ? `${t.slice(0, max).trimEnd()}…` : t;
+};
+/** «2027-06-19» или «2027-06-19T16:00» → «19.06.2027». */
+const shortDate = (date: string) => describeDate(date.length === 10 ? `${date}T00:00` : date).dotted.replace(/ /g, "");
+
+/**
+ * Строка-сводка под названием блока в списке редактора: что в блоке сейчас, не раскрывая его
+ * («Анна & Иван · 19.06.2027», «3 пункта: 16:00 Сбор гостей», «срок ответа не задан»). Пусто — сводки нет.
+ */
+export function blockSummary(data: InvitationData, block: Block): string {
+  const hero = findBlock(data, "hero");
+  const heroDate = hero?.date ? shortDate(hero.date) : "";
+  switch (block.type) {
+    case "hero":
+      return [block.names.trim(), block.date ? shortDate(block.date) : ""].filter(Boolean).join(" · ");
+    case "countdown":
+    case "calendar":
+      return heroDate;
+    case "story":
+    case "dresscode":
+      return firstWords(block.text);
+    case "program": {
+      const first = block.items[0];
+      if (!first) return "пунктов нет";
+      return `${plural(block.items.length, ["пункт", "пункта", "пунктов"])}: ${[first.time, first.title].filter(Boolean).join(" ")}`;
+    }
+    case "location":
+      return block.placeName.trim() || block.address.trim();
+    case "rsvp":
+      return block.deadline ? `ответить до ${shortDate(block.deadline)}` : "срок ответа не задан";
+    case "text":
+      return block.title?.trim() || firstWords(block.text);
+    case "photo":
+      return block.photo ? block.caption?.trim() || "фото загружено" : "фото не загружено";
+    case "gallery":
+      return block.photos.length ? plural(block.photos.length, ["фото", "фото", "фото"]) : "фото не загружены";
+    case "contacts":
+      return plural(block.people.length, ["контакт", "контакта", "контактов"]);
+  }
+}

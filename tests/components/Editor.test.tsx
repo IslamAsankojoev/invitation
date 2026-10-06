@@ -374,6 +374,42 @@ describe("Editor: раскрытый блок — сначала текст, о�
   });
 });
 
+describe("Editor: сводки в списке блоков и «Что осталось заполнить»", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("под названием блока — сводка; имя кнопки остаётся названием, сводка — её описание", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    const hero = screen.getByRole("button", { name: "Главный экран" });
+    expect(hero).toHaveAccessibleDescription("Анна & Иван · 19.06.2027");
+    await user.click(hero);
+    await user.clear(screen.getByLabelText("Имена"));
+    await user.type(screen.getByLabelText("Имена"), "Мария & Пётр");
+    expect(hero).toHaveAccessibleDescription("Мария & Пётр · 19.06.2027");
+    expect(screen.getByRole("button", { name: "Анкета гостя" })).toHaveAccessibleDescription("срок ответа не задан");
+  });
+
+  it("пункт открывает свой блок, заполненный — отмечается; список можно скрыть насовсем", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderEditor();
+    const card = await screen.findByRole("region", { name: "Что осталось заполнить" });
+    expect(within(card).getByText("0 из 4")).toBeInTheDocument();
+
+    await user.click(within(card).getByRole("button", { name: "Срок ответа: заполнить" }));
+    expect(screen.getByRole("button", { name: "Анкета гостя" })).toHaveAttribute("aria-expanded", "true");
+    fireEvent.change(screen.getByLabelText("Ответить до"), { target: { value: "2027-06-01" } });
+    expect(within(card).getByRole("button", { name: "Срок ответа: заполнено" })).toBeInTheDocument();
+    expect(within(card).getByText("1 из 4")).toBeInTheDocument();
+
+    await user.click(within(card).getByRole("button", { name: "Скрыть список «Что осталось заполнить»" }));
+    expect(screen.queryByRole("region", { name: "Что осталось заполнить" })).not.toBeInTheDocument();
+    unmount();
+    renderEditor();
+    await act(() => Promise.resolve());
+    expect(screen.queryByRole("region", { name: "Что осталось заполнить" })).not.toBeInTheDocument();
+  });
+});
+
 describe("Editor: нажатие на блок в превью открывает его", () => {
   beforeEach(() => localStorage.clear());
 

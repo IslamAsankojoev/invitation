@@ -12,8 +12,8 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronDown, Copy, GripVertical, Plus, Trash2 } from "lucide-react";
-import { useState, type ComponentType } from "react";
+import { Check, ChevronDown, Circle, Copy, GripVertical, ListChecks, Plus, Trash2, X } from "lucide-react";
+import { useEffect, useId, useState, type ComponentType } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,8 +30,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   addOrnament,
   blockById,
-  blockLabels,
   blockName,
+  blockSummary,
   canAddBlock,
   canRemoveBlock,
   duplicateBlock,
@@ -45,6 +45,7 @@ import {
   updateOrnament,
 } from "@/lib/blocks";
 import type { Block, BlockType, InvitationData, Ornament } from "@/lib/schema";
+import { checklist, type ChecklistItem } from "@/lib/checklist";
 import { createBlock } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import { AddBlockDialog } from "./AddBlockDialog";
@@ -125,6 +126,7 @@ export function BlocksPanel({ data, onChange, expanded, onExpandedChange, onAdde
 
   return (
     <>
+      <Checklist items={checklist(data)} onOpen={(id) => onExpandedChange(id)} />
       <DndContext
         // Стабильный id: иначе счётчик dnd-kit даёт разные aria-describedby на сервере и клиенте (hydration mismatch).
         id="blocks-dnd"
@@ -145,6 +147,7 @@ export function BlocksPanel({ data, onChange, expanded, onExpandedChange, onAdde
                 key={block.id}
                 block={block}
                 name={blockName(data, block)}
+                summary={blockSummary(data, block)}
                 data={data}
                 expanded={expanded === block.id}
                 onExpand={() => onExpandedChange(expanded === block.id ? null : block.id)}
@@ -192,6 +195,8 @@ type ItemProps = {
   block: Block;
   /** Название в списке: «Текст», при нескольких — «Текст 2». */
   name: string;
+  /** Сводка под названием: что в блоке сейчас («Анна & Иван · 19.06.2027»). */
+  summary: string;
   data: InvitationData;
   expanded: boolean;
   onExpand: () => void;
@@ -208,13 +213,12 @@ type ItemProps = {
   onViewChange: (view: BlockViewState) => void;
 };
 
-function BlockItem({ block, name, data, expanded, onExpand, onToggle, onDuplicate, onRemove, onFieldsChange, view, onViewChange, ...ornamentHandlers }: ItemProps) {
+function BlockItem({ block, name, summary, data, expanded, onExpand, onToggle, onDuplicate, onRemove, onFieldsChange, view, onViewChange, ...ornamentHandlers }: ItemProps) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: block.id,
   });
   const label = name;
-  // Свой заголовок помогает различать блоки одного типа («Текст 2 · Подарки»); у «Текста» он и есть суть блока.
-  const subtitle = block.type === "text" || name !== blockLabels[block.type] ? block.title?.trim() : undefined;
+  const summaryId = useId();
   const Fields = blockFields[block.type] as ComponentType<{ block: Block; onChange: (patch: Partial<Block>) => void }>;
 
   return (
@@ -244,15 +248,21 @@ function BlockItem({ block, name, data, expanded, onExpand, onToggle, onDuplicat
           type="button"
           onClick={onExpand}
           aria-expanded={expanded}
+          aria-describedby={summary ? summaryId : undefined}
           className={cn(
             "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm font-medium outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50",
             !block.visible && "text-muted-foreground",
           )}
         >
           <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", !expanded && "-rotate-90")} />
-          <span className="truncate">
-            {label}
-            {subtitle && subtitle !== label && <span className="font-normal text-muted-foreground"> · {subtitle}</span>}
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate">{label}</span>
+            {/* Сводка — второй строкой; в доступное имя кнопки не входит (имя — название блока), а описывает её. */}
+            {summary && (
+              <span id={summaryId} aria-hidden="true" className="truncate text-xs font-normal text-muted-foreground">
+                {summary}
+              </span>
+            )}
           </span>
         </button>
         {onDuplicate && (
@@ -294,5 +304,69 @@ function BlockItem({ block, name, data, expanded, onExpand, onToggle, onDuplicat
         </Tabs>
       )}
     </li>
+  );
+}
+
+/** Ключ localStorage: карточку «Что осталось заполнить» закрыли. */
+const CHECKLIST_HIDDEN_KEY = "editor-checklist-hidden";
+
+/**
+ * «Что осталось заполнить»: главное, что в приглашении ещё из примера шаблона (lib/checklist.ts). Пункт открывает
+ * свой блок. Всё сделано — карточки нет; закрыть можно и раньше (запоминается в браузере).
+ */
+function Checklist({ items, onOpen }: { items: ChecklistItem[]; onOpen: (blockId: string) => void }) {
+  const [hidden, setHidden] = useState(true);
+  useEffect(() => {
+    try {
+      setHidden(localStorage.getItem(CHECKLIST_HIDDEN_KEY) === "1");
+    } catch {
+      setHidden(false);
+    }
+  }, []);
+  const left = items.filter((i) => !i.done).length;
+  if (hidden || left === 0) return null;
+  return (
+    <section aria-label="Что осталось заполнить" className="mb-3 rounded-xl border bg-muted/40 p-3">
+      <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+        <ListChecks className="size-4 text-muted-foreground" />
+        <span className="flex-1">Что осталось заполнить</span>
+        <span className="text-xs font-normal text-muted-foreground">
+          {items.length - left} из {items.length}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          aria-label="Скрыть список «Что осталось заполнить»"
+          onClick={() => {
+            setHidden(true);
+            try {
+              localStorage.setItem(CHECKLIST_HIDDEN_KEY, "1");
+            } catch {
+              // приватный режим — список просто покажется снова
+            }
+          }}
+        >
+          <X />
+        </Button>
+      </div>
+      <ul className="flex flex-wrap gap-1.5">
+        {items.map((item) => (
+          <li key={item.key}>
+            <Button
+              type="button"
+              variant={item.done ? "ghost" : "outline"}
+              size="sm"
+              aria-label={`${item.label}: ${item.done ? "заполнено" : "заполнить"}`}
+              className={cn("bg-background", item.done && "text-muted-foreground line-through decoration-muted-foreground/40")}
+              onClick={() => onOpen(item.blockId)}
+            >
+              {item.done ? <Check className="text-emerald-600" /> : <Circle className="text-muted-foreground" />}
+              {item.label}
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
