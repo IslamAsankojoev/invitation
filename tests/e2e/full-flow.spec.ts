@@ -50,7 +50,7 @@ test("создать → настроить → открыть → послуш�
     "src",
     "/library/red-roses.webp",
   );
-  await page.getByTestId("block-item-location").getByRole("button", { name: "Тонкая настройка" }).click();
+  await page.getByTestId("block-item-location").getByRole("button", { name: "Тонкая настройка", exact: true }).click();
   await page.getByTestId("block-item-location").getByRole("button", { name: /^Фон блока: .*Выбрать$/ }).click();
   const surfaces = page.getByRole("dialog", { name: "Фон блока" });
   await surfaces.getByRole("radio", { name: "Простые" }).click();

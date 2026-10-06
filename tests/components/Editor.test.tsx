@@ -136,25 +136,45 @@ describe("Editor", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(location().querySelector("img[data-ornament]")).toHaveAttribute("src", "/library/gardenia.webp");
 
-    await user.selectOptions(screen.getByLabelText("Положение украшения 1"), "bottom-left");
+    await user.click(within(screen.getByRole("radiogroup", { name: "Положение украшения 1" })).getByRole("radio", { name: "Снизу слева" }));
     expect((location().querySelector("[data-decor]") as HTMLElement).style.left).toBe("0px");
+
+    // Только что добавленное украшение раскрыто: «Меньше / Больше» меняют размер заметным шагом.
+    const decorWidth = () => (location().querySelector("[data-decor]") as HTMLElement).style.width;
+    expect(decorWidth()).toBe("160px");
+    await user.click(screen.getByRole("button", { name: "Увеличить украшение 1" }));
+    expect(decorWidth()).toBe("200px");
+    await user.click(screen.getByRole("button", { name: "Уменьшить украшение 1" }));
+    expect(decorWidth()).toBe("160px");
+
+    // Заменить картинку — то же украшение, место и размер не меняются.
+    await user.click(screen.getByRole("button", { name: "Заменить картинку" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Красные розы" }));
+    expect(location().querySelectorAll("img[data-ornament]")).toHaveLength(1);
+    expect(location().querySelector("img[data-ornament]")).toHaveAttribute("src", "/library/red-roses.webp");
+    expect((location().querySelector("[data-decor]") as HTMLElement).style.left).toBe("0px");
+
+    // Точные числа и своя анимация — в свёрнутой «Тонкой настройке украшения».
+    expect(screen.queryByRole("slider", { name: "Размер украшения 1" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Тонкая настройка украшения" }));
+    expect(screen.getByRole("slider", { name: "Размер украшения 1" })).toBeInTheDocument();
 
     // Своя анимация: сначала — копия общей, потом правится отдельно от остальных украшений.
     expect(location().querySelector("img[data-ornament]")).toHaveAttribute("data-idle", "sway");
-    await user.click(screen.getByRole("switch", { name: "Своя анимация украшения 1" }));
+    await user.click(screen.getByRole("switch", { name: "Анимировать отдельно от остальных" }));
     await user.selectOptions(screen.getByLabelText("Движение украшения 1"), "float");
     await user.selectOptions(screen.getByLabelText("Появление украшения 1"), "grow");
     expect(location().querySelector("img[data-ornament]")).toHaveAttribute("data-idle", "float");
     expect(location().querySelector("[data-decor]")).toHaveAttribute("data-enter", "grow");
-    const amplitude = screen.getByRole("slider", { name: "Размах движения украшения 1" });
+    const amplitude = screen.getByRole("slider", { name: "Сила движения украшения 1" });
     amplitude.focus();
     await user.keyboard("{End}");
     expect((location().querySelector("img[data-ornament]") as HTMLElement).style.getPropertyValue("--oi-a")).toBe("3");
     // «Вращается» — без размаха.
     await user.selectOptions(screen.getByLabelText("Движение украшения 1"), "spin");
-    expect(screen.queryByRole("slider", { name: "Размах движения украшения 1" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("slider", { name: "Сила движения украшения 1" })).not.toBeInTheDocument();
     // Выключили — снова как у всех.
-    await user.click(screen.getByRole("switch", { name: "Своя анимация украшения 1" }));
+    await user.click(screen.getByRole("switch", { name: "Анимировать отдельно от остальных" }));
     expect(location().querySelector("img[data-ornament]")).toHaveAttribute("data-idle", "sway");
     expect(location().querySelector("[data-decor]")).not.toHaveAttribute("data-decor-own");
 
@@ -172,7 +192,7 @@ describe("Editor", () => {
     const before = decor();
     expect(before).toHaveAttribute("data-revealed");
 
-    await user.selectOptions(screen.getByLabelText("Положение украшения 1"), "bottom-left");
+    await user.click(within(screen.getByRole("radiogroup", { name: "Положение украшения 1" })).getByRole("radio", { name: "Снизу слева" }));
     // Пока правка идёт — тот же элемент, изменения видны сразу.
     expect(decor()).toBe(before);
     expect(decor().style.left).toBe("0px");

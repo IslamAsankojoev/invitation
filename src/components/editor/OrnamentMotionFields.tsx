@@ -97,8 +97,8 @@ export function OrnamentMotionFields({
       )}
       {idleHasAmplitude(value.idle) && (
         <LabeledSlider
-          label="Размах движения"
-          ariaLabel={`Размах движения ${of}`}
+          label="Сила движения"
+          ariaLabel={`Сила движения ${of}`}
           valueLabel={`×${value.idleAmplitude.toFixed(1)}`}
           value={value.idleAmplitude}
           min={0.2}

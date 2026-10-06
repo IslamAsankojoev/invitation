@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createOrnament } from "@/lib/blocks";
-import { idleHasAmplitude, ornamentMotionOf, ornamentMotionProps, resolveIdle } from "@/lib/ornaments";
-import { DEFAULT_ORNAMENT_MOTION, type Ornament, type OrnamentMotion } from "@/lib/schema";
+import { idleHasAmplitude, ornamentMotionOf, ornamentMotionProps, POSITION_GRID, resolveIdle, stepOrnamentSize } from "@/lib/ornaments";
+import { DEFAULT_ORNAMENT_MOTION, ORNAMENT_POSITIONS, ornamentSchema, type Ornament, type OrnamentMotion } from "@/lib/schema";
 
 const common: OrnamentMotion = { ...DEFAULT_ORNAMENT_MOTION };
 const own: OrnamentMotion = { enter: "grow", enterSpeed: 2, idle: "float", idleSpeed: 0.5, idleAmplitude: 2.5 };
@@ -63,5 +63,28 @@ describe("анимация украшений", () => {
     expect(idleHasAmplitude("sway")).toBe(true);
     expect(idleHasAmplitude("spin")).toBe(false);
     expect(idleHasAmplitude("none")).toBe(false);
+  });
+
+  it("«Меньше / Больше»: заметный шаг, кратно 10, в границах схемы", () => {
+    expect(stepOrnamentSize(160, "bigger")).toBe(200);
+    expect(stepOrnamentSize(160, "smaller")).toBe(130);
+    // На маленьком размере шаг не меньше 10 px — кнопка всегда что-то меняет.
+    expect(stepOrnamentSize(40, "bigger")).toBe(50);
+    expect(stepOrnamentSize(50, "smaller")).toBe(40);
+    // Границы: дальше не идёт, и результат проходит схему.
+    expect(stepOrnamentSize(40, "smaller")).toBe(40);
+    expect(stepOrnamentSize(380, "bigger")).toBe(400);
+    for (const size of [40, 75, 110, 260, 400]) {
+      for (const dir of ["smaller", "bigger"] as const) {
+        const next = stepOrnamentSize(size, dir);
+        expect(next % 10).toBe(0);
+        expect(ornamentSchema.safeParse({ ...createOrnament("/library/gardenia.webp"), size: next }).success).toBe(true);
+      }
+    }
+  });
+
+  it("сетка мест 3×3 — все положения ровно по разу", () => {
+    expect(POSITION_GRID).toHaveLength(9);
+    expect([...POSITION_GRID].sort()).toEqual([...ORNAMENT_POSITIONS].sort());
   });
 });

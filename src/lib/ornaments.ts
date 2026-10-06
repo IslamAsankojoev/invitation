@@ -99,6 +99,27 @@ export function ornamentMotionProps(o: Ornament, common: OrnamentMotion, index: 
 
 const round = (n: number) => Math.round(n * 1000) / 1000;
 
+/** Границы размера украшения (как в схеме) и шаг кнопок «Меньше / Больше» в редакторе. */
+export const ORNAMENT_SIZE_MIN = 40;
+export const ORNAMENT_SIZE_MAX = 400;
+
+/**
+ * Размер после «Меньше» (×0.8) или «Больше» (×1.25): шаг заметный на любом размере, кратен 10, в границах схемы.
+ * Чтобы кнопка всегда что-то меняла, шаг — не меньше 10 px.
+ */
+export function stepOrnamentSize(size: number, dir: "smaller" | "bigger"): number {
+  const raw = Math.round((dir === "bigger" ? size * 1.25 : size * 0.8) / 10) * 10;
+  const next = dir === "bigger" ? Math.max(raw, size + 10) : Math.min(raw, size - 10);
+  return Math.min(ORNAMENT_SIZE_MAX, Math.max(ORNAMENT_SIZE_MIN, next));
+}
+
+/** Сетка 3×3 для выбора места украшения в редакторе: по строкам сверху вниз. */
+export const POSITION_GRID: OrnamentPosition[] = [
+  "top-left", "top", "top-right",
+  "left", "center", "right",
+  "bottom-left", "bottom", "bottom-right",
+];
+
 export const positionLabels: Record<OrnamentPosition, string> = {
   "top-left": "Сверху слева",
   top: "Сверху по центру",

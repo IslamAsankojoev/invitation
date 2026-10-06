@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, ChevronRight, FlipHorizontal2, Image as ImageIcon, Palette, Plus, RotateCcw, Shuffle, Sparkles, Trash2, X } from "lucide-react";
+import { Ban, ChevronRight, FlipHorizontal2, Image as ImageIcon, Minus, Palette, Plus, RotateCcw, Shuffle, Sparkles, Trash2, X } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,12 +15,11 @@ import { blockLabels, createOrnament, defaultTitles, MAX_ORNAMENTS } from "@/lib
 import { blockEdges, blockHasFill, edgeLabels, edgeMaskStyle, edgesVisible, newEdgeSeed, tornPaperStyle, type EdgeSide } from "@/lib/edges";
 import { mixHex } from "@/lib/color";
 import { FULL_WIDTH_SURFACES, isPanelSurface, ORNAMENT_CATEGORIES, surfaceGroups, surfaceLabels, surfaceLayer, surfaceThumb, takesBgColor } from "@/lib/library";
-import { positionLabels } from "@/lib/ornaments";
+import { ORNAMENT_SIZE_MAX, ORNAMENT_SIZE_MIN, POSITION_GRID, positionLabels, stepOrnamentSize } from "@/lib/ornaments";
 import { premiumSurfaces } from "@/lib/premium";
 import {
   EDGES,
   ENTRANCES,
-  ORNAMENT_POSITIONS,
   PHOTO_HEIGHTS,
   type Block,
   type Edge,
@@ -410,7 +409,8 @@ type ViewProps = Props & {
  * «Тонкая настройка» — фон, края, картинка, ширина, появление. Недействующие сейчас настройки не показываются.
  */
 export function BlockView({ block, theme, onChange, onAddOrnament, onUpdateOrnament, onRemoveOrnament, fineOpen, onFineOpenChange }: ViewProps) {
-  const [picking, setPicking] = useState(false);
+  const [picking, setPicking] = useState<"add" | "replace" | null>(null);
+  const [openOrnament, setOpenOrnament] = useState<number | null>(null);
   const entranceId = useId();
   const widthId = useId();
   const label = blockLabels[block.type];
@@ -438,33 +438,58 @@ export function BlockView({ block, theme, onChange, onAddOrnament, onUpdateOrnam
             {block.ornaments.length} из {MAX_ORNAMENTS}
           </span>
         </FieldLabel>
-        <ul className="flex flex-col gap-2">
+        {/* Ряд миниатюр: нажатие раскрывает карточку украшения под рядом (одна за раз). */}
+        <div className="flex flex-wrap items-center gap-2">
           {block.ornaments.map((o, i) => (
-            <OrnamentRow
+            <button
               key={i}
-              index={i}
-              ornament={o}
-              theme={theme}
-              onChange={(patch) => onUpdateOrnament(i, patch)}
-              onRemove={() => onRemoveOrnament(i)}
-            />
+              type="button"
+              aria-pressed={openOrnament === i}
+              aria-label={`Украшение ${i + 1}`}
+              onClick={() => setOpenOrnament(openOrnament === i ? null : i)}
+              className={cn(
+                "size-12 overflow-hidden rounded-md border p-1 outline-none transition hover:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-pressed:border-primary aria-pressed:ring-2 aria-pressed:ring-primary/30",
+                checker,
+              )}
+            >
+              <img src={o.src} alt="" className="size-full object-contain" />
+            </button>
           ))}
-        </ul>
-        {block.ornaments.length < MAX_ORNAMENTS && (
-          <Button type="button" variant="outline" size="sm" className="self-start" onClick={() => setPicking(true)}>
-            <Plus /> Добавить украшение
-          </Button>
+          {block.ornaments.length < MAX_ORNAMENTS && (
+            <Button type="button" variant="outline" size="sm" onClick={() => setPicking("add")}>
+              <Plus /> Добавить украшение
+            </Button>
+          )}
+        </div>
+        {openOrnament !== null && block.ornaments[openOrnament] && (
+          <OrnamentCard
+            key={openOrnament}
+            index={openOrnament}
+            ornament={block.ornaments[openOrnament]}
+            theme={theme}
+            onChange={(patch) => onUpdateOrnament(openOrnament, patch)}
+            onReplace={() => setPicking("replace")}
+            onRemove={() => {
+              onRemoveOrnament(openOrnament);
+              setOpenOrnament(null);
+            }}
+          />
         )}
       </div>
 
       <ImagePicker
-        open={picking}
-        onOpenChange={setPicking}
-        title={`Украшение для блока «${label}»`}
+        open={picking !== null}
+        onOpenChange={(open) => !open && setPicking(null)}
+        title={picking === "replace" ? `Другая картинка для украшения ${(openOrnament ?? 0) + 1}` : `Украшение для блока «${label}»`}
         categories={ORNAMENT_CATEGORIES}
         onPick={(src) => {
-          onAddOrnament(createOrnament(src, nextPosition));
-          setPicking(false);
+          if (picking === "replace" && openOrnament !== null) onUpdateOrnament(openOrnament, { src });
+          else {
+            onAddOrnament(createOrnament(src, nextPosition));
+            // Только что добавленное — сразу раскрыто: его обычно хочется подвинуть.
+            setOpenOrnament(block.ornaments.length);
+          }
+          setPicking(null);
         }}
       />
 
@@ -558,102 +583,150 @@ export function BlockView({ block, theme, onChange, onAddOrnament, onUpdateOrnam
   );
 }
 
-function OrnamentRow({
+/**
+ * Карточка выбранного украшения: где, «Меньше / Больше», отражение, замена, удаление; точные числа и своя анимация —
+ * в свёрнутой «Тонкой настройке украшения».
+ */
+function OrnamentCard({
   index,
   ornament: o,
   theme,
   onChange,
+  onReplace,
   onRemove,
 }: {
   index: number;
   ornament: Ornament;
   theme: Theme;
   onChange: (patch: Partial<Ornament>) => void;
+  onReplace: () => void;
   onRemove: () => void;
 }) {
   const n = index + 1;
   const flipId = useId();
   const ownId = useId();
+  const [fine, setFine] = useState(false);
   return (
-    <li data-testid={`ornament-${index}`} className="flex flex-col gap-3 rounded-lg border bg-muted/40 p-3">
-      <div className="flex items-center gap-3">
-        <img src={o.src} alt="" className={cn("size-12 shrink-0 rounded-md border object-contain p-1", checker)} />
-        <NativeSelect
-          aria-label={`Положение украшения ${n}`}
-          size="sm"
-          className="w-full [&_select]:bg-background"
-          value={o.position}
-          onChange={(e) => onChange({ position: e.target.value as OrnamentPosition })}
-        >
-          {ORNAMENT_POSITIONS.map((p) => (
-            <NativeSelectOption key={p} value={p}>
-              {positionLabels[p]}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
-        <Button type="button" variant="ghost" size="icon-sm" aria-label={`Удалить украшение ${n}`} onClick={onRemove}>
-          <Trash2 />
-        </Button>
-      </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-        <LabeledSlider
-          label="Размер"
-          ariaLabel={`Размер украшения ${n}`}
-          valueLabel={`${o.size}px`}
-          value={o.size}
-          min={40}
-          max={400}
-          step={10}
-          onChange={(size) => onChange({ size })}
-        />
-        <LabeledSlider
-          label="Поворот"
-          ariaLabel={`Поворот украшения ${n}`}
-          valueLabel={`${o.rotate}°`}
-          value={o.rotate}
-          min={-180}
-          max={180}
-          step={5}
-          onChange={(rotate) => onChange({ rotate })}
-        />
-        <LabeledSlider
-          label="Прозрачность"
-          ariaLabel={`Прозрачность украшения ${n}`}
-          valueLabel={`${Math.round(o.opacity * 100)}%`}
-          value={Math.round(o.opacity * 100)}
-          min={10}
-          max={100}
-          step={5}
-          onChange={(v) => onChange({ opacity: v / 100 })}
-        />
-        <div className="flex items-end">
-          <label htmlFor={flipId} className="flex items-center gap-2 text-xs text-muted-foreground">
+    <div data-testid={`ornament-${index}`} className="flex flex-col gap-4 rounded-lg border bg-muted/40 p-3">
+      <div className="flex items-start gap-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs text-muted-foreground">Где</span>
+          <div role="radiogroup" aria-label={`Положение украшения ${n}`} className="grid grid-cols-3 gap-1 rounded-md border bg-background p-1">
+            {POSITION_GRID.map((p) => (
+              <button
+                key={p}
+                type="button"
+                role="radio"
+                aria-checked={o.position === p}
+                aria-label={positionLabels[p]}
+                title={positionLabels[p]}
+                onClick={() => onChange({ position: p })}
+                className="group flex size-7 items-center justify-center rounded outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+              >
+                <span className="size-2 rounded-full bg-muted-foreground/30 transition group-aria-checked:size-3 group-aria-checked:bg-primary" />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground">Размер</span>
+            <div className="flex gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label={`Уменьшить украшение ${n}`}
+                disabled={o.size <= ORNAMENT_SIZE_MIN}
+                onClick={() => onChange({ size: stepOrnamentSize(o.size, "smaller") })}
+              >
+                <Minus /> Меньше
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                aria-label={`Увеличить украшение ${n}`}
+                disabled={o.size >= ORNAMENT_SIZE_MAX}
+                onClick={() => onChange({ size: stepOrnamentSize(o.size, "bigger") })}
+              >
+                <Plus /> Больше
+              </Button>
+            </div>
+          </div>
+          <label htmlFor={flipId} className="flex items-center gap-2 text-sm">
             <Switch id={flipId} size="sm" checked={o.flip} onCheckedChange={(flip) => onChange({ flip })} />
-            <FlipHorizontal2 className="size-3.5" /> Отразить
+            <FlipHorizontal2 className="size-3.5 text-muted-foreground" /> Отразить зеркально
           </label>
         </div>
       </div>
-      <div className="flex flex-col gap-3 border-t pt-3">
-        <label htmlFor={ownId} className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Switch
-            id={ownId}
-            size="sm"
-            aria-label={`Своя анимация украшения ${n}`}
-            checked={!!o.motion}
-            // Включили — начинаем с общих настроек, выключили — снова как у всех.
-            onCheckedChange={(own) => onChange({ motion: own ? { ...theme.ornamentMotion } : undefined })}
-          />
-          <Sparkles className="size-3.5" /> Своя анимация
-        </label>
-        {theme.motion.style === "none" && (
-          <p className="text-xs text-muted-foreground">Сейчас анимации выключены: «Оформление» → «Анимации» → «Без анимаций».</p>
-        )}
-        {o.motion ? (
-          <OrnamentMotionFields value={o.motion} of={`украшения ${n}`} onChange={(patch) => onChange({ motion: { ...o.motion!, ...patch } })} />
-        ) : (
-          <p className="text-xs text-muted-foreground">Как у всех украшений — общая анимация в «Оформлении» → «Анимации».</p>
-        )}
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" variant="outline" size="sm" onClick={onReplace}>
+          <ImageIcon /> Заменить картинку
+        </Button>
+        <Button type="button" variant="ghost" size="sm" className="ml-auto text-muted-foreground hover:text-destructive" aria-label={`Удалить украшение ${n}`} onClick={onRemove}>
+          <Trash2 /> Удалить
+        </Button>
       </div>
-    </li>
+      <Collapsible open={fine} onOpenChange={setFine} className="border-t pt-2">
+        <CollapsibleTrigger asChild>
+          <Button type="button" variant="ghost" size="sm" className="-ml-2 text-muted-foreground">
+            <ChevronRight className={cn("transition-transform", fine && "rotate-90")} /> Тонкая настройка украшения
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="flex flex-col gap-3 pt-3">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+            <LabeledSlider
+              label="Размер"
+              ariaLabel={`Размер украшения ${n}`}
+              valueLabel={`${o.size}px`}
+              value={o.size}
+              min={ORNAMENT_SIZE_MIN}
+              max={ORNAMENT_SIZE_MAX}
+              step={10}
+              onChange={(size) => onChange({ size })}
+            />
+            <LabeledSlider
+              label="Поворот"
+              ariaLabel={`Поворот украшения ${n}`}
+              valueLabel={`${o.rotate}°`}
+              value={o.rotate}
+              min={-180}
+              max={180}
+              step={5}
+              onChange={(rotate) => onChange({ rotate })}
+            />
+            <LabeledSlider
+              label="Прозрачность"
+              ariaLabel={`Прозрачность украшения ${n}`}
+              valueLabel={`${Math.round(o.opacity * 100)}%`}
+              value={Math.round(o.opacity * 100)}
+              min={10}
+              max={100}
+              step={5}
+              onChange={(v) => onChange({ opacity: v / 100 })}
+            />
+          </div>
+          <label htmlFor={ownId} className="flex items-center gap-2 text-sm">
+            <Switch
+              id={ownId}
+              size="sm"
+              checked={!!o.motion}
+              // Включили — начинаем с общих настроек, выключили — снова как у всех.
+              onCheckedChange={(own) => onChange({ motion: own ? { ...theme.ornamentMotion } : undefined })}
+            />
+            <Sparkles className="size-3.5 text-muted-foreground" /> Анимировать отдельно от остальных
+          </label>
+          {theme.motion.style === "none" && (
+            <p className="text-xs text-muted-foreground">Сейчас анимации выключены: «Оформление» → «Анимации» → «Без анимаций».</p>
+          )}
+          {o.motion ? (
+            <OrnamentMotionFields value={o.motion} of={`украшения ${n}`} onChange={(patch) => onChange({ motion: { ...o.motion!, ...patch } })} />
+          ) : (
+            <p className="text-xs text-muted-foreground">Как у всех украшений — общая анимация в «Оформлении» → «Анимации».</p>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
   );
 }
