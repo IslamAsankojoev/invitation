@@ -65,9 +65,11 @@ function AccordionContent({
       className="overflow-hidden text-sm data-open:animate-accordion-down data-closed:animate-accordion-up"
       {...props}
     >
+      {/* Без фиксированной высоты: внутри раскрываются «Тонкие настройки», раздел должен расти вместе с ними
+          (высота --radix-accordion-content-height нужна только анимации раскрытия — она у AccordionContent выше). */}
       <div
         className={cn(
-          "h-(--radix-accordion-content-height) pt-0 pb-4 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground [&_p:not(:last-child)]:mb-4",
+          "pt-0 pb-4 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground [&_p:not(:last-child)]:mb-4",
           className
         )}
       >

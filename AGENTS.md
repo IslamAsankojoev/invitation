@@ -573,6 +573,9 @@ InvitationData
     `User` + `Session` и поставить cookie `authjs.session-token` = sessionToken.
 22. **`next build` в папку `.next` ломает запущенный `npm run dev`** (страницы отдают 500): собирай с
     `NEXT_DIST_DIR=.next-build`, а после локального `npm run vercel-build` перезапусти dev и удали `.next`.
+23. **shadcn `accordion` генерируется с ошибками:** импорт `cn` из `"cn"` и фиксированная высота
+    `h-(--radix-accordion-content-height)` у внутреннего блока — раздел не рос, когда внутри раскрывалась «Тонкая
+    настройка», и низ обрезался. Обе правки уже в `ui/accordion.tsx`; при повторном `shadcn add accordion` — проверь.
 
 ## 8. Тесты
 
