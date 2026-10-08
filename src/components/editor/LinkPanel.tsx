@@ -1,19 +1,29 @@
 "use client";
 
-import { Check, Copy, KeyRound, Link2 } from "lucide-react";
+import { Check, Copy, Eye, KeyRound, Link2, Send, Share2, Sparkles } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { accountGate } from "@/lib/access";
+import type { InvitationData } from "@/lib/schema";
+import { shareMessage, slugSuggestions, telegramShareUrl, whatsappShareUrl } from "@/lib/share";
 import { slugSchema } from "@/lib/slug";
 import { patchInvitation } from "./api";
 import { AccountRequired } from "./AccountRequired";
 import { Group } from "./controls";
 import type { EditorAccount } from "./Editor";
 
-type Props = { id: string; token: string; slug: string; onSlugChange: (slug: string) => void; account?: EditorAccount };
+type Props = {
+  id: string;
+  token: string;
+  slug: string;
+  onSlugChange: (slug: string) => void;
+  account?: EditorAccount;
+  /** Для текста сообщения гостям и ссылки из имён. */
+  data: InvitationData;
+};
 
 function CopyButton({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false);
@@ -34,12 +44,17 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   );
 }
 
-export function LinkPanel({ id, token, slug, onSlugChange, account }: Props) {
+export function LinkPanel({ id, token, slug, onSlugChange, account, data }: Props) {
   const [value, setValue] = useState(slug);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [origin, setOrigin] = useState("");
+  /** Системное «Поделиться» есть почти на всех телефонах, на компьютере — не везде. */
+  const [canShare, setCanShare] = useState(false);
   const slugId = useId();
-  useEffect(() => setOrigin(window.location.origin), []);
+  useEffect(() => {
+    setOrigin(window.location.origin);
+    setCanShare(typeof navigator.share === "function");
+  }, []);
 
   const formatError = slugSchema.safeParse(value).error?.issues[0].message;
   const publicUrl = `${origin}/i/${slug}`;
@@ -55,20 +70,76 @@ export function LinkPanel({ id, token, slug, onSlugChange, account }: Props) {
       </Group>
     );
 
-  async function save() {
-    if (formatError || value === slug) return;
+  async function save(next = value) {
+    if (!slugSchema.safeParse(next).success || next === slug) return;
     try {
-      await patchInvitation(id, token, { slug: value });
-      onSlugChange(value);
+      await patchInvitation(id, token, { slug: next });
+      onSlugChange(next);
+      setValue(next);
       setMessage({ ok: true, text: "Ссылка сохранена" });
     } catch (e) {
       setMessage({ ok: false, text: (e as Error).message });
     }
   }
 
+  const text = shareMessage(data, publicUrl);
+  const suggestions = slugSuggestions(data).filter((s) => s !== slug);
+
   return (
     <div className="flex flex-col gap-4">
-      <Group title="Адрес приглашения">
+      <Group title="Отправьте гостям">
+        <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
+          <Link2 className="size-4 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 flex-1 truncate text-sm font-medium">{publicUrl}</span>
+          <CopyButton text={publicUrl} label="Скопировать ссылку для гостей" />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Button asChild size="lg" className="bg-[#25d366] text-white hover:bg-[#1ebe5b]">
+            <a href={whatsappShareUrl(text)} target="_blank" rel="noopener noreferrer" aria-label="Отправить в WhatsApp">
+              <Send /> WhatsApp
+            </a>
+          </Button>
+          <Button asChild size="lg" className="bg-[#2aabee] text-white hover:bg-[#1e96d4]">
+            <a href={telegramShareUrl(publicUrl, text)} target="_blank" rel="noopener noreferrer" aria-label="Отправить в Telegram">
+              <Send /> Telegram
+            </a>
+          </Button>
+          {canShare && (
+            <Button
+              type="button"
+              size="lg"
+              variant="outline"
+              className="col-span-2"
+              onClick={() => navigator.share({ text: text.replace(`\n\n${publicUrl}`, ""), url: publicUrl }).catch(() => {})}
+            >
+              <Share2 /> Другое приложение…
+            </Button>
+          )}
+        </div>
+        <details className="text-sm">
+          <summary className="cursor-pointer text-muted-foreground">Текст сообщения</summary>
+          <p className="mt-2 rounded-lg border p-3 whitespace-pre-line">{text}</p>
+        </details>
+        <Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
+          <a href={`/i/${slug}`} target="_blank">
+            <Eye /> Посмотреть как гость
+          </a>
+        </Button>
+      </Group>
+
+      <Group title="Красивая ссылка">
+        {suggestions.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-muted-foreground">Ссылку из имён гостям проще узнать и запомнить:</p>
+            <div className="flex flex-wrap gap-2">
+              {suggestions.map((s) => (
+                <Button key={s} type="button" variant="outline" size="sm" onClick={() => save(s)} aria-label={`Сделать ссылку /i/${s}`}>
+                  <Sparkles /> /i/{s}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
         <Field data-invalid={!!formatError || undefined}>
           <FieldLabel htmlFor={slugId}>Адрес приглашения</FieldLabel>
           <div className="flex items-center gap-2">
@@ -86,27 +157,21 @@ export function LinkPanel({ id, token, slug, onSlugChange, account }: Props) {
                 }}
               />
             </div>
-            <Button type="button" disabled={!!formatError || value === slug} onClick={save}>
+            <Button type="button" disabled={!!formatError || value === slug} onClick={() => save()}>
               Сохранить
             </Button>
           </div>
-          {formatError ? <FieldError>{formatError}</FieldError> : <FieldDescription>Латиница, цифры и дефис, 3–40 символов.</FieldDescription>}
+          {formatError ? (
+            <FieldError>{formatError}</FieldError>
+          ) : (
+            <FieldDescription>Латинские буквы, цифры и дефис. Поменяйте до того, как отправите гостям.</FieldDescription>
+          )}
         </Field>
         {message && (
           <p role="status" className={message.ok ? "text-sm text-emerald-700" : "text-sm text-destructive"}>
             {message.text}
           </p>
         )}
-      </Group>
-
-      <Group title="Ссылка для гостей">
-        <div className="flex items-center gap-2">
-          <Link2 className="size-4 shrink-0 text-muted-foreground" />
-          <a href={`/i/${slug}`} target="_blank" className="min-w-0 flex-1 truncate text-sm font-medium underline-offset-4 hover:underline">
-            {publicUrl}
-          </a>
-          <CopyButton text={publicUrl} label="Скопировать ссылку для гостей" />
-        </div>
       </Group>
 
       <Alert>

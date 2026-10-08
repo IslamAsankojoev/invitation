@@ -41,7 +41,8 @@ export function TemplateGallery() {
     }
     const { editUrl } = await res.json();
     // Полная навигация, а не router.push: надёжнее при первой компиляции маршрута в dev-режиме.
-    window.location.assign(editUrl);
+    // start=1 — редактор начнётся с быстрого старта (имена, дата, место).
+    window.location.assign(`${editUrl}&start=1`);
   }
 
   return (

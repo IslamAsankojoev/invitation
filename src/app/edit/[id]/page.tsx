@@ -4,14 +4,14 @@ import { canEdit, ownershipOf } from "@/lib/access";
 import { getInvitationById } from "@/lib/invitations";
 import { authEnabled, currentUser } from "@/lib/session";
 
-type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ token?: string; saved?: string }> };
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ token?: string; saved?: string; start?: string }> };
 
 const NOTICES: SaveNotice[] = ["1", "taken", "login"];
 
 export const metadata = { title: "Редактор приглашения" };
 
 export default async function EditPage({ params, searchParams }: Props) {
-  const [{ id }, { token, saved }] = await Promise.all([params, searchParams]);
+  const [{ id }, { token, saved, start }] = await Promise.all([params, searchParams]);
   const [inv, user] = await Promise.all([getInvitationById(id), currentUser()]);
   // Секретная ссылка работает всегда (и у приглашений до аккаунтов), владелец заходит и без неё.
   if (!inv || !canEdit(inv, { token, userId: user?.id })) forbidden();
@@ -24,6 +24,7 @@ export default async function EditPage({ params, searchParams }: Props) {
       initialData={inv.data}
       account={authEnabled() ? { user, ownership: ownershipOf(inv, user?.id) } : undefined}
       notice={NOTICES.find((n) => n === saved)}
+      quickStart={start === "1"}
     />
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check, ChevronDown, CircleCheck, Crown, ExternalLink, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, RotateCw, Users, X } from "lucide-react";
+import { AlertCircle, Check, ChevronDown, CircleCheck, Crown, ExternalLink, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, RotateCw, Send, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { DecorLayer } from "@/components/invitation/DecorLayer";
@@ -26,6 +26,7 @@ import { BlocksPanel, type BlockViewState } from "./BlocksPanel";
 import { IntroPreview } from "./IntroPreview";
 import { LinkPanel } from "./LinkPanel";
 import { MusicPanel } from "./MusicPanel";
+import { QuickStart } from "./QuickStart";
 import { ThemePanel } from "./ThemePanel";
 import { useAutosave, type SaveStatus } from "./useAutosave";
 
@@ -42,6 +43,8 @@ type Props = {
   initialData: InvitationData;
   account?: EditorAccount;
   notice?: SaveNotice;
+  /** Только что создано из шаблона — сначала быстрый старт (имена, дата, место). */
+  quickStart?: boolean;
 };
 
 const noticeText: Record<SaveNotice, { ok: boolean; text: string }> = {
@@ -134,7 +137,7 @@ const PICK_TIP_KEY = "editor-pick-tip";
 /** Плашка «PRO-оформление» над вкладками. Пока тарифов нет — скрыта; значки PRO на плитках остаются. */
 const SHOW_PREMIUM_ALERT = false;
 
-export function Editor({ id, token, initialSlug, initialData, account, notice }: Props) {
+export function Editor({ id, token, initialSlug, initialData, account, notice, quickStart = false }: Props) {
   const [data, setData] = useState(initialData);
   const [slug, setSlug] = useState(initialSlug);
 
@@ -163,6 +166,14 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
   const [intro, setIntro] = useState(false);
   /** Вкладка панели — управляемая: нажатие на блок в превью переключает на «Блоки». */
   const [tab, setTab] = useState<string>(notice ? "Ссылка" : TABS[0]);
+  const [starting, setStarting] = useState(quickStart);
+  // Быстрый старт — один раз: убираем ?start=1 из адреса, чтобы он не открылся снова после перезагрузки.
+  useEffect(() => {
+    if (!quickStart) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("start");
+    window.history.replaceState(window.history.state, "", url);
+  }, [quickStart]);
   /** Подсказка «нажмите на блок в превью» — до первого закрытия (запоминается в браузере). */
   const [pickTip, setPickTip] = useState(false);
   useEffect(() => {
@@ -246,6 +257,14 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
     if (on && expanded) scrollPreview(expanded);
   }
 
+  /** «Отправить гостям»: панель «Ссылка» с кнопками WhatsApp и Telegram. */
+  function openShare() {
+    setStarting(false);
+    setIntro(false);
+    setTab("Ссылка");
+    setSheet(true);
+  }
+
   function reloadPreview() {
     setPreviewKey((k) => k + 1);
     previewRef.current?.scrollTo({ top: 0 });
@@ -301,7 +320,8 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
               <ChevronDown />
             </Button>
           </div>
-          <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-background/95 px-4 pb-3 backdrop-blur lg:pt-3">
+          {/* На телефоне шапка нужна только для меню аккаунта: «Открыть», «Гости» и «Отправить» — над превью. */}
+          <header className={cn("sticky top-0 z-20 flex items-center gap-3 border-b bg-background/95 px-4 pb-3 backdrop-blur lg:pt-3", !account && "max-lg:hidden")}>
             {/* <a href="/" aria-label="На главную" className="shrink-0">
               <img src="/logo.webp" alt="" width={44} height={32} className="h-8 w-auto" />
             </a> */}
@@ -310,29 +330,6 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
               <h1 className="sr-only text-base leading-none font-semibold lg:not-sr-only">Редактор приглашения</h1>
             </div>
             <nav className="flex gap-2">
-              {gate ? (
-                <>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setGateFor("editor")}>
-                    <ExternalLink /> Открыть
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setGateFor("guests")}>
-                    <Users /> Гости
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button asChild variant="outline" size="sm">
-                    <a href={`/i/${slug}`} target="_blank">
-                      <ExternalLink /> Открыть
-                    </a>
-                  </Button>
-                  <Button asChild variant="outline" size="sm">
-                    <a href={`/edit/${id}/guests?token=${token}`}>
-                      <Users /> Гости
-                    </a>
-                  </Button>
-                </>
-              )}
               {account && <AccountMenu user={account.user} />}
             </nav>
           </header>
@@ -345,7 +342,8 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
             }}
             className="flex min-h-0 flex-1 flex-col gap-0"
           >
-            <div className="border-b px-4 py-3">
+            {/* На телефоне разделы переключает нижняя панель — второй ряд вкладок в шторке не нужен. */}
+            <div className="border-b px-4 py-3 max-lg:hidden">
               <TabsList className="w-full">
                 {TABS.map((t) => (
                   <TabsTrigger key={t} value={t}>
@@ -407,7 +405,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
                 <MusicPanel data={data} onChange={setData} />
               </TabsContent>
               <TabsContent value="Ссылка">
-                <LinkPanel id={id} token={token} slug={slug} onSlugChange={setSlug} account={account} />
+                <LinkPanel id={id} token={token} slug={slug} onSlugChange={setSlug} account={account} data={data} />
               </TabsContent>
             </div>
           </Tabs>
@@ -419,21 +417,51 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
           aria-label="Превью"
           className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-hidden pt-2 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:h-svh lg:gap-3 lg:p-8"
         >
-          <div className="flex w-full max-w-[433px] flex-wrap items-center gap-2 px-3 lg:px-0">
+          {/* z-[35] — над невидимой подложкой шторки: кнопки сверху нажимаются с первого раза и при открытой панели. */}
+          <div className="relative z-[35] flex w-full max-w-[433px] items-center gap-2 px-3 lg:max-w-[720px] lg:px-0">
             <Button type="button" variant="outline" size="icon-sm" onClick={reloadPreview} aria-label="Перезагрузить" title="Перезагрузить превью">
               <RotateCw />
             </Button>
-            <Badge role="status" data-testid="save-status" variant={statusInfo.variant}>
+            <Badge role="status" data-testid="save-status" variant={statusInfo.variant} title={statusInfo.text}>
               {statusInfo.icon}
-              {statusInfo.text}
+              {/* На узком экране — только значок: место нужнее кнопкам справа. */}
+              <span className={cn(status === "saved" && "max-sm:sr-only")}>{statusInfo.text}</span>
             </Badge>
             <label
-              className="ml-auto flex cursor-pointer items-center gap-2 text-sm"
+              className="ml-auto flex cursor-pointer items-center gap-2 text-sm max-lg:hidden"
               title="Прокручивать превью к блоку, который открыт в редакторе"
             >
               <Switch checked={follow} onCheckedChange={toggleFollow} aria-label="Следовать за редактируемым блоком" />
-              Следовать за контентом
+              Листать к блоку
             </label>
+            <div className="ml-auto flex gap-2 lg:ml-2">
+              {gate ? (
+                <>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setGateFor("editor")} aria-label="Открыть">
+                    <ExternalLink /> <span className="max-sm:hidden">Открыть</span>
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setGateFor("guests")}>
+                    <Users /> Гости
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button asChild variant="outline" size="sm">
+                    <a href={`/i/${slug}`} target="_blank" aria-label="Открыть">
+                      <ExternalLink /> <span className="max-sm:hidden">Открыть</span>
+                    </a>
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <a href={`/edit/${id}/guests?token=${token}`}>
+                      <Users /> Гости
+                    </a>
+                  </Button>
+                </>
+              )}
+              <Button type="button" size="sm" onClick={openShare}>
+                <Send /> Отправить{" "}<span className="max-sm:sr-only">гостям</span>
+              </Button>
+            </div>
           </div>
           {pickTip && (
             <p role="note" className="mx-3 flex w-[calc(100%-1.5rem)] max-w-[433px] items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm lg:mx-0 lg:w-full">
@@ -483,6 +511,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
           })}
         </nav>
       </div>
+      {starting && <QuickStart data={data} onChange={setData} onClose={() => setStarting(false)} onShare={openShare} />}
       {account && gate && (
         <Dialog open={gateFor !== null} onOpenChange={(open) => !open && setGateFor(null)}>
           <DialogContent className="sm:max-w-md">

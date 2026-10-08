@@ -12,7 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, ChevronDown, Circle, Copy, GripVertical, ListChecks, Plus, Trash2, X } from "lucide-react";
+import { Check, ChevronDown, Circle, Copy, Ellipsis, GripVertical, ListChecks, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useId, useState, type ComponentType } from "react";
 import {
   AlertDialog,
@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -84,6 +85,44 @@ function announcementsFor(data: InvitationData): Announcements {
       over ? `Блок «${name(active.id)}» перемещён на место блока «${name(over.id)}».` : `Блок «${name(active.id)}» отпущен.`,
     onDragCancel: ({ active }) => `Перемещение блока «${name(active.id)}» отменено.`,
   };
+}
+
+/** «⋯» в строке блока: «Дублировать» и «Удалить» — редкие действия, в строке им не место. */
+function BlockMenu({ label, onDuplicate, onRemove }: { label: string; onDuplicate?: () => void; onRemove?: () => void }) {
+  const [open, setOpen] = useState(false);
+  if (!onDuplicate && !onRemove) return null;
+  const run = (action: () => void) => () => {
+    setOpen(false);
+    action();
+  };
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground" aria-label={`Ещё: блок «${label}»`} title="Ещё">
+          <Ellipsis />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-auto gap-1 p-1">
+        {onDuplicate && (
+          <Button type="button" variant="ghost" size="sm" className="justify-start" aria-label={`Дублировать блок «${label}»`} onClick={run(onDuplicate)}>
+            <Copy /> Дублировать
+          </Button>
+        )}
+        {onRemove && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="justify-start text-destructive hover:text-destructive"
+            aria-label={`Удалить блок «${label}»`}
+            onClick={run(onRemove)}
+          >
+            <Trash2 /> Удалить
+          </Button>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 export function BlocksPanel({ data, onChange, expanded, onExpandedChange, onAdded, view: viewProp, onViewChange }: Props) {
@@ -265,16 +304,7 @@ function BlockItem({ block, name, summary, data, expanded, onExpand, onToggle, o
             )}
           </span>
         </button>
-        {onDuplicate && (
-          <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground" aria-label={`Дублировать блок «${label}»`} title="Дублировать" onClick={onDuplicate}>
-            <Copy />
-          </Button>
-        )}
-        {onRemove && (
-          <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-destructive" aria-label={`Удалить блок «${label}»`} title="Удалить" onClick={onRemove}>
-            <Trash2 />
-          </Button>
-        )}
+        <BlockMenu label={label} onDuplicate={onDuplicate} onRemove={onRemove} />
         <Switch checked={block.visible} onCheckedChange={onToggle} aria-label={`Показывать блок «${label}»`} />
       </div>
       {expanded && (

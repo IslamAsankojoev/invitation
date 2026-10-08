@@ -1,4 +1,12 @@
+import { PrismaClient } from "@prisma/client";
 import { expect, test, type Page } from "@playwright/test";
+
+/** База e2e между запусками не чистится: ссылку из имён освобождаем, иначе второй запуск получит «занято». */
+test.beforeAll(async () => {
+  const prisma = new PrismaClient({ datasourceUrl: "postgresql://postgres:postgres@localhost:5433/wedding_e2e" });
+  await prisma.invitation.deleteMany({ where: { slug: { startsWith: "mariya-petr" } } });
+  await prisma.$disconnect();
+});
 
 const blockOrder = (page: Page) =>
   page.locator("[data-testid^=block-item-]").evaluateAll((els) => els.map((e) => e.getAttribute("data-testid")!.slice(11)));
@@ -11,13 +19,25 @@ test("создать → настроить → открыть → послуш�
   const editorUrl = new URL(page.url());
   const saveStatus = page.getByTestId("save-status");
 
+  // 2. Быстрый старт: имена, дата и время; место пропускаем
+  const quick = page.getByRole("dialog");
+  await expect(quick.getByText("Шаг 1 из 3")).toBeVisible();
+  await expect(quick.getByRole("button", { name: "Свадьба" })).toHaveAttribute("aria-pressed", "true");
+  await quick.getByLabel("Имена").fill("Мария & Пётр");
+  await quick.getByRole("button", { name: "Далее" }).click();
+  await quick.getByLabel("Дата").fill("2027-08-20");
+  await quick.getByLabel("Начало").fill("17:30");
+  await quick.getByRole("button", { name: "Далее" }).click();
+  await quick.getByRole("button", { name: "Далее" }).click();
+  await expect(quick.getByText("Приглашение готово!")).toBeVisible();
+  await quick.getByRole("button", { name: "Оформить дальше" }).click();
+  await expect(quick).toBeHidden();
+  await expect(page.getByTestId("preview").getByTestId("hero-names")).toHaveText("Мария & Пётр");
+  // Быстрый старт — один раз: ?start=1 убран из адреса.
+  expect(new URL(page.url()).searchParams.has("start")).toBe(false);
+
   // На телефоне панель — шторка снизу: открываем «Блоки».
   await page.getByRole("button", { name: "Панель «Блоки»" }).click();
-  // 2. Имена и дата (блоки сначала свёрнуты — открываем главный экран)
-  await page.getByRole("button", { name: "Главный экран", exact: true }).click();
-  await page.getByLabel("Имена", { exact: true }).fill("Мария & Пётр");
-  await page.getByLabel("Дата и время").fill("2027-08-20T17:30");
-  await expect(page.getByTestId("preview").getByTestId("hero-names")).toHaveText("Мария & Пётр");
 
   // 3. Скрыть story
   await page.getByLabel("Показывать блок «Наша история»").uncheck();
@@ -68,7 +88,7 @@ test("создать → настроить → открыть → послуш�
 
   // 5. Декор «petals»
   // «Оформление» — свёрнутые разделы: раскрываем нужный.
-  await page.getByRole("tab", { name: "Оформление" }).click();
+  await page.getByRole("button", { name: "Панель «Оформление»" }).click();
   await page.getByRole("button", { name: /^Падающий декор/ }).click();
   await page.getByRole("button", { name: "Декор Лепестки" }).click();
   await page.getByRole("button", { name: /^Шрифты/ }).click();
@@ -78,15 +98,26 @@ test("создать → настроить → открыть → послуш�
   await page.getByRole("button", { name: "Текстура Узор" }).click();
 
   // 6. Музыка — из встроенного списка (своя загрузка пока выключена)
-  await page.getByRole("tab", { name: "Музыка" }).click();
+  await page.getByRole("button", { name: "Панель «Музыка»" }).click();
   await expect(page.getByText(/Загрузить свою музыку пока нельзя/)).toBeVisible();
   await page.getByRole("button", { name: "Песня «A Thousand Years» — Christina Perri" }).click();
   await expect(page.getByRole("button", { name: "Песня «A Thousand Years» — Christina Perri" })).toHaveAttribute("aria-pressed", "true");
   await expect(saveStatus).toHaveText("Сохранено");
 
+  // 6а. «Отправить гостям» — WhatsApp с именами и ссылкой, ссылка из имён одним нажатием
+  await page.getByRole("button", { name: "Отправить гостям" }).click();
+  await expect(page.getByRole("link", { name: "Отправить в WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/\?text=.*%D0%9C%D0%B0%D1%80%D0%B8%D1%8F/);
+  const pretty = page.getByRole("button", { name: /^Сделать ссылку \/i\/mariya-petr/ }).first();
+  await pretty.click();
+  await expect(page.getByText("Ссылка сохранена")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Посмотреть как гость" })).toHaveAttribute("href", /^\/i\/mariya-petr/);
+
   // 7. Открыть публичную ссылку
   const publicHref = await page.getByRole("link", { name: "Открыть" }).getAttribute("href");
+  expect(publicHref).toMatch(/^\/i\/mariya-petr/);
   await page.goto(publicHref!);
+  // Превью ссылки в мессенджерах: имена, повод, дата.
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "Мария & Пётр — приглашение на свадьбу");
 
   await expect(page.getByTestId("decor-layer")).toHaveAttribute("data-decor", "petals");
   const blocks = await page.locator("[data-block]").evaluateAll((els) => els.map((e) => e.getAttribute("data-block")));

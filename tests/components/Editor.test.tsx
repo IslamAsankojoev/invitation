@@ -557,25 +557,32 @@ describe("Editor: добавление, копирование и удалени
     expect(screen.getByLabelText("Подпись кнопки")).toHaveFocus();
   });
 
-  it("«Дублировать» кладёт копию под блок, «Удалить» спрашивает подтверждение", async () => {
+  it("«Дублировать» кладёт копию под блок, «Удалить» спрашивает подтверждение (оба — в меню «⋯»)", async () => {
     const user = userEvent.setup();
     renderEditor();
     const preview = screen.getByTestId("preview");
     const stories = () => preview.querySelectorAll('[data-block="story"]');
+    const menu = (label: string) => user.click(screen.getByRole("button", { name: `Ещё: блок «${label}»` }));
+    // В строке блока — одно «⋯» вместо двух значков.
+    expect(screen.queryByRole("button", { name: "Дублировать блок «Наша история»" })).not.toBeInTheDocument();
+    await menu("Наша история");
     await user.click(screen.getByRole("button", { name: "Дублировать блок «Наша история»" }));
     expect(stories()).toHaveLength(2);
     expect(screen.getByRole("button", { name: /^Наша история 2/ })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.queryByRole("button", { name: "Дублировать блок «Наша история»" })).not.toBeInTheDocument();
 
+    await menu("Наша история 2");
     await user.click(screen.getByRole("button", { name: "Удалить блок «Наша история 2»" }));
     await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Отмена" }));
     expect(stories()).toHaveLength(2);
+    await menu("Наша история 2");
     await user.click(screen.getByRole("button", { name: "Удалить блок «Наша история 2»" }));
     await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Удалить" }));
     expect(stories()).toHaveLength(1);
 
-    // Главный экран не удаляется и не копируется, анкета — не копируется.
-    expect(screen.queryByRole("button", { name: "Удалить блок «Главный экран»" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Дублировать блок «Главный экран»" })).not.toBeInTheDocument();
+    // Главный экран не удаляется и не копируется — у него нет «⋯»; анкета — не копируется.
+    expect(screen.queryByRole("button", { name: "Ещё: блок «Главный экран»" })).not.toBeInTheDocument();
+    await menu("Анкета гостя");
     expect(screen.queryByRole("button", { name: "Дублировать блок «Анкета гостя»" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Удалить блок «Анкета гостя»" })).toBeInTheDocument();
   });
@@ -747,5 +754,97 @@ describe("Editor: добавление, копирование и удалени
     await openThemeSection(user, "Падающий декор", { fine: true });
     await user.click(screen.getByRole("switch", { name: "Мини-игра: лопаются от касания" }));
     expect(layer()).not.toHaveAttribute("data-pop");
+  });
+});
+
+describe("Editor: быстрый старт и отправка гостям", () => {
+  const renderNew = () =>
+    render(<Editor id="inv1" token="secret" initialSlug="x7k2m9qa" initialData={createDefaultInvitation()} quickStart />);
+
+  it("три шага: повод и имена, дата и время, место — всё сразу в превью; в конце «Отправить гостям»", async () => {
+    const user = userEvent.setup();
+    window.history.replaceState(null, "", "/edit/inv1?token=secret&start=1");
+    renderNew();
+    // Повторно после перезагрузки не откроется: start убран из адреса, token остался.
+    expect(window.location.search).toBe("?token=secret");
+    const preview = screen.getByTestId("preview");
+    const dialog = () => screen.getByRole("dialog");
+    expect(within(dialog()).getByText("Шаг 1 из 3")).toBeInTheDocument();
+
+    await user.click(within(dialog()).getByRole("button", { name: "Кыз узатуу" }));
+    expect(within(dialog()).getByRole("button", { name: "Кыз узатуу" })).toHaveAttribute("aria-pressed", "true");
+    // Поле пустое, пример шаблона — подсказкой: стирать «Анна & Иван» не нужно.
+    const names = within(dialog()).getByLabelText("Имена");
+    expect(names).toHaveValue("");
+    expect(names).toHaveAttribute("placeholder", "Анна & Иван");
+    await user.type(names, "Айбек & Айзада");
+    expect(within(preview).getByTestId("hero-names")).toHaveTextContent("Айбек & Айзада");
+    expect(within(preview).getByText("Приглашение на кыз узатуу")).toBeInTheDocument();
+    await user.click(within(dialog()).getByRole("button", { name: "Далее" }));
+
+    fireEvent.change(within(dialog()).getByLabelText("Дата"), { target: { value: "2027-08-14" } });
+    fireEvent.change(within(dialog()).getByLabelText("Начало"), { target: { value: "18:00" } });
+    expect(within(dialog()).getByLabelText("Дата")).toHaveValue("2027-08-14");
+    expect(within(dialog()).getByLabelText("Начало")).toHaveValue("18:00");
+    await user.click(within(dialog()).getByRole("button", { name: "Далее" }));
+
+    await user.type(within(dialog()).getByLabelText("Название места"), "Ресторан «Ала-Тоо»");
+    const map = within(dialog()).getByLabelText("Ссылка на карту");
+    await user.type(map, "где-то рядом");
+    expect(within(dialog()).getByText("Не похоже на ссылку — скопируйте её ещё раз")).toBeInTheDocument();
+    expect(within(dialog()).getByRole("button", { name: "Далее" })).toBeDisabled();
+    await user.clear(map);
+    // «Поделиться» в 2ГИС копирует текст со ссылкой — берём ссылку.
+    await user.click(map);
+    await user.paste("Ала-Тоо, Бишкек https://go.2gis.com/abc12");
+    expect(within(preview).getByText("Ресторан «Ала-Тоо»")).toBeInTheDocument();
+    // Пока открыт диалог, Radix скрывает остальное от скринридеров (aria-hidden) — ищем ссылку по разметке.
+    expect(preview.querySelector('[data-block="location"] a[href="https://go.2gis.com/abc12"]')).toHaveTextContent("Посмотреть на карте");
+    await user.click(within(dialog()).getByRole("button", { name: "Далее" }));
+
+    expect(within(dialog()).getByText("Приглашение готово!")).toBeInTheDocument();
+    await user.click(within(dialog()).getByRole("button", { name: "Отправить гостям" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Ссылка" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("link", { name: "Отправить в WhatsApp" }).getAttribute("href")).toContain(
+      encodeURIComponent("Айбек & Айзада"),
+    );
+  });
+
+  it("«Пропустить всё» закрывает быстрый старт, шаблон остаётся как был", async () => {
+    const user = userEvent.setup();
+    renderNew();
+    await user.click(screen.getByRole("button", { name: "Пропустить всё" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(within(screen.getByTestId("preview")).getByTestId("hero-names")).toHaveTextContent("Анна & Иван");
+  });
+
+  it("без ?start быстрый старт не показывается", () => {
+    renderEditor();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("«Отправить гостям» над превью: WhatsApp, Telegram и ссылка из имён в один клик", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    renderEditor();
+    await user.click(screen.getByRole("button", { name: "Отправить гостям" }));
+    expect(screen.getByRole("tab", { name: "Ссылка" })).toHaveAttribute("aria-selected", "true");
+    const url = `${window.location.origin}/i/demo`;
+    const wa = new URL(screen.getByRole("link", { name: "Отправить в WhatsApp" }).getAttribute("href")!);
+    expect(wa.origin).toBe("https://wa.me");
+    expect(wa.searchParams.get("text")).toBe(`Приглашение на свадьбу\nАнна & Иван\n19 июня 2027, 16:00\nРесторан «Сад»\n\n${url}`);
+    const tg = new URL(screen.getByRole("link", { name: "Отправить в Telegram" }).getAttribute("href")!);
+    expect(tg.searchParams.get("url")).toBe(url);
+
+    await user.click(screen.getByRole("button", { name: "Сделать ссылку /i/anna-ivan" }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/invitations/inv1?token=secret",
+      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ slug: "anna-ivan" }) }),
+    );
+    expect(await screen.findByText("Ссылка сохранена")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Посмотреть как гость" })).toHaveAttribute("href", "/i/anna-ivan");
+    expect(screen.queryByRole("button", { name: "Сделать ссылку /i/anna-ivan" })).not.toBeInTheDocument();
   });
 });
