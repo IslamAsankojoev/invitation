@@ -183,6 +183,12 @@ export const BLOCK_WIDTHS = ["content", "full"] as const;
 export const MOTION_STYLES = ["elegant", "soft", "playful", "cinematic", "none"] as const;
 /** Заголовки блоков: капитель (Tenor Sans) или шрифтом имён — рукописные строчными, остальные капителью. */
 export const HEADINGS = ["caps", "names"] as const;
+/**
+ * Как ведёт себя фоновое фото страницы: stretch — растянуто на всю высоту и прокручивается с содержимым (как было),
+ * fixed — стоит на месте, содержимое едет поверх, parallax — стоит на месте и медленно смещается при прокрутке.
+ */
+export const BACKGROUND_MODES = ["stretch", "fixed", "parallax"] as const;
+export type BackgroundMode = (typeof BACKGROUND_MODES)[number];
 /** Вид заставки перед открытием приглашения. */
 export const ENVELOPE_STYLES = ["seal", "veil", "flap", "curtains", "book"] as const;
 /** Значки пунктов программы (вид «С иконками»). */
@@ -240,6 +246,9 @@ export const themeSchema = z.object({
   font: z.enum(FONTS),
   bodyFont: z.enum(BODY_FONTS).default("auto"),
   background: z.string().max(500).nullable(),
+  backgroundMode: z.enum(BACKGROUND_MODES).default("stretch"),
+  /** Приглушение фонового фото цветом фона палитры: 0 — фото как есть, 0.9 — почти не видно. */
+  backgroundDim: z.number().min(0, "Приглушение фона от 0 до 0.9").max(0.9, "Приглушение фона от 0 до 0.9").default(0.7),
   texture: z.enum(TEXTURES).default("none"),
   decor: z.object({
     type: z.enum(DECOR_TYPES),

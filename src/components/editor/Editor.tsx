@@ -324,7 +324,8 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
   const previewScreen = (
     // isolate: слои приглашения (заливка выбранного блока, украшения) не выходят поверх шторки и нижней панели.
     <div className="relative isolate h-full">
-      <div ref={previewRef} className="editor-pick h-full overflow-y-auto" data-testid="preview" onClickCapture={pickFromPreview}>
+      {/* container-type: size — высота экрана превью для фона страницы (100cqh в PageBackground). */}
+      <div ref={previewRef} className="editor-pick h-full overflow-y-auto [container-type:size]" data-testid="preview" onClickCapture={pickFromPreview}>
         <InvitationView key={previewKey} data={data} slug={slug} preview selectedBlockId={expanded} />
       </div>
       <DecorLayer key={previewKey} decor={data.theme.decor} contained />

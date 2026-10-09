@@ -68,7 +68,9 @@ describe("InvitationView", () => {
   });
 
   it("прозрачность фона применяется к слою фона, а не к содержимому блока", () => {
-    const data = updateBlock(createDefaultInvitation(), "program", { surfaceOpacity: 0.4 });
+    // Бумагу задаём сами: в «Кремовой классике» блоки лежат прямо на фоне страницы.
+    const base = updateBlock(createDefaultInvitation(), "calendar", { surface: "paper" });
+    const data = updateBlock(base, "program", { surface: "paper", surfaceOpacity: 0.4 });
     const { container } = render(<InvitationView data={data} slug="demo" />);
     const program = section(container, "program");
     const layer = within(program).getByTestId("surface-layer");

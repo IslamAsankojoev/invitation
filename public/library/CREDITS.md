@@ -159,7 +159,7 @@ pngwing.com сам ничего не лицензирует (пометка «No
 
 | Файл | Что | Автор | Лицензия | Источник |
 |---|---|---|---|---|
-| `cream-classic-hero.webp` | Кремовый шёлк с веткой | toichakyru.com | уточняется (pinterest-references) | toichakyru.com/images/pinterest-references/gold-clean.png |
+| `cream-classic-silk.webp` | Кремовый шёлк с веткой (фон страницы) | toichakyru.com | уточняется (pinterest-references) | toichakyru.com/images/pinterest-references/gold-clean.png |
 | `rose-garden-hero.webp` | Пара в калпаке на закате в горах | toichakyru.com | Собственность проекта | toichakyru.com/images/hero.jpg |
 | `golden-autumn-hero.webp` | Невеста в красном с украшениями | toichakyru.com | Собственность проекта | toichakyru.com/images/template-restored/kyz-gold-bride-hero.webp |
 | `starry-night-hero.webp` | Пара, тёмно-синее платье | toichakyru.com | уточняется (wedding-references) | toichakyru.com/images/wedding-references/stars-hero-clean.png |

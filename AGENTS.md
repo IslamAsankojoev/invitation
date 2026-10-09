@@ -62,7 +62,7 @@ build`, регион функций `dub1` (vercel.json) — рядом с ба�
 `NEXT_DIST_DIR=.next-build npx next build` (отдельная папка, чтобы не мешать запущенному dev-серверу; после сборки
 верни `tsconfig.json`/`next-env.d.ts`, Next дописывает туда `.next-build/types`).
 
-Текущее состояние: **360 тестов Vitest, E2E и `next build` проходят** (после шаблонов по примерам). Края, фоновые
+Текущее состояние: **374 теста Vitest, E2E и `next build` проходят** (после шаблонов по примерам). Края, фоновые
 картинки, ширина и стиль текста всё ещё без своих тестов — см. «Долг по тестам» в `next-blocks.md`.
 
 Если порт 3000 занят другим dev-сервером — в `.claude/launch.json` есть `dev-3200` (своя папка `.next-3200`).
@@ -155,6 +155,8 @@ InvitationData
 │  │        pacifico, amatic, playfair, prata, forum, yeseva, cormorant-sc, oranienbaum, poiret, comfortaa)
 │  ├─ bodyFont: auto | cormorant | lora | eb-garamond | playfair | old-standard | pt-serif | montserrat | raleway | manrope | inter
 │  ├─ background: url | null            фоновое фото страницы
+│  ├─ backgroundMode: stretch | fixed | parallax   как ведёт себя фон (по умолчанию stretch — как до 1.1.0)
+│  ├─ backgroundDim 0–0.9               приглушение фона цветом --bg (по умолчанию 0.7)
 │  ├─ texture: none | halftone | speckle | grain | linen | grid | diagonal | hearts | diamonds | flourish | stars | watercolor
 │  ├─ decor: { type: none|image|petals|sakura|confetti|snow, image: url|null, color: #hex, density 0–60, size 0.5–3,
 │  │           speed 0.3–3, pop?: boolean (мини-игра; не задано = включено) }
@@ -307,6 +309,12 @@ InvitationData
   Dresscode (кружки цветов), Rsvp (форма, степпер гостей, honeypot `website`, в превью не отправляет).
 - `DecorLayer`: canvas `fixed` (в превью `absolute`), `pointer-events: none`, частицы из `decorDrawers`,
   тип `image` рисует картинку с «переворотом» (scaleX), `prefers-reduced-motion` → статично.
+- `PageBackground`: фоновое фото страницы. `stretch` — на всю высоту приглашения, едет с ним; `fixed`/`parallax` —
+  «окно» `sticky top-0 h-[100cqh]` в слое `absolute inset-0`: содержимое едет поверх, у параллакса картинка на 35%
+  выше окна и смещается по прогрессу прокрутки (окно или скролл-контейнер превью). sticky, а не `fixed`, — чтобы
+  фон оставался в рамке телефона; поэтому корень приглашения — `overflow-clip` (hidden сделал бы его скролл-
+  контейнером), а скролл-контейнер превью — `container-type: size` (у гостя cqh = высоте экрана).
+  В редакторе — «Оформление» → «Фон страницы»: фото, «Как ведёт себя фон», «Приглушение».
 - `TextureLayer`: узоры нарисованы чёрным; светлая тема → `multiply`, тёмная → `invert(1)` + `screen`;
   `tinted` (акварель на `--accent`) — как есть.
 - Стили приглашения — классы `inv-*` в `globals.css` (`.inv-btn`, `.inv-input`, `.inv-field`, `.inv-choice`,
@@ -733,6 +741,8 @@ Vercel (Postgres + migrate уже сделаны), rate limit в Redis, чист
     Этап 5: нажатие на блок в превью открывает его, открытый блок подсвечен заливкой цвета шаблона.
     Этап 6: сводки под названиями блоков и «Что осталось заполнить». Этап 7 (на пробу): телефонный режим — превью
     на весь экран и панель-шторка. Коммит `ux-v1` (ветка `ux-v1`) — состояние до переделки.
+24. Формат 1.1.0: фон страницы — `theme.backgroundMode` (параллакс / неподвижный / на всю высоту) и
+    `theme.backgroundDim`. «Кремовая классика» — шёлк на всю страницу с параллаксом, блоки без бумажных фонов (по приглашению владельца).
 23. Аудит по правилам ui-ux-pro-max (ветка `ui-ux-pro-max-skill`): главная — два столбца карточек на телефоне, вся
     карточка нажимается, три шага сценария; редактор — «Поделиться», шторка без дубля вкладок и со свайпом, крупные
     зоны нажатия; ответы гостей — карточки на телефоне; 403 с выходом на главную; поля ≥ 16 px; safe-area.

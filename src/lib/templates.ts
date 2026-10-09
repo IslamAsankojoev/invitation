@@ -47,7 +47,8 @@ export type Template = {
   name: string;
   description: string;
   /** Тема; заголовки по умолчанию — капителью. */
-  theme: Omit<Theme, "headings" | "ornamentMotion"> & { headings?: Headings; ornamentMotion?: Theme["ornamentMotion"] };
+  theme: Omit<Theme, "headings" | "ornamentMotion" | "backgroundMode" | "backgroundDim"> &
+    Partial<Pick<Theme, "headings" | "ornamentMotion" | "backgroundMode" | "backgroundDim">>;
   /** Оформление по типам блоков; незаданное сбрасывается к «классика, без фона, без украшений». */
   blocks: { [K in BlockType]?: Partial<BlockDesign<K>> };
   /** Цвета дресс-кода, подобранные под палитру шаблона. */
@@ -101,17 +102,19 @@ const plainDesign: BlockDesign = {
 export const templates: Template[] = [
   {
     id: "cream-classic",
-    heroPhoto: photo("cream-classic-hero"),
     address: "г. Алматы, пр. Абая, 1",
     heroNames: "Айгерим & Нурлан",
     name: "Кремовая классика",
-    description: "Сухоцветы, бумага ручной работы, пергамент, бант из бечёвки и лепестки роз.",
+    description: "Кремовый шёлк, сухоцветы, бумага ручной работы, бант из бечёвки и лепестки роз.",
     theme: {
       palette: "cream",
       font: "script",
       bodyFont: "auto",
-      background: null,
-      texture: "halftone",
+      // Кремовый шёлк на всю страницу, медленно едет при прокрутке.
+      background: photo("cream-classic-silk"),
+      backgroundMode: "parallax",
+      backgroundDim: 0.2,
+      texture: "none",
       decor: { type: "image", image: lib("petal-red"), color: "#c0392b", density: 14, size: 1, speed: 1 },
       envelope: { ornament: lib("dried-botanical"), style: "seal" },
       motion: { style: "elegant", speed: 1 },
@@ -123,9 +126,8 @@ export const templates: Template[] = [
           orn("dried-botanical", "bottom-left", { size: 180, rotate: 180 }),
         ],
       },
-      calendar: { surface: "paper" },
-      story: { surface: "notebook" },
-      program: { surface: "paper", ornaments: [orn("twine-bow-wide", "top-right", { size: 120, rotate: 8 })] },
+      // Без бумажных фонов: блоки лежат прямо на шёлке фона страницы.
+      program: { ornaments: [orn("twine-bow-wide", "top-right", { size: 120, rotate: 8 })] },
       dresscode: { ornaments: [orn("dried-botanical", "bottom-left", { size: 120, opacity: 0.7 })] },
       location: { surface: "card" },
       rsvp: {
@@ -856,6 +858,8 @@ function designFor(template: Template, type: BlockType, n = 0): BlockDesign {
 /** Тема шаблона — глубокая копия (вложенные decor/envelope не должны быть общими с константой шаблона). */
 const themeOf = (template: Template): Theme => ({
   headings: "caps",
+  backgroundMode: "stretch",
+  backgroundDim: 0.7,
   ornamentMotion: { ...DEFAULT_ORNAMENT_MOTION },
   ...structuredClone(template.theme),
 });
@@ -1031,7 +1035,13 @@ export function applyTemplate(data: InvitationData, template: Template): Invitat
   const seen: Partial<Record<BlockType, number>> = {};
   return {
     ...data,
-    theme: { ...themeOf(template), background: data.theme.background },
+    // Фоновое фото страницы — содержимое, как фото блоков: шаблон его не трогает (и как оно ведёт себя — тоже).
+    theme: {
+      ...themeOf(template),
+      background: data.theme.background,
+      backgroundMode: data.theme.backgroundMode,
+      backgroundDim: data.theme.backgroundDim,
+    },
     blocks: data.blocks.map((block) => {
       const n = (seen[block.type] = (seen[block.type] ?? -1) + 1);
       // Копия: украшения и стили надписей не должны быть общими с константой шаблона.

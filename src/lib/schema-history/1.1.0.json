@@ -1,0 +1,5097 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "blocks": {
+      "items": {
+        "anyOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "bgBlur": {
+                "default": 0,
+                "maximum": 24,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgColor": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "bgDarken": {
+                "default": 0,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgDim": {
+                "default": 0.35,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgImage": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "date": {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2})?$",
+                "type": "string"
+              },
+              "edgeBottom": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeBottomSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "edgeTop": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeTopSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "entrance": {
+                "default": "auto",
+                "enum": [
+                  "auto",
+                  "rise",
+                  "fade",
+                  "slide",
+                  "zoom",
+                  "blur",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[\\w-]{1,40}$",
+                "type": "string"
+              },
+              "label": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "names": {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              "ornaments": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "flip": {
+                      "type": "boolean"
+                    },
+                    "motion": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "enter": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "side",
+                            "fade",
+                            "rise",
+                            "drop",
+                            "zoom",
+                            "grow",
+                            "spin",
+                            "blur",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "enterSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        },
+                        "idle": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "sway",
+                            "swing",
+                            "float",
+                            "breathe",
+                            "flutter",
+                            "shimmer",
+                            "spin",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "idleAmplitude": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.2,
+                          "type": "number"
+                        },
+                        "idleSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "opacity": {
+                      "maximum": 1,
+                      "minimum": 0.1,
+                      "type": "number"
+                    },
+                    "position": {
+                      "enum": [
+                        "top-left",
+                        "top",
+                        "top-right",
+                        "left",
+                        "right",
+                        "bottom-left",
+                        "bottom",
+                        "bottom-right",
+                        "center"
+                      ],
+                      "type": "string"
+                    },
+                    "rotate": {
+                      "maximum": 180,
+                      "minimum": -180,
+                      "type": "number"
+                    },
+                    "size": {
+                      "maximum": 400,
+                      "minimum": 40,
+                      "type": "number"
+                    },
+                    "src": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "position",
+                    "size",
+                    "rotate",
+                    "flip",
+                    "opacity"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "photo": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "scriptLine": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "subtitle": {
+                "maxLength": 200,
+                "type": "string"
+              },
+              "surface": {
+                "default": "plain",
+                "enum": [
+                  "plain",
+                  "paper",
+                  "card",
+                  "vellum",
+                  "crumpled",
+                  "notebook",
+                  "sheet-holes",
+                  "sheet-margin",
+                  "sheet-torn",
+                  "note-strip",
+                  "note-lined",
+                  "note-kraft",
+                  "note-curl",
+                  "scroll",
+                  "parchment",
+                  "parchment-burnt",
+                  "sticker-yellow",
+                  "sticker-clip",
+                  "sticker-pin",
+                  "sticker-pink",
+                  "sticker-orange",
+                  "sticker-tape",
+                  "note-burlap",
+                  "fabric-lilac",
+                  "label-lilac",
+                  "card-clematis",
+                  "label-vintage",
+                  "ticket-admit",
+                  "ticket-gold",
+                  "ticket-pink",
+                  "ticket-stubs",
+                  "frame",
+                  "frame-gold",
+                  "frame-baroque",
+                  "frame-filigree",
+                  "frame-roses",
+                  "plate",
+                  "plate-roses",
+                  "doily-paper",
+                  "doily-kraft",
+                  "doily-lace",
+                  "doily-pink",
+                  "wreath-garden",
+                  "wreath-blue",
+                  "wreath-peony"
+                ],
+                "type": "string"
+              },
+              "surfaceOpacity": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0.1,
+                "type": "number"
+              },
+              "textStyles": {
+                "additionalProperties": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "color": {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    },
+                    "font": {
+                      "enum": [
+                        "script",
+                        "serif",
+                        "sans",
+                        "marck",
+                        "bad-script",
+                        "caveat",
+                        "lobster",
+                        "pacifico",
+                        "amatic",
+                        "playfair",
+                        "prata",
+                        "forum",
+                        "yeseva",
+                        "cormorant-sc",
+                        "oranienbaum",
+                        "poiret",
+                        "comfortaa",
+                        "comforter",
+                        "comforter-brush",
+                        "alice",
+                        "kurale",
+                        "philosopher",
+                        "ruslan",
+                        "cormorant-unicase",
+                        "cormorant-infant",
+                        "playfair-sc",
+                        "gabriela",
+                        "pattaya",
+                        "bellota",
+                        "cormorant",
+                        "lora",
+                        "eb-garamond",
+                        "old-standard",
+                        "pt-serif",
+                        "montserrat",
+                        "raleway",
+                        "manrope",
+                        "inter",
+                        "literata",
+                        "spectral",
+                        "vollkorn",
+                        "alegreya",
+                        "jost",
+                        "arsenal"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "default": {},
+                "propertyNames": {
+                  "maxLength": 40
+                },
+                "type": "object"
+              },
+              "title": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "type": {
+                "const": "hero",
+                "type": "string"
+              },
+              "variant": {
+                "default": "classic",
+                "enum": [
+                  "classic",
+                  "arch",
+                  "polaroid",
+                  "minimal",
+                  "cover",
+                  "monogram",
+                  "ticket"
+                ],
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "width": {
+                "default": "content",
+                "enum": [
+                  "content",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "visible",
+              "names",
+              "date"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "bgBlur": {
+                "default": 0,
+                "maximum": 24,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgColor": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "bgDarken": {
+                "default": 0,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgDim": {
+                "default": 0.35,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgImage": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "edgeBottom": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeBottomSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "edgeTop": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeTopSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "entrance": {
+                "default": "auto",
+                "enum": [
+                  "auto",
+                  "rise",
+                  "fade",
+                  "slide",
+                  "zoom",
+                  "blur",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[\\w-]{1,40}$",
+                "type": "string"
+              },
+              "ornaments": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "flip": {
+                      "type": "boolean"
+                    },
+                    "motion": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "enter": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "side",
+                            "fade",
+                            "rise",
+                            "drop",
+                            "zoom",
+                            "grow",
+                            "spin",
+                            "blur",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "enterSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        },
+                        "idle": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "sway",
+                            "swing",
+                            "float",
+                            "breathe",
+                            "flutter",
+                            "shimmer",
+                            "spin",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "idleAmplitude": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.2,
+                          "type": "number"
+                        },
+                        "idleSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "opacity": {
+                      "maximum": 1,
+                      "minimum": 0.1,
+                      "type": "number"
+                    },
+                    "position": {
+                      "enum": [
+                        "top-left",
+                        "top",
+                        "top-right",
+                        "left",
+                        "right",
+                        "bottom-left",
+                        "bottom",
+                        "bottom-right",
+                        "center"
+                      ],
+                      "type": "string"
+                    },
+                    "rotate": {
+                      "maximum": 180,
+                      "minimum": -180,
+                      "type": "number"
+                    },
+                    "size": {
+                      "maximum": 400,
+                      "minimum": 40,
+                      "type": "number"
+                    },
+                    "src": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "position",
+                    "size",
+                    "rotate",
+                    "flip",
+                    "opacity"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "scriptLine": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "surface": {
+                "default": "plain",
+                "enum": [
+                  "plain",
+                  "paper",
+                  "card",
+                  "vellum",
+                  "crumpled",
+                  "notebook",
+                  "sheet-holes",
+                  "sheet-margin",
+                  "sheet-torn",
+                  "note-strip",
+                  "note-lined",
+                  "note-kraft",
+                  "note-curl",
+                  "scroll",
+                  "parchment",
+                  "parchment-burnt",
+                  "sticker-yellow",
+                  "sticker-clip",
+                  "sticker-pin",
+                  "sticker-pink",
+                  "sticker-orange",
+                  "sticker-tape",
+                  "note-burlap",
+                  "fabric-lilac",
+                  "label-lilac",
+                  "card-clematis",
+                  "label-vintage",
+                  "ticket-admit",
+                  "ticket-gold",
+                  "ticket-pink",
+                  "ticket-stubs",
+                  "frame",
+                  "frame-gold",
+                  "frame-baroque",
+                  "frame-filigree",
+                  "frame-roses",
+                  "plate",
+                  "plate-roses",
+                  "doily-paper",
+                  "doily-kraft",
+                  "doily-lace",
+                  "doily-pink",
+                  "wreath-garden",
+                  "wreath-blue",
+                  "wreath-peony"
+                ],
+                "type": "string"
+              },
+              "surfaceOpacity": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0.1,
+                "type": "number"
+              },
+              "textStyles": {
+                "additionalProperties": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "color": {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    },
+                    "font": {
+                      "enum": [
+                        "script",
+                        "serif",
+                        "sans",
+                        "marck",
+                        "bad-script",
+                        "caveat",
+                        "lobster",
+                        "pacifico",
+                        "amatic",
+                        "playfair",
+                        "prata",
+                        "forum",
+                        "yeseva",
+                        "cormorant-sc",
+                        "oranienbaum",
+                        "poiret",
+                        "comfortaa",
+                        "comforter",
+                        "comforter-brush",
+                        "alice",
+                        "kurale",
+                        "philosopher",
+                        "ruslan",
+                        "cormorant-unicase",
+                        "cormorant-infant",
+                        "playfair-sc",
+                        "gabriela",
+                        "pattaya",
+                        "bellota",
+                        "cormorant",
+                        "lora",
+                        "eb-garamond",
+                        "old-standard",
+                        "pt-serif",
+                        "montserrat",
+                        "raleway",
+                        "manrope",
+                        "inter",
+                        "literata",
+                        "spectral",
+                        "vollkorn",
+                        "alegreya",
+                        "jost",
+                        "arsenal"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "default": {},
+                "propertyNames": {
+                  "maxLength": 40
+                },
+                "type": "object"
+              },
+              "title": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "type": {
+                "const": "countdown",
+                "type": "string"
+              },
+              "variant": {
+                "default": "classic",
+                "enum": [
+                  "classic",
+                  "circles",
+                  "cards"
+                ],
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "width": {
+                "default": "content",
+                "enum": [
+                  "content",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "visible"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "bgBlur": {
+                "default": 0,
+                "maximum": 24,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgColor": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "bgDarken": {
+                "default": 0,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgDim": {
+                "default": 0.35,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgImage": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "edgeBottom": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeBottomSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "edgeTop": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeTopSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "entrance": {
+                "default": "auto",
+                "enum": [
+                  "auto",
+                  "rise",
+                  "fade",
+                  "slide",
+                  "zoom",
+                  "blur",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[\\w-]{1,40}$",
+                "type": "string"
+              },
+              "ornaments": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "flip": {
+                      "type": "boolean"
+                    },
+                    "motion": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "enter": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "side",
+                            "fade",
+                            "rise",
+                            "drop",
+                            "zoom",
+                            "grow",
+                            "spin",
+                            "blur",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "enterSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        },
+                        "idle": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "sway",
+                            "swing",
+                            "float",
+                            "breathe",
+                            "flutter",
+                            "shimmer",
+                            "spin",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "idleAmplitude": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.2,
+                          "type": "number"
+                        },
+                        "idleSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "opacity": {
+                      "maximum": 1,
+                      "minimum": 0.1,
+                      "type": "number"
+                    },
+                    "position": {
+                      "enum": [
+                        "top-left",
+                        "top",
+                        "top-right",
+                        "left",
+                        "right",
+                        "bottom-left",
+                        "bottom",
+                        "bottom-right",
+                        "center"
+                      ],
+                      "type": "string"
+                    },
+                    "rotate": {
+                      "maximum": 180,
+                      "minimum": -180,
+                      "type": "number"
+                    },
+                    "size": {
+                      "maximum": 400,
+                      "minimum": 40,
+                      "type": "number"
+                    },
+                    "src": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "position",
+                    "size",
+                    "rotate",
+                    "flip",
+                    "opacity"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "scriptLine": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "surface": {
+                "default": "plain",
+                "enum": [
+                  "plain",
+                  "paper",
+                  "card",
+                  "vellum",
+                  "crumpled",
+                  "notebook",
+                  "sheet-holes",
+                  "sheet-margin",
+                  "sheet-torn",
+                  "note-strip",
+                  "note-lined",
+                  "note-kraft",
+                  "note-curl",
+                  "scroll",
+                  "parchment",
+                  "parchment-burnt",
+                  "sticker-yellow",
+                  "sticker-clip",
+                  "sticker-pin",
+                  "sticker-pink",
+                  "sticker-orange",
+                  "sticker-tape",
+                  "note-burlap",
+                  "fabric-lilac",
+                  "label-lilac",
+                  "card-clematis",
+                  "label-vintage",
+                  "ticket-admit",
+                  "ticket-gold",
+                  "ticket-pink",
+                  "ticket-stubs",
+                  "frame",
+                  "frame-gold",
+                  "frame-baroque",
+                  "frame-filigree",
+                  "frame-roses",
+                  "plate",
+                  "plate-roses",
+                  "doily-paper",
+                  "doily-kraft",
+                  "doily-lace",
+                  "doily-pink",
+                  "wreath-garden",
+                  "wreath-blue",
+                  "wreath-peony"
+                ],
+                "type": "string"
+              },
+              "surfaceOpacity": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0.1,
+                "type": "number"
+              },
+              "textStyles": {
+                "additionalProperties": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "color": {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    },
+                    "font": {
+                      "enum": [
+                        "script",
+                        "serif",
+                        "sans",
+                        "marck",
+                        "bad-script",
+                        "caveat",
+                        "lobster",
+                        "pacifico",
+                        "amatic",
+                        "playfair",
+                        "prata",
+                        "forum",
+                        "yeseva",
+                        "cormorant-sc",
+                        "oranienbaum",
+                        "poiret",
+                        "comfortaa",
+                        "comforter",
+                        "comforter-brush",
+                        "alice",
+                        "kurale",
+                        "philosopher",
+                        "ruslan",
+                        "cormorant-unicase",
+                        "cormorant-infant",
+                        "playfair-sc",
+                        "gabriela",
+                        "pattaya",
+                        "bellota",
+                        "cormorant",
+                        "lora",
+                        "eb-garamond",
+                        "old-standard",
+                        "pt-serif",
+                        "montserrat",
+                        "raleway",
+                        "manrope",
+                        "inter",
+                        "literata",
+                        "spectral",
+                        "vollkorn",
+                        "alegreya",
+                        "jost",
+                        "arsenal"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "default": {},
+                "propertyNames": {
+                  "maxLength": 40
+                },
+                "type": "object"
+              },
+              "title": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "type": {
+                "const": "calendar",
+                "type": "string"
+              },
+              "variant": {
+                "default": "classic",
+                "enum": [
+                  "classic",
+                  "date",
+                  "week",
+                  "tearoff"
+                ],
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "width": {
+                "default": "content",
+                "enum": [
+                  "content",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "visible"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "bgBlur": {
+                "default": 0,
+                "maximum": 24,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgColor": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "bgDarken": {
+                "default": 0,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgDim": {
+                "default": 0.35,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgImage": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "edgeBottom": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeBottomSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "edgeTop": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeTopSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "entrance": {
+                "default": "auto",
+                "enum": [
+                  "auto",
+                  "rise",
+                  "fade",
+                  "slide",
+                  "zoom",
+                  "blur",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[\\w-]{1,40}$",
+                "type": "string"
+              },
+              "ornaments": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "flip": {
+                      "type": "boolean"
+                    },
+                    "motion": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "enter": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "side",
+                            "fade",
+                            "rise",
+                            "drop",
+                            "zoom",
+                            "grow",
+                            "spin",
+                            "blur",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "enterSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        },
+                        "idle": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "sway",
+                            "swing",
+                            "float",
+                            "breathe",
+                            "flutter",
+                            "shimmer",
+                            "spin",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "idleAmplitude": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.2,
+                          "type": "number"
+                        },
+                        "idleSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "opacity": {
+                      "maximum": 1,
+                      "minimum": 0.1,
+                      "type": "number"
+                    },
+                    "position": {
+                      "enum": [
+                        "top-left",
+                        "top",
+                        "top-right",
+                        "left",
+                        "right",
+                        "bottom-left",
+                        "bottom",
+                        "bottom-right",
+                        "center"
+                      ],
+                      "type": "string"
+                    },
+                    "rotate": {
+                      "maximum": 180,
+                      "minimum": -180,
+                      "type": "number"
+                    },
+                    "size": {
+                      "maximum": 400,
+                      "minimum": 40,
+                      "type": "number"
+                    },
+                    "src": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "position",
+                    "size",
+                    "rotate",
+                    "flip",
+                    "opacity"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "photo": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "scriptLine": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "surface": {
+                "default": "plain",
+                "enum": [
+                  "plain",
+                  "paper",
+                  "card",
+                  "vellum",
+                  "crumpled",
+                  "notebook",
+                  "sheet-holes",
+                  "sheet-margin",
+                  "sheet-torn",
+                  "note-strip",
+                  "note-lined",
+                  "note-kraft",
+                  "note-curl",
+                  "scroll",
+                  "parchment",
+                  "parchment-burnt",
+                  "sticker-yellow",
+                  "sticker-clip",
+                  "sticker-pin",
+                  "sticker-pink",
+                  "sticker-orange",
+                  "sticker-tape",
+                  "note-burlap",
+                  "fabric-lilac",
+                  "label-lilac",
+                  "card-clematis",
+                  "label-vintage",
+                  "ticket-admit",
+                  "ticket-gold",
+                  "ticket-pink",
+                  "ticket-stubs",
+                  "frame",
+                  "frame-gold",
+                  "frame-baroque",
+                  "frame-filigree",
+                  "frame-roses",
+                  "plate",
+                  "plate-roses",
+                  "doily-paper",
+                  "doily-kraft",
+                  "doily-lace",
+                  "doily-pink",
+                  "wreath-garden",
+                  "wreath-blue",
+                  "wreath-peony"
+                ],
+                "type": "string"
+              },
+              "surfaceOpacity": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0.1,
+                "type": "number"
+              },
+              "text": {
+                "maxLength": 5000,
+                "type": "string"
+              },
+              "textStyles": {
+                "additionalProperties": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "color": {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    },
+                    "font": {
+                      "enum": [
+                        "script",
+                        "serif",
+                        "sans",
+                        "marck",
+                        "bad-script",
+                        "caveat",
+                        "lobster",
+                        "pacifico",
+                        "amatic",
+                        "playfair",
+                        "prata",
+                        "forum",
+                        "yeseva",
+                        "cormorant-sc",
+                        "oranienbaum",
+                        "poiret",
+                        "comfortaa",
+                        "comforter",
+                        "comforter-brush",
+                        "alice",
+                        "kurale",
+                        "philosopher",
+                        "ruslan",
+                        "cormorant-unicase",
+                        "cormorant-infant",
+                        "playfair-sc",
+                        "gabriela",
+                        "pattaya",
+                        "bellota",
+                        "cormorant",
+                        "lora",
+                        "eb-garamond",
+                        "old-standard",
+                        "pt-serif",
+                        "montserrat",
+                        "raleway",
+                        "manrope",
+                        "inter",
+                        "literata",
+                        "spectral",
+                        "vollkorn",
+                        "alegreya",
+                        "jost",
+                        "arsenal"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "default": {},
+                "propertyNames": {
+                  "maxLength": 40
+                },
+                "type": "object"
+              },
+              "title": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "type": {
+                "const": "story",
+                "type": "string"
+              },
+              "variant": {
+                "default": "classic",
+                "enum": [
+                  "classic",
+                  "photo",
+                  "letter"
+                ],
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "width": {
+                "default": "content",
+                "enum": [
+                  "content",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "visible",
+              "text"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "bgBlur": {
+                "default": 0,
+                "maximum": 24,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgColor": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "bgDarken": {
+                "default": 0,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgDim": {
+                "default": 0.35,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgImage": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "edgeBottom": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeBottomSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "edgeTop": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeTopSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "entrance": {
+                "default": "auto",
+                "enum": [
+                  "auto",
+                  "rise",
+                  "fade",
+                  "slide",
+                  "zoom",
+                  "blur",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[\\w-]{1,40}$",
+                "type": "string"
+              },
+              "items": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "description": {
+                      "maxLength": 300,
+                      "type": "string"
+                    },
+                    "icon": {
+                      "enum": [
+                        "rings",
+                        "glasses",
+                        "cake",
+                        "dinner",
+                        "music",
+                        "camera",
+                        "car",
+                        "heart",
+                        "church",
+                        "dance"
+                      ],
+                      "type": "string"
+                    },
+                    "time": {
+                      "maxLength": 20,
+                      "type": "string"
+                    },
+                    "title": {
+                      "maxLength": 200,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "time",
+                    "title"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 30,
+                "type": "array"
+              },
+              "ornaments": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "flip": {
+                      "type": "boolean"
+                    },
+                    "motion": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "enter": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "side",
+                            "fade",
+                            "rise",
+                            "drop",
+                            "zoom",
+                            "grow",
+                            "spin",
+                            "blur",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "enterSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        },
+                        "idle": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "sway",
+                            "swing",
+                            "float",
+                            "breathe",
+                            "flutter",
+                            "shimmer",
+                            "spin",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "idleAmplitude": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.2,
+                          "type": "number"
+                        },
+                        "idleSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "opacity": {
+                      "maximum": 1,
+                      "minimum": 0.1,
+                      "type": "number"
+                    },
+                    "position": {
+                      "enum": [
+                        "top-left",
+                        "top",
+                        "top-right",
+                        "left",
+                        "right",
+                        "bottom-left",
+                        "bottom",
+                        "bottom-right",
+                        "center"
+                      ],
+                      "type": "string"
+                    },
+                    "rotate": {
+                      "maximum": 180,
+                      "minimum": -180,
+                      "type": "number"
+                    },
+                    "size": {
+                      "maximum": 400,
+                      "minimum": 40,
+                      "type": "number"
+                    },
+                    "src": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "position",
+                    "size",
+                    "rotate",
+                    "flip",
+                    "opacity"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "scriptLine": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "surface": {
+                "default": "plain",
+                "enum": [
+                  "plain",
+                  "paper",
+                  "card",
+                  "vellum",
+                  "crumpled",
+                  "notebook",
+                  "sheet-holes",
+                  "sheet-margin",
+                  "sheet-torn",
+                  "note-strip",
+                  "note-lined",
+                  "note-kraft",
+                  "note-curl",
+                  "scroll",
+                  "parchment",
+                  "parchment-burnt",
+                  "sticker-yellow",
+                  "sticker-clip",
+                  "sticker-pin",
+                  "sticker-pink",
+                  "sticker-orange",
+                  "sticker-tape",
+                  "note-burlap",
+                  "fabric-lilac",
+                  "label-lilac",
+                  "card-clematis",
+                  "label-vintage",
+                  "ticket-admit",
+                  "ticket-gold",
+                  "ticket-pink",
+                  "ticket-stubs",
+                  "frame",
+                  "frame-gold",
+                  "frame-baroque",
+                  "frame-filigree",
+                  "frame-roses",
+                  "plate",
+                  "plate-roses",
+                  "doily-paper",
+                  "doily-kraft",
+                  "doily-lace",
+                  "doily-pink",
+                  "wreath-garden",
+                  "wreath-blue",
+                  "wreath-peony"
+                ],
+                "type": "string"
+              },
+              "surfaceOpacity": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0.1,
+                "type": "number"
+              },
+              "textStyles": {
+                "additionalProperties": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "color": {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    },
+                    "font": {
+                      "enum": [
+                        "script",
+                        "serif",
+                        "sans",
+                        "marck",
+                        "bad-script",
+                        "caveat",
+                        "lobster",
+                        "pacifico",
+                        "amatic",
+                        "playfair",
+                        "prata",
+                        "forum",
+                        "yeseva",
+                        "cormorant-sc",
+                        "oranienbaum",
+                        "poiret",
+                        "comfortaa",
+                        "comforter",
+                        "comforter-brush",
+                        "alice",
+                        "kurale",
+                        "philosopher",
+                        "ruslan",
+                        "cormorant-unicase",
+                        "cormorant-infant",
+                        "playfair-sc",
+                        "gabriela",
+                        "pattaya",
+                        "bellota",
+                        "cormorant",
+                        "lora",
+                        "eb-garamond",
+                        "old-standard",
+                        "pt-serif",
+                        "montserrat",
+                        "raleway",
+                        "manrope",
+                        "inter",
+                        "literata",
+                        "spectral",
+                        "vollkorn",
+                        "alegreya",
+                        "jost",
+                        "arsenal"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "default": {},
+                "propertyNames": {
+                  "maxLength": 40
+                },
+                "type": "object"
+              },
+              "title": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "type": {
+                "const": "program",
+                "type": "string"
+              },
+              "variant": {
+                "default": "classic",
+                "enum": [
+                  "classic",
+                  "cards",
+                  "icons"
+                ],
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "width": {
+                "default": "content",
+                "enum": [
+                  "content",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "visible",
+              "items"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "address": {
+                "maxLength": 300,
+                "type": "string"
+              },
+              "bgBlur": {
+                "default": 0,
+                "maximum": 24,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgColor": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "bgDarken": {
+                "default": 0,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgDim": {
+                "default": 0.35,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgImage": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "edgeBottom": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeBottomSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "edgeTop": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeTopSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "entrance": {
+                "default": "auto",
+                "enum": [
+                  "auto",
+                  "rise",
+                  "fade",
+                  "slide",
+                  "zoom",
+                  "blur",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[\\w-]{1,40}$",
+                "type": "string"
+              },
+              "mapUrl": {
+                "format": "uri",
+                "type": "string"
+              },
+              "ornaments": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "flip": {
+                      "type": "boolean"
+                    },
+                    "motion": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "enter": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "side",
+                            "fade",
+                            "rise",
+                            "drop",
+                            "zoom",
+                            "grow",
+                            "spin",
+                            "blur",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "enterSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        },
+                        "idle": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "sway",
+                            "swing",
+                            "float",
+                            "breathe",
+                            "flutter",
+                            "shimmer",
+                            "spin",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "idleAmplitude": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.2,
+                          "type": "number"
+                        },
+                        "idleSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "opacity": {
+                      "maximum": 1,
+                      "minimum": 0.1,
+                      "type": "number"
+                    },
+                    "position": {
+                      "enum": [
+                        "top-left",
+                        "top",
+                        "top-right",
+                        "left",
+                        "right",
+                        "bottom-left",
+                        "bottom",
+                        "bottom-right",
+                        "center"
+                      ],
+                      "type": "string"
+                    },
+                    "rotate": {
+                      "maximum": 180,
+                      "minimum": -180,
+                      "type": "number"
+                    },
+                    "size": {
+                      "maximum": 400,
+                      "minimum": 40,
+                      "type": "number"
+                    },
+                    "src": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "position",
+                    "size",
+                    "rotate",
+                    "flip",
+                    "opacity"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "photo": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "placeName": {
+                "maxLength": 200,
+                "type": "string"
+              },
+              "scriptLine": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "surface": {
+                "default": "plain",
+                "enum": [
+                  "plain",
+                  "paper",
+                  "card",
+                  "vellum",
+                  "crumpled",
+                  "notebook",
+                  "sheet-holes",
+                  "sheet-margin",
+                  "sheet-torn",
+                  "note-strip",
+                  "note-lined",
+                  "note-kraft",
+                  "note-curl",
+                  "scroll",
+                  "parchment",
+                  "parchment-burnt",
+                  "sticker-yellow",
+                  "sticker-clip",
+                  "sticker-pin",
+                  "sticker-pink",
+                  "sticker-orange",
+                  "sticker-tape",
+                  "note-burlap",
+                  "fabric-lilac",
+                  "label-lilac",
+                  "card-clematis",
+                  "label-vintage",
+                  "ticket-admit",
+                  "ticket-gold",
+                  "ticket-pink",
+                  "ticket-stubs",
+                  "frame",
+                  "frame-gold",
+                  "frame-baroque",
+                  "frame-filigree",
+                  "frame-roses",
+                  "plate",
+                  "plate-roses",
+                  "doily-paper",
+                  "doily-kraft",
+                  "doily-lace",
+                  "doily-pink",
+                  "wreath-garden",
+                  "wreath-blue",
+                  "wreath-peony"
+                ],
+                "type": "string"
+              },
+              "surfaceOpacity": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0.1,
+                "type": "number"
+              },
+              "textStyles": {
+                "additionalProperties": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "color": {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    },
+                    "font": {
+                      "enum": [
+                        "script",
+                        "serif",
+                        "sans",
+                        "marck",
+                        "bad-script",
+                        "caveat",
+                        "lobster",
+                        "pacifico",
+                        "amatic",
+                        "playfair",
+                        "prata",
+                        "forum",
+                        "yeseva",
+                        "cormorant-sc",
+                        "oranienbaum",
+                        "poiret",
+                        "comfortaa",
+                        "comforter",
+                        "comforter-brush",
+                        "alice",
+                        "kurale",
+                        "philosopher",
+                        "ruslan",
+                        "cormorant-unicase",
+                        "cormorant-infant",
+                        "playfair-sc",
+                        "gabriela",
+                        "pattaya",
+                        "bellota",
+                        "cormorant",
+                        "lora",
+                        "eb-garamond",
+                        "old-standard",
+                        "pt-serif",
+                        "montserrat",
+                        "raleway",
+                        "manrope",
+                        "inter",
+                        "literata",
+                        "spectral",
+                        "vollkorn",
+                        "alegreya",
+                        "jost",
+                        "arsenal"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "default": {},
+                "propertyNames": {
+                  "maxLength": 40
+                },
+                "type": "object"
+              },
+              "title": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "type": {
+                "const": "location",
+                "type": "string"
+              },
+              "variant": {
+                "default": "classic",
+                "enum": [
+                  "classic",
+                  "postcard",
+                  "minimal"
+                ],
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "width": {
+                "default": "content",
+                "enum": [
+                  "content",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "visible",
+              "placeName",
+              "address"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "bgBlur": {
+                "default": 0,
+                "maximum": 24,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgColor": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "bgDarken": {
+                "default": 0,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgDim": {
+                "default": 0.35,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgImage": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "colors": {
+                "items": {
+                  "pattern": "^#[0-9a-fA-F]{6}$",
+                  "type": "string"
+                },
+                "maxItems": 10,
+                "type": "array"
+              },
+              "edgeBottom": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeBottomSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "edgeTop": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeTopSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "entrance": {
+                "default": "auto",
+                "enum": [
+                  "auto",
+                  "rise",
+                  "fade",
+                  "slide",
+                  "zoom",
+                  "blur",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[\\w-]{1,40}$",
+                "type": "string"
+              },
+              "ornaments": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "flip": {
+                      "type": "boolean"
+                    },
+                    "motion": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "enter": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "side",
+                            "fade",
+                            "rise",
+                            "drop",
+                            "zoom",
+                            "grow",
+                            "spin",
+                            "blur",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "enterSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        },
+                        "idle": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "sway",
+                            "swing",
+                            "float",
+                            "breathe",
+                            "flutter",
+                            "shimmer",
+                            "spin",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "idleAmplitude": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.2,
+                          "type": "number"
+                        },
+                        "idleSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "opacity": {
+                      "maximum": 1,
+                      "minimum": 0.1,
+                      "type": "number"
+                    },
+                    "position": {
+                      "enum": [
+                        "top-left",
+                        "top",
+                        "top-right",
+                        "left",
+                        "right",
+                        "bottom-left",
+                        "bottom",
+                        "bottom-right",
+                        "center"
+                      ],
+                      "type": "string"
+                    },
+                    "rotate": {
+                      "maximum": 180,
+                      "minimum": -180,
+                      "type": "number"
+                    },
+                    "size": {
+                      "maximum": 400,
+                      "minimum": 40,
+                      "type": "number"
+                    },
+                    "src": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "position",
+                    "size",
+                    "rotate",
+                    "flip",
+                    "opacity"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "scriptLine": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "surface": {
+                "default": "plain",
+                "enum": [
+                  "plain",
+                  "paper",
+                  "card",
+                  "vellum",
+                  "crumpled",
+                  "notebook",
+                  "sheet-holes",
+                  "sheet-margin",
+                  "sheet-torn",
+                  "note-strip",
+                  "note-lined",
+                  "note-kraft",
+                  "note-curl",
+                  "scroll",
+                  "parchment",
+                  "parchment-burnt",
+                  "sticker-yellow",
+                  "sticker-clip",
+                  "sticker-pin",
+                  "sticker-pink",
+                  "sticker-orange",
+                  "sticker-tape",
+                  "note-burlap",
+                  "fabric-lilac",
+                  "label-lilac",
+                  "card-clematis",
+                  "label-vintage",
+                  "ticket-admit",
+                  "ticket-gold",
+                  "ticket-pink",
+                  "ticket-stubs",
+                  "frame",
+                  "frame-gold",
+                  "frame-baroque",
+                  "frame-filigree",
+                  "frame-roses",
+                  "plate",
+                  "plate-roses",
+                  "doily-paper",
+                  "doily-kraft",
+                  "doily-lace",
+                  "doily-pink",
+                  "wreath-garden",
+                  "wreath-blue",
+                  "wreath-peony"
+                ],
+                "type": "string"
+              },
+              "surfaceOpacity": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0.1,
+                "type": "number"
+              },
+              "text": {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              "textStyles": {
+                "additionalProperties": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "color": {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    },
+                    "font": {
+                      "enum": [
+                        "script",
+                        "serif",
+                        "sans",
+                        "marck",
+                        "bad-script",
+                        "caveat",
+                        "lobster",
+                        "pacifico",
+                        "amatic",
+                        "playfair",
+                        "prata",
+                        "forum",
+                        "yeseva",
+                        "cormorant-sc",
+                        "oranienbaum",
+                        "poiret",
+                        "comfortaa",
+                        "comforter",
+                        "comforter-brush",
+                        "alice",
+                        "kurale",
+                        "philosopher",
+                        "ruslan",
+                        "cormorant-unicase",
+                        "cormorant-infant",
+                        "playfair-sc",
+                        "gabriela",
+                        "pattaya",
+                        "bellota",
+                        "cormorant",
+                        "lora",
+                        "eb-garamond",
+                        "old-standard",
+                        "pt-serif",
+                        "montserrat",
+                        "raleway",
+                        "manrope",
+                        "inter",
+                        "literata",
+                        "spectral",
+                        "vollkorn",
+                        "alegreya",
+                        "jost",
+                        "arsenal"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "default": {},
+                "propertyNames": {
+                  "maxLength": 40
+                },
+                "type": "object"
+              },
+              "title": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "type": {
+                "const": "dresscode",
+                "type": "string"
+              },
+              "variant": {
+                "default": "classic",
+                "enum": [
+                  "classic",
+                  "stripes",
+                  "chips"
+                ],
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "width": {
+                "default": "content",
+                "enum": [
+                  "content",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "visible",
+              "text",
+              "colors"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "bgBlur": {
+                "default": 0,
+                "maximum": 24,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgColor": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "bgDarken": {
+                "default": 0,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgDim": {
+                "default": 0.35,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgImage": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "deadline": {
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "type": "string"
+              },
+              "edgeBottom": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeBottomSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "edgeTop": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeTopSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "entrance": {
+                "default": "auto",
+                "enum": [
+                  "auto",
+                  "rise",
+                  "fade",
+                  "slide",
+                  "zoom",
+                  "blur",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[\\w-]{1,40}$",
+                "type": "string"
+              },
+              "ornaments": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "flip": {
+                      "type": "boolean"
+                    },
+                    "motion": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "enter": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "side",
+                            "fade",
+                            "rise",
+                            "drop",
+                            "zoom",
+                            "grow",
+                            "spin",
+                            "blur",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "enterSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        },
+                        "idle": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "sway",
+                            "swing",
+                            "float",
+                            "breathe",
+                            "flutter",
+                            "shimmer",
+                            "spin",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "idleAmplitude": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.2,
+                          "type": "number"
+                        },
+                        "idleSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "opacity": {
+                      "maximum": 1,
+                      "minimum": 0.1,
+                      "type": "number"
+                    },
+                    "position": {
+                      "enum": [
+                        "top-left",
+                        "top",
+                        "top-right",
+                        "left",
+                        "right",
+                        "bottom-left",
+                        "bottom",
+                        "bottom-right",
+                        "center"
+                      ],
+                      "type": "string"
+                    },
+                    "rotate": {
+                      "maximum": 180,
+                      "minimum": -180,
+                      "type": "number"
+                    },
+                    "size": {
+                      "maximum": 400,
+                      "minimum": 40,
+                      "type": "number"
+                    },
+                    "src": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "position",
+                    "size",
+                    "rotate",
+                    "flip",
+                    "opacity"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "scriptLine": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "surface": {
+                "default": "plain",
+                "enum": [
+                  "plain",
+                  "paper",
+                  "card",
+                  "vellum",
+                  "crumpled",
+                  "notebook",
+                  "sheet-holes",
+                  "sheet-margin",
+                  "sheet-torn",
+                  "note-strip",
+                  "note-lined",
+                  "note-kraft",
+                  "note-curl",
+                  "scroll",
+                  "parchment",
+                  "parchment-burnt",
+                  "sticker-yellow",
+                  "sticker-clip",
+                  "sticker-pin",
+                  "sticker-pink",
+                  "sticker-orange",
+                  "sticker-tape",
+                  "note-burlap",
+                  "fabric-lilac",
+                  "label-lilac",
+                  "card-clematis",
+                  "label-vintage",
+                  "ticket-admit",
+                  "ticket-gold",
+                  "ticket-pink",
+                  "ticket-stubs",
+                  "frame",
+                  "frame-gold",
+                  "frame-baroque",
+                  "frame-filigree",
+                  "frame-roses",
+                  "plate",
+                  "plate-roses",
+                  "doily-paper",
+                  "doily-kraft",
+                  "doily-lace",
+                  "doily-pink",
+                  "wreath-garden",
+                  "wreath-blue",
+                  "wreath-peony"
+                ],
+                "type": "string"
+              },
+              "surfaceOpacity": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0.1,
+                "type": "number"
+              },
+              "textStyles": {
+                "additionalProperties": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "color": {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    },
+                    "font": {
+                      "enum": [
+                        "script",
+                        "serif",
+                        "sans",
+                        "marck",
+                        "bad-script",
+                        "caveat",
+                        "lobster",
+                        "pacifico",
+                        "amatic",
+                        "playfair",
+                        "prata",
+                        "forum",
+                        "yeseva",
+                        "cormorant-sc",
+                        "oranienbaum",
+                        "poiret",
+                        "comfortaa",
+                        "comforter",
+                        "comforter-brush",
+                        "alice",
+                        "kurale",
+                        "philosopher",
+                        "ruslan",
+                        "cormorant-unicase",
+                        "cormorant-infant",
+                        "playfair-sc",
+                        "gabriela",
+                        "pattaya",
+                        "bellota",
+                        "cormorant",
+                        "lora",
+                        "eb-garamond",
+                        "old-standard",
+                        "pt-serif",
+                        "montserrat",
+                        "raleway",
+                        "manrope",
+                        "inter",
+                        "literata",
+                        "spectral",
+                        "vollkorn",
+                        "alegreya",
+                        "jost",
+                        "arsenal"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "default": {},
+                "propertyNames": {
+                  "maxLength": 40
+                },
+                "type": "object"
+              },
+              "title": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "type": {
+                "const": "rsvp",
+                "type": "string"
+              },
+              "variant": {
+                "default": "classic",
+                "enum": [
+                  "classic",
+                  "compact"
+                ],
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "width": {
+                "default": "content",
+                "enum": [
+                  "content",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "visible"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "bgBlur": {
+                "default": 0,
+                "maximum": 24,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgColor": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "bgDarken": {
+                "default": 0,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgDim": {
+                "default": 0.35,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgImage": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "buttonLabel": {
+                "maxLength": 60,
+                "type": "string"
+              },
+              "buttonUrl": {
+                "maxLength": 500,
+                "pattern": "^(https?:\\/\\/|tel:|mailto:)\\S+$",
+                "type": "string"
+              },
+              "edgeBottom": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeBottomSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "edgeTop": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeTopSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "entrance": {
+                "default": "auto",
+                "enum": [
+                  "auto",
+                  "rise",
+                  "fade",
+                  "slide",
+                  "zoom",
+                  "blur",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "icon": {
+                "enum": [
+                  "rings",
+                  "glasses",
+                  "cake",
+                  "dinner",
+                  "music",
+                  "camera",
+                  "car",
+                  "heart",
+                  "church",
+                  "dance",
+                  "gift",
+                  "letter",
+                  "child",
+                  "info",
+                  "flower",
+                  "star",
+                  "plane",
+                  "globe"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[\\w-]{1,40}$",
+                "type": "string"
+              },
+              "ornaments": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "flip": {
+                      "type": "boolean"
+                    },
+                    "motion": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "enter": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "side",
+                            "fade",
+                            "rise",
+                            "drop",
+                            "zoom",
+                            "grow",
+                            "spin",
+                            "blur",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "enterSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        },
+                        "idle": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "sway",
+                            "swing",
+                            "float",
+                            "breathe",
+                            "flutter",
+                            "shimmer",
+                            "spin",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "idleAmplitude": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.2,
+                          "type": "number"
+                        },
+                        "idleSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "opacity": {
+                      "maximum": 1,
+                      "minimum": 0.1,
+                      "type": "number"
+                    },
+                    "position": {
+                      "enum": [
+                        "top-left",
+                        "top",
+                        "top-right",
+                        "left",
+                        "right",
+                        "bottom-left",
+                        "bottom",
+                        "bottom-right",
+                        "center"
+                      ],
+                      "type": "string"
+                    },
+                    "rotate": {
+                      "maximum": 180,
+                      "minimum": -180,
+                      "type": "number"
+                    },
+                    "size": {
+                      "maximum": 400,
+                      "minimum": 40,
+                      "type": "number"
+                    },
+                    "src": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "position",
+                    "size",
+                    "rotate",
+                    "flip",
+                    "opacity"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "scriptLine": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "surface": {
+                "default": "plain",
+                "enum": [
+                  "plain",
+                  "paper",
+                  "card",
+                  "vellum",
+                  "crumpled",
+                  "notebook",
+                  "sheet-holes",
+                  "sheet-margin",
+                  "sheet-torn",
+                  "note-strip",
+                  "note-lined",
+                  "note-kraft",
+                  "note-curl",
+                  "scroll",
+                  "parchment",
+                  "parchment-burnt",
+                  "sticker-yellow",
+                  "sticker-clip",
+                  "sticker-pin",
+                  "sticker-pink",
+                  "sticker-orange",
+                  "sticker-tape",
+                  "note-burlap",
+                  "fabric-lilac",
+                  "label-lilac",
+                  "card-clematis",
+                  "label-vintage",
+                  "ticket-admit",
+                  "ticket-gold",
+                  "ticket-pink",
+                  "ticket-stubs",
+                  "frame",
+                  "frame-gold",
+                  "frame-baroque",
+                  "frame-filigree",
+                  "frame-roses",
+                  "plate",
+                  "plate-roses",
+                  "doily-paper",
+                  "doily-kraft",
+                  "doily-lace",
+                  "doily-pink",
+                  "wreath-garden",
+                  "wreath-blue",
+                  "wreath-peony"
+                ],
+                "type": "string"
+              },
+              "surfaceOpacity": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0.1,
+                "type": "number"
+              },
+              "text": {
+                "maxLength": 3000,
+                "type": "string"
+              },
+              "textStyles": {
+                "additionalProperties": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "color": {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    },
+                    "font": {
+                      "enum": [
+                        "script",
+                        "serif",
+                        "sans",
+                        "marck",
+                        "bad-script",
+                        "caveat",
+                        "lobster",
+                        "pacifico",
+                        "amatic",
+                        "playfair",
+                        "prata",
+                        "forum",
+                        "yeseva",
+                        "cormorant-sc",
+                        "oranienbaum",
+                        "poiret",
+                        "comfortaa",
+                        "comforter",
+                        "comforter-brush",
+                        "alice",
+                        "kurale",
+                        "philosopher",
+                        "ruslan",
+                        "cormorant-unicase",
+                        "cormorant-infant",
+                        "playfair-sc",
+                        "gabriela",
+                        "pattaya",
+                        "bellota",
+                        "cormorant",
+                        "lora",
+                        "eb-garamond",
+                        "old-standard",
+                        "pt-serif",
+                        "montserrat",
+                        "raleway",
+                        "manrope",
+                        "inter",
+                        "literata",
+                        "spectral",
+                        "vollkorn",
+                        "alegreya",
+                        "jost",
+                        "arsenal"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "default": {},
+                "propertyNames": {
+                  "maxLength": 40
+                },
+                "type": "object"
+              },
+              "title": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "type": {
+                "const": "text",
+                "type": "string"
+              },
+              "variant": {
+                "default": "classic",
+                "enum": [
+                  "classic",
+                  "card",
+                  "quote"
+                ],
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "width": {
+                "default": "content",
+                "enum": [
+                  "content",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "visible",
+              "text"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "bgBlur": {
+                "default": 0,
+                "maximum": 24,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgColor": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "bgDarken": {
+                "default": 0,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgDim": {
+                "default": 0.35,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgImage": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "caption": {
+                "maxLength": 200,
+                "type": "string"
+              },
+              "edgeBottom": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeBottomSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "edgeTop": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeTopSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "entrance": {
+                "default": "auto",
+                "enum": [
+                  "auto",
+                  "rise",
+                  "fade",
+                  "slide",
+                  "zoom",
+                  "blur",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "height": {
+                "default": "auto",
+                "enum": [
+                  "auto",
+                  "screen",
+                  "square"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[\\w-]{1,40}$",
+                "type": "string"
+              },
+              "ornaments": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "flip": {
+                      "type": "boolean"
+                    },
+                    "motion": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "enter": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "side",
+                            "fade",
+                            "rise",
+                            "drop",
+                            "zoom",
+                            "grow",
+                            "spin",
+                            "blur",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "enterSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        },
+                        "idle": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "sway",
+                            "swing",
+                            "float",
+                            "breathe",
+                            "flutter",
+                            "shimmer",
+                            "spin",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "idleAmplitude": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.2,
+                          "type": "number"
+                        },
+                        "idleSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "opacity": {
+                      "maximum": 1,
+                      "minimum": 0.1,
+                      "type": "number"
+                    },
+                    "position": {
+                      "enum": [
+                        "top-left",
+                        "top",
+                        "top-right",
+                        "left",
+                        "right",
+                        "bottom-left",
+                        "bottom",
+                        "bottom-right",
+                        "center"
+                      ],
+                      "type": "string"
+                    },
+                    "rotate": {
+                      "maximum": 180,
+                      "minimum": -180,
+                      "type": "number"
+                    },
+                    "size": {
+                      "maximum": 400,
+                      "minimum": 40,
+                      "type": "number"
+                    },
+                    "src": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "position",
+                    "size",
+                    "rotate",
+                    "flip",
+                    "opacity"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "photo": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "scriptLine": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "surface": {
+                "default": "plain",
+                "enum": [
+                  "plain",
+                  "paper",
+                  "card",
+                  "vellum",
+                  "crumpled",
+                  "notebook",
+                  "sheet-holes",
+                  "sheet-margin",
+                  "sheet-torn",
+                  "note-strip",
+                  "note-lined",
+                  "note-kraft",
+                  "note-curl",
+                  "scroll",
+                  "parchment",
+                  "parchment-burnt",
+                  "sticker-yellow",
+                  "sticker-clip",
+                  "sticker-pin",
+                  "sticker-pink",
+                  "sticker-orange",
+                  "sticker-tape",
+                  "note-burlap",
+                  "fabric-lilac",
+                  "label-lilac",
+                  "card-clematis",
+                  "label-vintage",
+                  "ticket-admit",
+                  "ticket-gold",
+                  "ticket-pink",
+                  "ticket-stubs",
+                  "frame",
+                  "frame-gold",
+                  "frame-baroque",
+                  "frame-filigree",
+                  "frame-roses",
+                  "plate",
+                  "plate-roses",
+                  "doily-paper",
+                  "doily-kraft",
+                  "doily-lace",
+                  "doily-pink",
+                  "wreath-garden",
+                  "wreath-blue",
+                  "wreath-peony"
+                ],
+                "type": "string"
+              },
+              "surfaceOpacity": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0.1,
+                "type": "number"
+              },
+              "textStyles": {
+                "additionalProperties": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "color": {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    },
+                    "font": {
+                      "enum": [
+                        "script",
+                        "serif",
+                        "sans",
+                        "marck",
+                        "bad-script",
+                        "caveat",
+                        "lobster",
+                        "pacifico",
+                        "amatic",
+                        "playfair",
+                        "prata",
+                        "forum",
+                        "yeseva",
+                        "cormorant-sc",
+                        "oranienbaum",
+                        "poiret",
+                        "comfortaa",
+                        "comforter",
+                        "comforter-brush",
+                        "alice",
+                        "kurale",
+                        "philosopher",
+                        "ruslan",
+                        "cormorant-unicase",
+                        "cormorant-infant",
+                        "playfair-sc",
+                        "gabriela",
+                        "pattaya",
+                        "bellota",
+                        "cormorant",
+                        "lora",
+                        "eb-garamond",
+                        "old-standard",
+                        "pt-serif",
+                        "montserrat",
+                        "raleway",
+                        "manrope",
+                        "inter",
+                        "literata",
+                        "spectral",
+                        "vollkorn",
+                        "alegreya",
+                        "jost",
+                        "arsenal"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "default": {},
+                "propertyNames": {
+                  "maxLength": 40
+                },
+                "type": "object"
+              },
+              "title": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "type": {
+                "const": "photo",
+                "type": "string"
+              },
+              "variant": {
+                "default": "classic",
+                "enum": [
+                  "classic",
+                  "frame",
+                  "polaroid"
+                ],
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "width": {
+                "default": "full",
+                "enum": [
+                  "content",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "visible"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "bgBlur": {
+                "default": 0,
+                "maximum": 24,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgColor": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "bgDarken": {
+                "default": 0,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgDim": {
+                "default": 0.35,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgImage": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "edgeBottom": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeBottomSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "edgeTop": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeTopSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "entrance": {
+                "default": "auto",
+                "enum": [
+                  "auto",
+                  "rise",
+                  "fade",
+                  "slide",
+                  "zoom",
+                  "blur",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[\\w-]{1,40}$",
+                "type": "string"
+              },
+              "ornaments": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "flip": {
+                      "type": "boolean"
+                    },
+                    "motion": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "enter": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "side",
+                            "fade",
+                            "rise",
+                            "drop",
+                            "zoom",
+                            "grow",
+                            "spin",
+                            "blur",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "enterSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        },
+                        "idle": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "sway",
+                            "swing",
+                            "float",
+                            "breathe",
+                            "flutter",
+                            "shimmer",
+                            "spin",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "idleAmplitude": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.2,
+                          "type": "number"
+                        },
+                        "idleSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "opacity": {
+                      "maximum": 1,
+                      "minimum": 0.1,
+                      "type": "number"
+                    },
+                    "position": {
+                      "enum": [
+                        "top-left",
+                        "top",
+                        "top-right",
+                        "left",
+                        "right",
+                        "bottom-left",
+                        "bottom",
+                        "bottom-right",
+                        "center"
+                      ],
+                      "type": "string"
+                    },
+                    "rotate": {
+                      "maximum": 180,
+                      "minimum": -180,
+                      "type": "number"
+                    },
+                    "size": {
+                      "maximum": 400,
+                      "minimum": 40,
+                      "type": "number"
+                    },
+                    "src": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "position",
+                    "size",
+                    "rotate",
+                    "flip",
+                    "opacity"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "photos": {
+                "default": [],
+                "items": {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 9,
+                "type": "array"
+              },
+              "scriptLine": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "surface": {
+                "default": "plain",
+                "enum": [
+                  "plain",
+                  "paper",
+                  "card",
+                  "vellum",
+                  "crumpled",
+                  "notebook",
+                  "sheet-holes",
+                  "sheet-margin",
+                  "sheet-torn",
+                  "note-strip",
+                  "note-lined",
+                  "note-kraft",
+                  "note-curl",
+                  "scroll",
+                  "parchment",
+                  "parchment-burnt",
+                  "sticker-yellow",
+                  "sticker-clip",
+                  "sticker-pin",
+                  "sticker-pink",
+                  "sticker-orange",
+                  "sticker-tape",
+                  "note-burlap",
+                  "fabric-lilac",
+                  "label-lilac",
+                  "card-clematis",
+                  "label-vintage",
+                  "ticket-admit",
+                  "ticket-gold",
+                  "ticket-pink",
+                  "ticket-stubs",
+                  "frame",
+                  "frame-gold",
+                  "frame-baroque",
+                  "frame-filigree",
+                  "frame-roses",
+                  "plate",
+                  "plate-roses",
+                  "doily-paper",
+                  "doily-kraft",
+                  "doily-lace",
+                  "doily-pink",
+                  "wreath-garden",
+                  "wreath-blue",
+                  "wreath-peony"
+                ],
+                "type": "string"
+              },
+              "surfaceOpacity": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0.1,
+                "type": "number"
+              },
+              "textStyles": {
+                "additionalProperties": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "color": {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    },
+                    "font": {
+                      "enum": [
+                        "script",
+                        "serif",
+                        "sans",
+                        "marck",
+                        "bad-script",
+                        "caveat",
+                        "lobster",
+                        "pacifico",
+                        "amatic",
+                        "playfair",
+                        "prata",
+                        "forum",
+                        "yeseva",
+                        "cormorant-sc",
+                        "oranienbaum",
+                        "poiret",
+                        "comfortaa",
+                        "comforter",
+                        "comforter-brush",
+                        "alice",
+                        "kurale",
+                        "philosopher",
+                        "ruslan",
+                        "cormorant-unicase",
+                        "cormorant-infant",
+                        "playfair-sc",
+                        "gabriela",
+                        "pattaya",
+                        "bellota",
+                        "cormorant",
+                        "lora",
+                        "eb-garamond",
+                        "old-standard",
+                        "pt-serif",
+                        "montserrat",
+                        "raleway",
+                        "manrope",
+                        "inter",
+                        "literata",
+                        "spectral",
+                        "vollkorn",
+                        "alegreya",
+                        "jost",
+                        "arsenal"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "default": {},
+                "propertyNames": {
+                  "maxLength": 40
+                },
+                "type": "object"
+              },
+              "title": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "type": {
+                "const": "gallery",
+                "type": "string"
+              },
+              "variant": {
+                "default": "classic",
+                "enum": [
+                  "classic",
+                  "collage",
+                  "carousel"
+                ],
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "width": {
+                "default": "content",
+                "enum": [
+                  "content",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "visible"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "bgBlur": {
+                "default": 0,
+                "maximum": 24,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgColor": {
+                "anyOf": [
+                  {
+                    "pattern": "^#[0-9a-fA-F]{6}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "bgDarken": {
+                "default": 0,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgDim": {
+                "default": 0.35,
+                "maximum": 0.9,
+                "minimum": 0,
+                "type": "number"
+              },
+              "bgImage": {
+                "anyOf": [
+                  {
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "edgeBottom": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeBottomSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "edgeTop": {
+                "default": "none",
+                "enum": [
+                  "none",
+                  "wave",
+                  "arch",
+                  "zigzag",
+                  "scallop",
+                  "perforated",
+                  "torn"
+                ],
+                "type": "string"
+              },
+              "edgeTopSeed": {
+                "maximum": 2147483646,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "entrance": {
+                "default": "auto",
+                "enum": [
+                  "auto",
+                  "rise",
+                  "fade",
+                  "slide",
+                  "zoom",
+                  "blur",
+                  "none"
+                ],
+                "type": "string"
+              },
+              "id": {
+                "pattern": "^[\\w-]{1,40}$",
+                "type": "string"
+              },
+              "ornaments": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "flip": {
+                      "type": "boolean"
+                    },
+                    "motion": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "enter": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "side",
+                            "fade",
+                            "rise",
+                            "drop",
+                            "zoom",
+                            "grow",
+                            "spin",
+                            "blur",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "enterSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        },
+                        "idle": {
+                          "default": "auto",
+                          "enum": [
+                            "auto",
+                            "sway",
+                            "swing",
+                            "float",
+                            "breathe",
+                            "flutter",
+                            "shimmer",
+                            "spin",
+                            "none"
+                          ],
+                          "type": "string"
+                        },
+                        "idleAmplitude": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.2,
+                          "type": "number"
+                        },
+                        "idleSpeed": {
+                          "default": 1,
+                          "maximum": 3,
+                          "minimum": 0.25,
+                          "type": "number"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "opacity": {
+                      "maximum": 1,
+                      "minimum": 0.1,
+                      "type": "number"
+                    },
+                    "position": {
+                      "enum": [
+                        "top-left",
+                        "top",
+                        "top-right",
+                        "left",
+                        "right",
+                        "bottom-left",
+                        "bottom",
+                        "bottom-right",
+                        "center"
+                      ],
+                      "type": "string"
+                    },
+                    "rotate": {
+                      "maximum": 180,
+                      "minimum": -180,
+                      "type": "number"
+                    },
+                    "size": {
+                      "maximum": 400,
+                      "minimum": 40,
+                      "type": "number"
+                    },
+                    "src": {
+                      "maxLength": 500,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "src",
+                    "position",
+                    "size",
+                    "rotate",
+                    "flip",
+                    "opacity"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "people": {
+                "default": [],
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "maxLength": 80,
+                      "type": "string"
+                    },
+                    "phone": {
+                      "maxLength": 30,
+                      "type": "string"
+                    },
+                    "role": {
+                      "maxLength": 80,
+                      "type": "string"
+                    },
+                    "telegram": {
+                      "maxLength": 40,
+                      "type": "string"
+                    },
+                    "whatsapp": {
+                      "default": true,
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              "scriptLine": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "surface": {
+                "default": "plain",
+                "enum": [
+                  "plain",
+                  "paper",
+                  "card",
+                  "vellum",
+                  "crumpled",
+                  "notebook",
+                  "sheet-holes",
+                  "sheet-margin",
+                  "sheet-torn",
+                  "note-strip",
+                  "note-lined",
+                  "note-kraft",
+                  "note-curl",
+                  "scroll",
+                  "parchment",
+                  "parchment-burnt",
+                  "sticker-yellow",
+                  "sticker-clip",
+                  "sticker-pin",
+                  "sticker-pink",
+                  "sticker-orange",
+                  "sticker-tape",
+                  "note-burlap",
+                  "fabric-lilac",
+                  "label-lilac",
+                  "card-clematis",
+                  "label-vintage",
+                  "ticket-admit",
+                  "ticket-gold",
+                  "ticket-pink",
+                  "ticket-stubs",
+                  "frame",
+                  "frame-gold",
+                  "frame-baroque",
+                  "frame-filigree",
+                  "frame-roses",
+                  "plate",
+                  "plate-roses",
+                  "doily-paper",
+                  "doily-kraft",
+                  "doily-lace",
+                  "doily-pink",
+                  "wreath-garden",
+                  "wreath-blue",
+                  "wreath-peony"
+                ],
+                "type": "string"
+              },
+              "surfaceOpacity": {
+                "default": 1,
+                "maximum": 1,
+                "minimum": 0.1,
+                "type": "number"
+              },
+              "text": {
+                "maxLength": 500,
+                "type": "string"
+              },
+              "textStyles": {
+                "additionalProperties": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "color": {
+                      "pattern": "^#[0-9a-fA-F]{6}$",
+                      "type": "string"
+                    },
+                    "font": {
+                      "enum": [
+                        "script",
+                        "serif",
+                        "sans",
+                        "marck",
+                        "bad-script",
+                        "caveat",
+                        "lobster",
+                        "pacifico",
+                        "amatic",
+                        "playfair",
+                        "prata",
+                        "forum",
+                        "yeseva",
+                        "cormorant-sc",
+                        "oranienbaum",
+                        "poiret",
+                        "comfortaa",
+                        "comforter",
+                        "comforter-brush",
+                        "alice",
+                        "kurale",
+                        "philosopher",
+                        "ruslan",
+                        "cormorant-unicase",
+                        "cormorant-infant",
+                        "playfair-sc",
+                        "gabriela",
+                        "pattaya",
+                        "bellota",
+                        "cormorant",
+                        "lora",
+                        "eb-garamond",
+                        "old-standard",
+                        "pt-serif",
+                        "montserrat",
+                        "raleway",
+                        "manrope",
+                        "inter",
+                        "literata",
+                        "spectral",
+                        "vollkorn",
+                        "alegreya",
+                        "jost",
+                        "arsenal"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "default": {},
+                "propertyNames": {
+                  "maxLength": 40
+                },
+                "type": "object"
+              },
+              "title": {
+                "maxLength": 80,
+                "type": "string"
+              },
+              "type": {
+                "const": "contacts",
+                "type": "string"
+              },
+              "variant": {
+                "default": "classic",
+                "enum": [
+                  "classic",
+                  "cards"
+                ],
+                "type": "string"
+              },
+              "visible": {
+                "type": "boolean"
+              },
+              "width": {
+                "default": "content",
+                "enum": [
+                  "content",
+                  "full"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "visible"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "maxItems": 40,
+      "type": "array"
+    },
+    "music": {
+      "additionalProperties": false,
+      "properties": {
+        "loop": {
+          "type": "boolean"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "url",
+        "loop"
+      ],
+      "type": "object"
+    },
+    "schemaVersion": {
+      "default": "1.0.0",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$",
+      "type": "string"
+    },
+    "theme": {
+      "additionalProperties": false,
+      "properties": {
+        "background": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "backgroundDim": {
+          "default": 0.7,
+          "maximum": 0.9,
+          "minimum": 0,
+          "type": "number"
+        },
+        "backgroundMode": {
+          "default": "stretch",
+          "enum": [
+            "stretch",
+            "fixed",
+            "parallax"
+          ],
+          "type": "string"
+        },
+        "bodyFont": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "cormorant",
+            "lora",
+            "eb-garamond",
+            "playfair",
+            "old-standard",
+            "pt-serif",
+            "montserrat",
+            "raleway",
+            "manrope",
+            "inter",
+            "literata",
+            "spectral",
+            "vollkorn",
+            "alegreya",
+            "jost",
+            "arsenal"
+          ],
+          "type": "string"
+        },
+        "decor": {
+          "additionalProperties": false,
+          "properties": {
+            "color": {
+              "pattern": "^#[0-9a-fA-F]{6}$",
+              "type": "string"
+            },
+            "density": {
+              "maximum": 60,
+              "minimum": 0,
+              "type": "number"
+            },
+            "image": {
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null
+            },
+            "pop": {
+              "type": "boolean"
+            },
+            "size": {
+              "default": 1,
+              "maximum": 3,
+              "minimum": 0.5,
+              "type": "number"
+            },
+            "speed": {
+              "default": 1,
+              "maximum": 3,
+              "minimum": 0.3,
+              "type": "number"
+            },
+            "type": {
+              "enum": [
+                "none",
+                "image",
+                "petals",
+                "sakura",
+                "confetti",
+                "snow"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "color",
+            "density"
+          ],
+          "type": "object"
+        },
+        "envelope": {
+          "additionalProperties": false,
+          "default": {
+            "ornament": null,
+            "style": "seal"
+          },
+          "properties": {
+            "ornament": {
+              "anyOf": [
+                {
+                  "maxLength": 500,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "style": {
+              "default": "seal",
+              "enum": [
+                "seal",
+                "veil",
+                "flap",
+                "curtains",
+                "book"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "ornament"
+          ],
+          "type": "object"
+        },
+        "font": {
+          "enum": [
+            "script",
+            "serif",
+            "sans",
+            "marck",
+            "bad-script",
+            "caveat",
+            "lobster",
+            "pacifico",
+            "amatic",
+            "playfair",
+            "prata",
+            "forum",
+            "yeseva",
+            "cormorant-sc",
+            "oranienbaum",
+            "poiret",
+            "comfortaa",
+            "comforter",
+            "comforter-brush",
+            "alice",
+            "kurale",
+            "philosopher",
+            "ruslan",
+            "cormorant-unicase",
+            "cormorant-infant",
+            "playfair-sc",
+            "gabriela",
+            "pattaya",
+            "bellota"
+          ],
+          "type": "string"
+        },
+        "headings": {
+          "default": "caps",
+          "enum": [
+            "caps",
+            "names"
+          ],
+          "type": "string"
+        },
+        "motion": {
+          "additionalProperties": false,
+          "default": {
+            "speed": 1,
+            "style": "elegant"
+          },
+          "properties": {
+            "speed": {
+              "default": 1,
+              "maximum": 2,
+              "minimum": 0.5,
+              "type": "number"
+            },
+            "style": {
+              "default": "elegant",
+              "enum": [
+                "elegant",
+                "soft",
+                "playful",
+                "cinematic",
+                "none"
+              ],
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "ornamentMotion": {
+          "additionalProperties": false,
+          "default": {
+            "enter": "auto",
+            "enterSpeed": 1,
+            "idle": "auto",
+            "idleAmplitude": 1,
+            "idleSpeed": 1
+          },
+          "properties": {
+            "enter": {
+              "default": "auto",
+              "enum": [
+                "auto",
+                "side",
+                "fade",
+                "rise",
+                "drop",
+                "zoom",
+                "grow",
+                "spin",
+                "blur",
+                "none"
+              ],
+              "type": "string"
+            },
+            "enterSpeed": {
+              "default": 1,
+              "maximum": 3,
+              "minimum": 0.25,
+              "type": "number"
+            },
+            "idle": {
+              "default": "auto",
+              "enum": [
+                "auto",
+                "sway",
+                "swing",
+                "float",
+                "breathe",
+                "flutter",
+                "shimmer",
+                "spin",
+                "none"
+              ],
+              "type": "string"
+            },
+            "idleAmplitude": {
+              "default": 1,
+              "maximum": 3,
+              "minimum": 0.2,
+              "type": "number"
+            },
+            "idleSpeed": {
+              "default": 1,
+              "maximum": 3,
+              "minimum": 0.25,
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "palette": {
+          "enum": [
+            "cream",
+            "blush",
+            "emerald",
+            "ivory",
+            "autumn",
+            "night",
+            "lavender",
+            "noir",
+            "navy",
+            "mocha",
+            "pearl",
+            "sand"
+          ],
+          "type": "string"
+        },
+        "texture": {
+          "default": "none",
+          "enum": [
+            "none",
+            "halftone",
+            "speckle",
+            "grain",
+            "linen",
+            "grid",
+            "diagonal",
+            "hearts",
+            "diamonds",
+            "flourish",
+            "stars",
+            "watercolor"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "palette",
+        "font",
+        "background",
+        "decor"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "theme",
+    "music",
+    "blocks"
+  ],
+  "type": "object"
+}

@@ -26,7 +26,7 @@ import {
 } from "@/lib/schema";
 import { premiumEnvelopeStyles, premiumFonts, premiumMotionStyles } from "@/lib/premium";
 import { bodyFonts, isScriptFont, palettes, titleFonts } from "@/lib/theme";
-import { envelopeStyleLabels, headingsLabels, motionStyleLabels } from "@/lib/variants";
+import { backgroundModeLabels, envelopeStyleLabels, headingsLabels, motionStyleLabels } from "@/lib/variants";
 import { cn } from "@/lib/utils";
 import { LabeledSlider } from "./BlockStyle";
 import { FineTuning, LibraryImageField, ProBadge, Segmented, UploadField } from "./controls";
@@ -72,6 +72,13 @@ const decorIcons: Record<DecorType, ComponentType<{ className?: string }>> = {
  * «Оформление» — свёрнутые разделы, как список блоков (editor-ux.md §4.5): в заголовке видно выбранное, порядок —
  * от понятного к тонкому, точные числа и редкие настройки — в «Тонкой настройке» внутри раздела.
  */
+/** Подсказка под выбором поведения фона. */
+const backgroundModeHints = {
+  parallax: "Фон медленно сдвигается при прокрутке — красиво с тканью или пейзажем",
+  fixed: "Фон стоит на месте, содержимое едет поверх него",
+  stretch: "Фото растянуто на всю высоту страницы и прокручивается вместе с ней",
+} as const;
+
 export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
   const { theme } = data;
   const set = (patch: Partial<Theme>) => onChange({ ...data, theme: { ...theme, ...patch } });
@@ -296,7 +303,7 @@ export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
       <AccordionItem value="background">
         <SectionTrigger
           title="Фон страницы"
-          summary={`${theme.texture === "none" ? "Без узора" : textureLabels[theme.texture]}${theme.background ? " · фото" : ""}`}
+          summary={`${theme.texture === "none" ? "Без узора" : textureLabels[theme.texture]}${theme.background ? ` · фото, ${backgroundModeLabels[theme.backgroundMode].toLowerCase()}` : ""}`}
         />
         <AccordionContent className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
@@ -320,6 +327,27 @@ export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
             </div>
           </div>
           <UploadField label="Фоновое фото" value={theme.background} onChange={(background) => set({ background })} />
+          {theme.background && (
+            <>
+              <Segmented
+                label="Как ведёт себя фон"
+                value={theme.backgroundMode}
+                options={backgroundModeLabels}
+                onChange={(backgroundMode) => set({ backgroundMode })}
+              />
+              <p className="-mt-2 text-xs text-muted-foreground">{backgroundModeHints[theme.backgroundMode]}</p>
+              <LabeledSlider
+                label="Приглушение"
+                ariaLabel="Приглушение фона страницы"
+                valueLabel={`${Math.round(theme.backgroundDim * 100)}%`}
+                value={theme.backgroundDim}
+                min={0}
+                max={0.9}
+                step={0.05}
+                onChange={(v) => set({ backgroundDim: Math.round(v * 100) / 100 })}
+              />
+            </>
+          )}
         </AccordionContent>
       </AccordionItem>
 

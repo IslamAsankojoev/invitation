@@ -5,6 +5,7 @@ import { headingsMode, palettes, themeStyle } from "@/lib/theme";
 import { blockComponents } from "./blocks/registry";
 import type { BlockContext } from "./blocks/types";
 import { MotionContext, OrnamentMotionContext, type Motion } from "./motion";
+import { PageBackground } from "./PageBackground";
 import { TextureLayer } from "./TextureLayer";
 
 type Props = {
@@ -23,7 +24,6 @@ export function InvitationView({ data, slug, preview = false, motion: requested 
   const { style, speed } = data.theme.motion;
   // Стиль «Без анимаций» — то же, что статичный режим: всё видно сразу.
   const motion: Motion = style === "none" ? "off" : requested;
-  const bg = data.theme.background;
 
   return (
     <div
@@ -31,18 +31,17 @@ export function InvitationView({ data, slug, preview = false, motion: requested 
       data-motion={motion}
       data-style={style}
       data-headings={headingsMode(data.theme)}
-      className={`relative min-h-full overflow-hidden bg-[var(--bg)] text-[var(--text)] ${motion === "off" ? "" : "inv-motion"}`}
+      // overflow-clip, а не hidden: hidden делает корень скролл-контейнером, и sticky-фон (PageBackground) не прилипал бы.
+      className={`relative min-h-full overflow-clip bg-[var(--bg)] text-[var(--text)] ${motion === "off" ? "" : "inv-motion"}`}
       style={{
         ...themeStyle(data.theme),
         ["--inv-speed" as string]: speed,
         fontFamily: "var(--font-body)",
-        backgroundImage: bg ? `linear-gradient(color-mix(in srgb, var(--bg) 70%, transparent), var(--bg)), url("${bg}")` : undefined,
-        backgroundSize: bg ? "cover" : undefined,
-        backgroundPosition: "center top",
       }}
     >
       <MotionContext.Provider value={motion}>
       <OrnamentMotionContext.Provider value={data.theme.ornamentMotion}>
+        <PageBackground theme={data.theme} />
         <TextureLayer texture={data.theme.texture} dark={palettes[data.theme.palette].dark} />
         {/* Колонка содержимого — 430 px; блок «во всю ширину» выходит на всю ширину экрана (его текст — в колонке). */}
         <main className="relative pb-24">

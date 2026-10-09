@@ -1,0 +1,284 @@
+{
+  "schemaVersion": "1.1.0",
+  "theme": {
+    "headings": "caps",
+    "backgroundMode": "parallax",
+    "backgroundDim": 0.2,
+    "ornamentMotion": {
+      "enter": "auto",
+      "enterSpeed": 1,
+      "idle": "auto",
+      "idleSpeed": 1,
+      "idleAmplitude": 1
+    },
+    "palette": "cream",
+    "font": "script",
+    "bodyFont": "auto",
+    "background": "/templates/cream-classic-silk.webp",
+    "texture": "none",
+    "decor": {
+      "type": "image",
+      "image": "/library/petal-red.webp",
+      "color": "#c0392b",
+      "density": 14,
+      "size": 1,
+      "speed": 1
+    },
+    "envelope": {
+      "ornament": "/library/dried-botanical.webp",
+      "style": "seal"
+    },
+    "motion": {
+      "style": "elegant",
+      "speed": 1
+    }
+  },
+  "music": {
+    "url": "/music/die-with-a-smile.mp3",
+    "loop": true
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "id": "b-hero",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/dried-botanical.webp",
+          "position": "top-right",
+          "size": 200,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1
+        },
+        {
+          "src": "/library/dried-botanical.webp",
+          "position": "bottom-left",
+          "size": 180,
+          "rotate": 180,
+          "flip": false,
+          "opacity": 1
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "names": "Айгерим & Нурлан",
+      "date": "2027-06-19T16:00",
+      "label": "Приглашение на свадьбу",
+      "subtitle": "Приглашаем вас разделить с нами этот день",
+      "photo": null
+    },
+    {
+      "type": "countdown",
+      "id": "b-countdown",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0
+    },
+    {
+      "type": "calendar",
+      "id": "b-calendar",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0
+    },
+    {
+      "type": "story",
+      "id": "b-story",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "",
+      "text": "Мы познакомились весной, и с тех пор не расстаёмся. Будем счастливы видеть вас рядом в самый важный для нас день.",
+      "photo": null
+    },
+    {
+      "type": "program",
+      "id": "b-program",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/twine-bow-wide.webp",
+          "position": "top-right",
+          "size": 120,
+          "rotate": 8,
+          "flip": false,
+          "opacity": 1
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "items": [
+        {
+          "time": "16:00",
+          "title": "Сбор гостей",
+          "description": "Фуршет и приветственные напитки"
+        },
+        {
+          "time": "16:30",
+          "title": "Церемония",
+          "description": "Торжественная регистрация"
+        },
+        {
+          "time": "18:00",
+          "title": "Праздничный ужин",
+          "description": "Банкет и поздравления"
+        }
+      ]
+    },
+    {
+      "type": "dresscode",
+      "id": "b-dresscode",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/dried-botanical.webp",
+          "position": "bottom-left",
+          "size": 120,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.7
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "text": "Будем рады, если вы поддержите цветовую гамму праздника",
+      "colors": [
+        "#efe6da",
+        "#dcc7b0",
+        "#c4a57f",
+        "#a8845e",
+        "#6f6862"
+      ]
+    },
+    {
+      "type": "location",
+      "id": "b-location",
+      "visible": true,
+      "variant": "classic",
+      "surface": "card",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "placeName": "Ресторан «Сад»",
+      "address": "г. Алматы, пр. Абая, 1",
+      "photo": null
+    },
+    {
+      "type": "rsvp",
+      "id": "b-rsvp",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/twine-bow.webp",
+          "position": "top-left",
+          "size": 90,
+          "rotate": -20,
+          "flip": false,
+          "opacity": 1
+        },
+        {
+          "src": "/library/dried-botanical.webp",
+          "position": "right",
+          "size": 170,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.85
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Подтвердите, пожалуйста,",
+      "scriptLine": "своё присутствие"
+    }
+  ]
+}

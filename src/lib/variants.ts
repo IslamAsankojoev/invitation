@@ -1,4 +1,4 @@
-import type { BlockType, Entrance, EnvelopeStyle, Headings, MotionStyle, OrnamentEnter, OrnamentIdle, PhotoHeight, ProgramIcon, TextIcon } from "./schema";
+import type { BackgroundMode, BlockType, Entrance, EnvelopeStyle, Headings, MotionStyle, OrnamentEnter, OrnamentIdle, PhotoHeight, ProgramIcon, TextIcon } from "./schema";
 import { BLOCK_VARIANTS } from "./schema";
 
 export type VariantOf<T extends BlockType> = (typeof BLOCK_VARIANTS)[T][number];
@@ -107,6 +107,13 @@ export const photoHeightLabels: Record<PhotoHeight, string> = {
   auto: "Как у фото",
   screen: "На весь экран",
   square: "Квадрат",
+};
+
+/** Как ведёт себя фоновое фото страницы (Segmented в «Оформление» → «Фон страницы»). */
+export const backgroundModeLabels: Record<BackgroundMode, string> = {
+  parallax: "Параллакс",
+  fixed: "Неподвижный",
+  stretch: "На всю высоту",
 };
 
 export const headingsLabels: Record<Headings, string> = {
