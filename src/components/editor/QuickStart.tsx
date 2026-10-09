@@ -266,7 +266,7 @@ export function QuickStart({ data, onChange, onClose, onShare }: Props) {
               </>
             )}
 
-            {step === "photo" && <PhotoStep value={hero.photo} onChange={(photo) => setHero({ photo })} />}
+            {step === "photo" && <PhotoStep value={hero.photo} onChange={(photo) => setHero({ photo, photoFocus: undefined })} />}
 
             <div className="flex items-center gap-2">
               {index > 0 && (

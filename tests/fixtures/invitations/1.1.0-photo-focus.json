@@ -1,0 +1,416 @@
+{
+  "schemaVersion": "1.1.0",
+  "theme": {
+    "headings": "names",
+    "ornamentMotion": {
+      "enter": "auto",
+      "enterSpeed": 1,
+      "idle": "auto",
+      "idleSpeed": 1,
+      "idleAmplitude": 1
+    },
+    "palette": "pearl",
+    "font": "cormorant-sc",
+    "bodyFont": "lora",
+    "background": null,
+    "texture": "speckle",
+    "decor": {
+      "type": "sakura",
+      "image": null,
+      "color": "#e8b8b5",
+      "density": 8,
+      "size": 0.8,
+      "speed": 0.6
+    },
+    "envelope": {
+      "ornament": "/library/pearls.svg",
+      "style": "curtains"
+    },
+    "motion": {
+      "style": "soft",
+      "speed": 1
+    }
+  },
+  "music": {
+    "url": "/music/perfect.mp3",
+    "loop": true
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "id": "b-hero",
+      "visible": true,
+      "variant": "cover",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/pink-roses.webp",
+          "position": "bottom-left",
+          "size": 130,
+          "rotate": 8,
+          "flip": false,
+          "opacity": 1
+        },
+        {
+          "src": "/library/shell-cockle.webp",
+          "position": "bottom-right",
+          "size": 100,
+          "rotate": -18,
+          "flip": false,
+          "opacity": 1
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "names": "Артём & Вероника",
+      "date": "2027-09-12T14:30",
+      "label": "Приглашение на свадьбу",
+      "photo": "/templates/seaside-couple.webp",
+      "photoFocus": {
+        "x": 40,
+        "y": 25
+      }
+    },
+    {
+      "type": "text",
+      "id": "b-text",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/divider-wave.svg",
+          "position": "top",
+          "size": 400,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.9
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Дорогие родные и близкие!",
+      "text": "Мы с радостью делимся с вами важной новостью — мы женимся! Приглашаем разделить с нами этот особенный день: очень хотим провести его в кругу самых близких людей."
+    },
+    {
+      "type": "program",
+      "id": "b-program",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "items": [
+        {
+          "time": "14:30",
+          "title": "Торжественная регистрация",
+          "description": "Дворец бракосочетания №2"
+        },
+        {
+          "time": "17:00",
+          "title": "Праздничный ужин",
+          "description": "Ресторан «Морская терраса»"
+        }
+      ],
+      "title": "Программа дня"
+    },
+    {
+      "type": "location",
+      "id": "b-location",
+      "visible": true,
+      "variant": "minimal",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/pearls.svg",
+          "position": "top-right",
+          "size": 64,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "placeName": "Ресторан «Морская терраса»",
+      "address": "г. Сочи, ул. Театральная, 8",
+      "photo": null,
+      "title": "",
+      "mapUrl": "https://yandex.ru/maps/?text=Сочи"
+    },
+    {
+      "type": "dresscode",
+      "id": "b-dresscode",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/pink-roses.webp",
+          "position": "bottom-left",
+          "size": 110,
+          "rotate": -8,
+          "flip": false,
+          "opacity": 0.95
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "text": "Будем рады, если вы поддержите цветовую гамму нашего вечера.",
+      "colors": [
+        "#efe4dc",
+        "#e9c9c2",
+        "#d6a39b",
+        "#a9ae9b",
+        "#9a8176"
+      ],
+      "title": "Дресс-код"
+    },
+    {
+      "type": "gallery",
+      "id": "b-gallery",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "photos": [
+        "/templates/seaside-g-bridesmaids.webp",
+        "/templates/seaside-g-table.webp",
+        "/templates/seaside-g-veil.webp",
+        "/templates/seaside-g-rings.webp"
+      ],
+      "title": ""
+    },
+    {
+      "type": "text",
+      "id": "b-text-2",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/divider-wave.svg",
+          "position": "top",
+          "size": 400,
+          "rotate": 0,
+          "flip": true,
+          "opacity": 0.9
+        },
+        {
+          "src": "/library/shell-cockle.webp",
+          "position": "right",
+          "size": 84,
+          "rotate": 24,
+          "flip": false,
+          "opacity": 1
+        },
+        {
+          "src": "/library/pearls.svg",
+          "position": "bottom-left",
+          "size": 70,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Пожелания",
+      "text": "Вместо традиционных подарков мы будем очень рады вашему вкладу в наше свадебное путешествие мечты.\n\nФормат праздника — только для взрослых. Пожалуйста, проведите этот вечер без детей.\n\nВместо живых цветов можно поддержать наш домашний бар — это будет отличным подарком!"
+    },
+    {
+      "type": "contacts",
+      "id": "b-contacts",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/shell-cockle.webp",
+          "position": "left",
+          "size": 86,
+          "rotate": -24,
+          "flip": false,
+          "opacity": 1
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Контакты",
+      "text": "По всем вопросам, пожалуйста, обращайтесь к нашему организатору:",
+      "people": [
+        {
+          "name": "Анна",
+          "role": "Организатор",
+          "phone": "+7 999 123-45-67",
+          "whatsapp": true,
+          "telegram": "anna_wedding"
+        }
+      ]
+    },
+    {
+      "type": "rsvp",
+      "id": "b-rsvp",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/pink-roses.webp",
+          "position": "bottom-right",
+          "size": 100,
+          "rotate": 8,
+          "flip": false,
+          "opacity": 1
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Анкета",
+      "scriptLine": "своё присутствие",
+      "deadline": "2027-08-20"
+    },
+    {
+      "type": "countdown",
+      "id": "b-countdown",
+      "visible": true,
+      "variant": "classic",
+      "surface": "card",
+      "surfaceOpacity": 0.9,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": "#f3e4dd",
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Увидимся через…"
+    },
+    {
+      "type": "text",
+      "id": "b-text-3",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/pearl-strand.svg",
+          "position": "top",
+          "size": 260,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 0.95
+        },
+        {
+          "src": "/library/pink-roses.webp",
+          "position": "bottom-right",
+          "size": 120,
+          "rotate": -6,
+          "flip": false,
+          "opacity": 1
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "",
+      "text": "С любовью,\nАртём и Вероника"
+    }
+  ]
+}

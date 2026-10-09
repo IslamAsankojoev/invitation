@@ -1,4 +1,5 @@
 import { MapPin } from "lucide-react";
+import { photoStyle } from "@/lib/photoFocus";
 import { textStyle } from "@/lib/textStyle";
 import { findBlock } from "@/lib/blocks";
 import { monogram } from "@/lib/calendar";
@@ -22,7 +23,7 @@ export function LocationBlock({ block, ctx }: BlockProps<"location">) {
     return (
       <Section block={block}>
         <div className="inv-postcard relative mx-auto max-w-sm p-3 pb-6 text-left text-[#3e3630]" style={{ transform: "rotate(1.5deg)" }} data-reveal="2" data-anim="drop">
-          {block.photo && <img src={block.photo} alt={block.placeName} className="aspect-[4/3] w-full object-cover" />}
+          {block.photo && <img src={block.photo} alt={block.placeName} className="aspect-[4/3] w-full object-cover" style={photoStyle(block)} />}
           <div className="relative px-3 pt-5">
             <span aria-hidden="true" className="inv-stamp absolute -top-9 right-2 flex h-16 w-14 items-center justify-center text-lg">
               {monogram(names)}
@@ -61,7 +62,7 @@ export function LocationBlock({ block, ctx }: BlockProps<"location">) {
       {block.photo && (
         // Фото раскрывается шторкой снизу вверх, картинка внутри мягко отдаляется.
         <div className="mb-8 aspect-[4/3] w-full overflow-hidden rounded-2xl" data-reveal="2" data-anim="curtain">
-          <img src={block.photo} alt={block.placeName} className="h-full w-full object-cover" />
+          <img src={block.photo} alt={block.placeName} className="h-full w-full object-cover" style={photoStyle(block)} />
         </div>
       )}
       <div data-reveal="3">

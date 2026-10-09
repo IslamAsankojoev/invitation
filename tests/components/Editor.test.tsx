@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor, type EditorAccount } from "@/components/editor/Editor";
+import { updateBlock } from "@/lib/blocks";
 import { createDefaultInvitation } from "@/lib/defaults";
 import { openBlockView, openThemeSection } from "./editorHelpers";
 
@@ -955,5 +956,34 @@ describe("Editor: проверка перед отправкой и правка
     } finally {
       window.matchMedia = original;
     }
+  });
+});
+
+describe("Editor: фото и QR-код", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("«Что главное на фото»: точка двигается стрелками, фото в превью сдвигается; новое фото — снова по центру", async () => {
+    const user = userEvent.setup();
+    const data = updateBlock(createDefaultInvitation(), "hero", { photo: "/templates/seaside-couple.webp" });
+    render(<Editor id="inv1" token="secret" initialSlug="demo" initialData={data} />);
+    await user.click(screen.getByRole("button", { name: "Главный экран" }));
+    const picker = screen.getByRole("button", { name: /^Главное место на фото: 50% по ширине, 50% по высоте/ });
+    picker.focus();
+    await user.keyboard("{ArrowRight}{ArrowUp}{ArrowUp}");
+    expect(screen.getByRole("button", { name: /^Главное место на фото: 55% по ширине, 40% по высоте/ })).toBeInTheDocument();
+    expect(within(screen.getByTestId("preview")).getByTestId("hero-photo")).toHaveStyle({ backgroundPosition: "55% 40%" });
+    await user.click(screen.getByRole("button", { name: "По центру" }));
+    expect(screen.getByRole("button", { name: /^Главное место на фото: 50% по ширине, 50% по высоте/ })).toBeInTheDocument();
+  });
+
+  it("QR-код ссылки для гостей и PNG для печати", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(screen.getByRole("button", { name: "Отправить гостям" }));
+    await user.click(screen.getByText("QR-код для бумажных приглашений"));
+    const qr = await screen.findByRole("img", { name: "QR-код ссылки для гостей" });
+    await waitFor(() => expect(qr.querySelector("svg")).not.toBeNull());
+    await waitFor(() => expect(screen.getByRole("link", { name: "Скачать PNG" }).getAttribute("href")).toMatch(/^data:image\/png;base64,/));
+    expect(screen.getByRole("link", { name: "Скачать PNG" })).toHaveAttribute("download", "qr-demo.png");
   });
 });

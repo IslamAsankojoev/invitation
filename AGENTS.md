@@ -62,7 +62,7 @@ build`, регион функций `dub1` (vercel.json) — рядом с ба�
 `NEXT_DIST_DIR=.next-build npx next build` (отдельная папка, чтобы не мешать запущенному dev-серверу; после сборки
 верни `tsconfig.json`/`next-env.d.ts`, Next дописывает туда `.next-build/types`).
 
-Текущее состояние: **405 тестов Vitest, E2E и `next build` проходят** (после быстрого старта и «Отправить гостям»). Края, фоновые
+Текущее состояние: **412 тестов Vitest, E2E и `next build` проходят** (после быстрого старта и «Отправить гостям»). Края, фоновые
 картинки, ширина и стиль текста всё ещё без своих тестов — см. «Долг по тестам» в `next-blocks.md`.
 
 Если порт 3000 занят другим dev-сервером — в `.claude/launch.json` есть `dev-3200` (своя папка `.next-3200`).
@@ -71,7 +71,7 @@ build`, регион функций `dub1` (vercel.json) — рядом с ба�
 
 ```
 prisma/schema.prisma        Invitation(id, slug unique, editToken, userId?, data: Json, timestamps), Rsvp (+ editKey? — секрет
-                            гостя для правки своего ответа, updatedAt),
+                            гостя для правки своего ответа, updatedAt), SlugAlias (прежние адреса → редирект на текущий),
                             User/Account/Session/VerificationToken (Auth.js)
 src/auth.ts                 Auth.js: Google + PrismaAdapter, сессии в БД; без ключей провайдеров нет
 prisma/migrations/          миграции (prisma migrate) — менять схему только через новую миграцию
@@ -136,6 +136,7 @@ src/lib/                    логика без UI, покрыта unit-тест
   shareImage.ts   картинка превью ссылки: фото приглашения или украшение на цвете палитры (sharp; только public/ и наш бакет)
   history.ts      «Отменить / Вернуть» редактора: record/undo/redo, правки чаще 1 с склеиваются, ≤ 50 шагов
   quickEdit.ts    правка надписи прямо в превью (телефон): какие поля (data-field) и их значения
+  photoFocus.ts   главное место на фото (photoFocus) → object-position / background-position, точка по нажатию
   rsvpMemory.ts   ответ гостя в его браузере (id, editKey, ответ) — «Вы уже ответили» и правка той же записи
   recent.ts       «Продолжить» на главной: недавние приглашения этого браузера (localStorage, id + token + имена)
   origin.ts       requestOrigin() — адрес сайта из заголовков запроса (og:image, ссылка в тексте для WhatsApp)
@@ -191,6 +192,7 @@ InvitationData
                     idle: auto|sway|swing|float|breathe|flutter|shimmer|spin|none, idleSpeed 0.25–3, idleAmplitude 0.2–3 }
    hero      { names, date "YYYY-MM-DDTHH:mm", label?, subtitle?, photo }
    countdown {}                calendar {}       (оба берут дату из hero)
+   photoFocus? { x, y } 0–100 % — у hero/story/location/photo: главное место фото при обрезке (нет — центр; 1.1.0)
    story     { text, photo }   program   { items[{ time, title, description?, icon? }] }
    location  { placeName, address, mapUrl?, photo }
    dresscode { text, colors: #hex[] }             rsvp { deadline? "YYYY-MM-DD" }
@@ -342,6 +344,9 @@ InvitationData
 - **Проверка перед отправкой** (`LinkPanel`, `presend-check`): незаполненное из `checklist(data)` (всё ещё как в примере
   шаблона) — предупреждение с кнопками «Заполнить: …» → `openBlock` в `Editor`. На компьютере нажатие на надпись в
   превью ставит курсор в её поле в панели (`focusField`, поле ищется по подписи = `QUICK_EDIT_FIELDS`).
+- **Фото:** под полем фото (обложка, история «с фото», место, блок «Фото») — `PhotoFocusField` «Что главное на фото»
+  (нажатие или стрелки, «По центру»); новое фото сбрасывает точку. **QR-код** (`QrCode.tsx`, библиотека `qrcode`) —
+  в «Ссылке», PNG 1024 px для печати.
 - «Ссылка» (`LinkPanel`): «Отправьте гостям» — ссылка + копировать, WhatsApp (`wa.me/?text=`), Telegram, системное
   «Поделиться» (если есть `navigator.share`), «Текст сообщения», «Посмотреть как гость»; «Красивая ссылка» — варианты из
   имён (`slugSuggestions`: aibek-aizada, aibek-aizada-2027) одним нажатием + ручной ввод.
@@ -419,6 +424,9 @@ InvitationData
 - Next не позволяет разные имена динамических сегментов на одном уровне → папка `api/invitations/[key]`:
   для GET/PATCH и GET rsvp это **id**, для POST rsvp — **slug**.
 - PATCH: `{ data?, slug? }`, 400 с плоским списком ошибок Zod (`formatZodErrors`), 403, 409 (slug занят).
+  Смена slug оставляет прежний адрес этому приглашению (`SlugAlias`, `updateInvitation` в транзакции): `/i/<старый>`
+  редиректит на текущий (`resolveSlug`), другому приглашению прежний адрес не достаётся (`isSlugTaken`); вернулись к
+  прежнему — он снова основной.
 - RSVP POST: валидация `rsvpInputSchema`, honeypot `website` → 400, лимит 5 ответов/мин с IP (in-memory), 429.
 - Рваный край: `GET /api/edges/torn?v=&seed=0…2147483646&side=top|bottom&layer=mask|paper` → webp. Картинка —
   чистая функция параметров: кэш в памяти (≤400, параллельные запросы одного зерна считаются один раз) и
@@ -769,3 +777,5 @@ Vercel (Postgres + migrate уже сделаны), rate limit в Redis, чист
     компьютере. Формат приглашения не менялся.
     Дальше по плану (решения пользователя): язык страницы гостя — организатор выбирает русский или кыргызский
     (редактор остаётся на русском); личные ссылки гостям с обращением по имени и отметкой «открыл/ответил».
+24. Формат **1.1.0**: `photoFocus` у блоков с фото (минор, без миграции; фикстура `1.1.0-photo-focus.json`). Заодно:
+    прежние адреса приглашения работают после смены ссылки (таблица `SlugAlias`), QR-код ссылки для печати.

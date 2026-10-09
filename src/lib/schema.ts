@@ -330,6 +330,10 @@ const blockBase = {
 
 const variant = <T extends keyof typeof BLOCK_VARIANTS>(type: T) => z.enum(BLOCK_VARIANTS[type]).default("classic" as never);
 
+/** Главное место на фото в процентах (0–100 по ширине и высоте): при обрезке под рамку оно остаётся видно. Нет — центр. */
+export const photoFocusSchema = z.object({ x: z.number().min(0).max(100), y: z.number().min(0).max(100) });
+export type PhotoFocus = z.infer<typeof photoFocusSchema>;
+
 export const heroBlockSchema = z.object({
   type: z.literal("hero"),
   ...blockBase,
@@ -340,6 +344,7 @@ export const heroBlockSchema = z.object({
   label: z.string().max(80).optional(),
   subtitle: z.string().max(200).optional(),
   photo: imageUrl.nullable().default(null),
+  photoFocus: photoFocusSchema.optional(),
 });
 
 export const countdownBlockSchema = z.object({ type: z.literal("countdown"), ...blockBase, variant: variant("countdown") });
@@ -352,6 +357,7 @@ export const storyBlockSchema = z.object({
   variant: variant("story"),
   text: z.string().max(5000),
   photo: imageUrl.nullable().default(null),
+  photoFocus: photoFocusSchema.optional(),
 });
 
 export const programBlockSchema = z.object({
@@ -378,6 +384,7 @@ export const locationBlockSchema = z.object({
   address: z.string().max(300),
   mapUrl: z.string().url("Ссылка на карту должна быть URL").optional(),
   photo: imageUrl.nullable().default(null),
+  photoFocus: photoFocusSchema.optional(),
 });
 
 export const dresscodeBlockSchema = z.object({
@@ -413,6 +420,7 @@ export const photoBlockSchema = z.object({
   width: z.enum(BLOCK_WIDTHS).default("full"),
   variant: variant("photo"),
   photo: imageUrl.nullable().default(null),
+  photoFocus: photoFocusSchema.optional(),
   caption: z.string().max(200).optional(),
   height: z.enum(PHOTO_HEIGHTS).default("auto"),
 });

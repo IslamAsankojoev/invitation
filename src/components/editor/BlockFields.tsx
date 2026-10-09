@@ -23,7 +23,7 @@ import {
 import { withTextStyle, type TextKey } from "@/lib/textStyle";
 import { EVENT_KINDS, SUBTITLE_PRESETS } from "@/lib/quickStart";
 import { programIconLabels, textIconLabels } from "@/lib/variants";
-import { AddFieldButton, PhotoListField, UploadField } from "./controls";
+import { AddFieldButton, PhotoFocusField, PhotoListField, UploadField } from "./controls";
 import { TextStylePicker } from "./TextStylePicker";
 
 type FieldsProps<T extends BlockType> = {
@@ -134,7 +134,8 @@ function HeroFields(props: FieldsProps<"hero">) {
         onChange={(subtitle) => onChange({ subtitle: subtitle || undefined })}
       />
       <Presets label="Готовые фразы" options={subtitleOptions} value={block.subtitle} onPick={(subtitle) => onChange({ subtitle })} />
-      <UploadField label="Фото на главном экране" value={block.photo} onChange={(photo) => onChange({ photo })} />
+      <UploadField label="Фото на главном экране" value={block.photo} onChange={(photo) => onChange({ photo, photoFocus: undefined })} />
+      {block.photo && <PhotoFocusField src={block.photo} value={block.photoFocus} onChange={(photoFocus) => onChange({ photoFocus })} />}
     </>
   );
 }
@@ -152,7 +153,10 @@ function StoryFields(props: FieldsProps<"story">) {
   return (
     <>
       <TextField textStyle={styleOf(props, "text")} label="Текст" multiline value={block.text} onChange={(text) => onChange({ text })} />
-      {block.variant === "photo" && <UploadField label="Фото к истории" value={block.photo} onChange={(photo) => onChange({ photo })} />}
+      {block.variant === "photo" && <UploadField label="Фото к истории" value={block.photo} onChange={(photo) => onChange({ photo, photoFocus: undefined })} />}
+      {block.variant === "photo" && block.photo && (
+        <PhotoFocusField src={block.photo} value={block.photoFocus} onChange={(photoFocus) => onChange({ photoFocus })} />
+      )}
       {block.variant === "letter" && <Hint>Письмо подписано именами из блока «Главный экран».</Hint>}
     </>
   );
@@ -256,7 +260,8 @@ function LocationFields(props: FieldsProps<"location">) {
         value={block.mapUrl ?? ""}
         onChange={(mapUrl) => onChange({ mapUrl: mapUrl || undefined })}
       />
-      <UploadField label="Фото места" value={block.photo} onChange={(photo) => onChange({ photo })} />
+      <UploadField label="Фото места" value={block.photo} onChange={(photo) => onChange({ photo, photoFocus: undefined })} />
+      {block.photo && <PhotoFocusField src={block.photo} value={block.photoFocus} onChange={(photoFocus) => onChange({ photoFocus })} />}
     </>
   );
 }
@@ -370,7 +375,8 @@ function PhotoFields(props: FieldsProps<"photo">) {
   const { block, onChange } = props;
   return (
     <>
-      <UploadField label="Фото" value={block.photo} onChange={(photo) => onChange({ photo })} />
+      <UploadField label="Фото" value={block.photo} onChange={(photo) => onChange({ photo, photoFocus: undefined })} />
+      {block.photo && <PhotoFocusField src={block.photo} value={block.photoFocus} onChange={(photoFocus) => onChange({ photoFocus })} />}
       <TextField
         textStyle={styleOf(props, "caption")}
         label="Подпись"

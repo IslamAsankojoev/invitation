@@ -1,5 +1,6 @@
 "use client";
 
+import { focusPosition, photoStyle } from "@/lib/photoFocus";
 import { Plane } from "lucide-react";
 import { useEffect, useId, useRef, type CSSProperties } from "react";
 import { textStyle } from "@/lib/textStyle";
@@ -215,7 +216,7 @@ function HeroClassic({ block, ctx }: HeroProps) {
               <div
                 data-testid="hero-photo"
                 className="inv-hero-photo absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url("${block.photo}")` }}
+                style={{ backgroundImage: `url("${block.photo}")`, backgroundPosition: focusPosition(block.photoFocus) }}
               />
             </div>
             <div aria-hidden="true" className="inv-hero-overlay absolute inset-0" />
@@ -262,7 +263,7 @@ function HeroArch({ block, ctx }: HeroProps) {
       <div className="inv-arch relative mx-auto w-[74%] max-w-[300px]" data-reveal="1" data-anim="curtain" data-delay="0.3">
         <div className="aspect-[3/4] overflow-hidden rounded-t-full">
           {block.photo ? (
-            <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" />
+            <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" style={photoStyle(block)} />
           ) : (
             <PhotoPlaceholder names={block.names} />
           )}
@@ -290,7 +291,7 @@ function HeroPolaroid({ block, ctx }: HeroProps) {
         <span aria-hidden="true" className="inv-tape right-[12%] rotate-12" />
         <div className="aspect-square overflow-hidden bg-neutral-200">
           {block.photo ? (
-            <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" />
+            <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" style={photoStyle(block)} />
           ) : (
             <PhotoPlaceholder names={block.names} />
           )}
@@ -313,7 +314,7 @@ function HeroMinimal({ block, ctx }: HeroProps) {
     <Section block={block} bare frame className="inv-hero flex min-h-[min(100svh,780px)] flex-col items-center justify-center px-8 pt-16 pb-28" background={<ScrollHint />}>
       {block.photo && (
         <div className="mx-auto mb-8 h-28 w-28 overflow-hidden rounded-full ring-1 ring-[var(--accent)] ring-offset-4 ring-offset-[var(--bg)]" data-reveal="1" data-anim="pop" data-delay="0.2">
-          <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" />
+          <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" style={photoStyle(block)} />
         </div>
       )}
       {block.label && (
@@ -385,7 +386,7 @@ function HeroCover({ block, ctx }: HeroProps) {
     <Section block={block} bare className="inv-hero flex min-h-[min(100svh,780px)] flex-col pb-14">
       <div className="inv-cover-photo relative h-[54svh] max-h-[470px] min-h-[330px] w-full overflow-hidden" data-reveal="1" data-anim="fade">
         {block.photo ? (
-          <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" />
+          <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" style={photoStyle(block)} />
         ) : (
           <PhotoPlaceholder names={block.names} />
         )}
@@ -467,7 +468,7 @@ function HeroMonogram({ block, ctx }: HeroProps) {
       {block.photo ? (
         // Фото — во всю ширину блока (выходит за поля) и проявляется из фона сверху.
         <div className="inv-monogram-photo relative -mx-8 mt-10 h-[300px]" data-reveal="4" data-anim="fade" data-delay="0.6">
-          <img src={block.photo} alt="" data-testid="hero-photo" className="absolute inset-0 h-full w-full object-cover" />
+          <img src={block.photo} alt="" data-testid="hero-photo" className="absolute inset-0 h-full w-full object-cover" style={photoStyle(block)} />
         </div>
       ) : (
         <div className="pb-24" />

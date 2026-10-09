@@ -110,6 +110,7 @@ test("создать → настроить → открыть → послуш�
   // 6а. «Отправить гостям» — WhatsApp с именами и ссылкой, ссылка из имён одним нажатием
   await page.getByRole("button", { name: "Отправить гостям" }).click();
   await expect(page.getByRole("link", { name: "Отправить в WhatsApp" })).toHaveAttribute("href", /^https:\/\/wa\.me\/\?text=.*%D0%9C%D0%B0%D1%80%D0%B8%D1%8F/);
+  const oldHref = await page.getByRole("link", { name: "Посмотреть как гость" }).getAttribute("href");
   const pretty = page.getByRole("button", { name: /^Сделать ссылку \/i\/mariya-petr/ }).first();
   await pretty.click();
   await expect(page.getByText("Ссылка сохранена")).toBeVisible();
@@ -118,6 +119,9 @@ test("создать → настроить → открыть → послуш�
   // 7. Открыть публичную ссылку
   const publicHref = await page.getByRole("link", { name: "Открыть" }).getAttribute("href");
   expect(publicHref).toMatch(/^\/i\/mariya-petr/);
+  // Прежняя ссылка (её могли уже разослать) ведёт на новую.
+  await page.goto(oldHref!);
+  await expect(page).toHaveURL(/\/i\/mariya-petr/);
   await page.goto(publicHref!);
   // Превью ссылки в мессенджерах: имена, повод, дата.
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "Мария & Пётр — приглашение на свадьбу");

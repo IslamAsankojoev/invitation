@@ -14,6 +14,7 @@ import { slugSchema } from "@/lib/slug";
 import { patchInvitation } from "./api";
 import { AccountRequired } from "./AccountRequired";
 import { Group } from "./controls";
+import { QrCode } from "./QrCode";
 import type { EditorAccount } from "./Editor";
 
 type Props = {
@@ -150,6 +151,7 @@ export function LinkPanel({ id, token, slug, onSlugChange, account, data, onFix 
             </Button>
           )}
         </div>
+        <QrCode url={publicUrl} fileName={`qr-${slug}.png`} />
         <details className="text-sm">
           <summary className="cursor-pointer text-muted-foreground">Текст сообщения</summary>
           <p className="mt-2 rounded-lg border p-3 whitespace-pre-line">{text}</p>
@@ -202,7 +204,7 @@ export function LinkPanel({ id, token, slug, onSlugChange, account, data, onFix 
           {formatError ? (
             <FieldError>{formatError}</FieldError>
           ) : (
-            <FieldDescription>Латинские буквы, цифры и дефис. Поменяйте до того, как отправите гостям.</FieldDescription>
+            <FieldDescription>Латинские буквы, цифры и дефис. Уже разослали — не страшно: старая ссылка откроет новую.</FieldDescription>
           )}
         </Field>
         {message && (

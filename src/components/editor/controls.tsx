@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { FieldError, FieldLabel } from "@/components/ui/field";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { categoryLabels, libraryBy, type LibraryCategory } from "@/lib/library";
+import { focusFromPoint } from "@/lib/photoFocus";
+import type { PhotoFocus } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { useUploadFile } from "./api";
 
@@ -370,5 +372,51 @@ export function FineTuning({ label = "Тонкая настройка", children
       </CollapsibleTrigger>
       <CollapsibleContent className="flex flex-col gap-4 pt-3">{children}</CollapsibleContent>
     </Collapsible>
+  );
+}
+
+/**
+ * «Что главное на фото»: нажатие на место снимка — оно останется в кадре, когда фото обрежется под рамку
+ * (обложка во весь экран, квадрат, полароид). Стрелки двигают точку на 5 %.
+ */
+export function PhotoFocusField({ src, value, onChange }: { src: string; value: PhotoFocus | undefined; onChange: (focus: PhotoFocus | undefined) => void }) {
+  const point = value ?? { x: 50, y: 50 };
+  const move = (dx: number, dy: number) =>
+    onChange({ x: Math.min(100, Math.max(0, point.x + dx)), y: Math.min(100, Math.max(0, point.y + dy)) });
+  return (
+    <div className="flex flex-col gap-2">
+      <FieldLabel>Что главное на фото</FieldLabel>
+      <button
+        type="button"
+        aria-label={`Главное место на фото: ${point.x}% по ширине, ${point.y}% по высоте. Нажмите на фото или двигайте стрелками`}
+        className="relative w-fit max-w-full cursor-crosshair self-start overflow-hidden rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+        onClick={(e) => {
+          const img = e.currentTarget.querySelector("img");
+          if (img && e.detail > 0) onChange(focusFromPoint(img.getBoundingClientRect(), e.clientX, e.clientY));
+        }}
+        onKeyDown={(e) => {
+          const step: Record<string, [number, number]> = { ArrowLeft: [-5, 0], ArrowRight: [5, 0], ArrowUp: [0, -5], ArrowDown: [0, 5] };
+          if (!step[e.key]) return;
+          e.preventDefault();
+          move(...step[e.key]);
+        }}
+      >
+        {/* Картинка целиком и не выше 14rem: рамка кнопки = снимок, точка считается от него. */}
+        <img src={src} alt="" className="block max-h-56 w-auto max-w-full" draggable={false} />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_2px_rgb(0_0_0/0.45)]"
+          style={{ left: `${point.x}%`, top: `${point.y}%` }}
+        />
+      </button>
+      <p className="text-xs text-muted-foreground">
+        Нажмите на лица — при обрезке фото они останутся в кадре.
+        {value && (
+          <Button type="button" variant="link" size="xs" className="ml-1 h-auto p-0 text-xs" onClick={() => onChange(undefined)}>
+            По центру
+          </Button>
+        )}
+      </p>
+    </div>
   );
 }

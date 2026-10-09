@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { photoStyle } from "@/lib/photoFocus";
 import { textStyle } from "@/lib/textStyle";
 import { blockTitle, findBlock } from "@/lib/blocks";
 import { Section } from "../Section";
@@ -43,7 +44,7 @@ export function StoryBlock({ block, ctx }: BlockProps<"story">) {
           <div className="relative mx-auto mb-10 w-[80%] max-w-[320px]">
             <span aria-hidden="true" className="absolute top-3 left-3 -right-3 -bottom-3 rounded-[20px] border border-[var(--accent)]/60" data-reveal="3" data-anim="fade" />
             <div className="relative overflow-hidden rounded-[20px]" data-reveal="2" data-anim="curtain">
-              <img src={block.photo} alt="" className="aspect-[4/5] w-full object-cover" />
+              <img src={block.photo} alt="" className="aspect-[4/5] w-full object-cover" style={photoStyle(block)} />
             </div>
           </div>
         )}
