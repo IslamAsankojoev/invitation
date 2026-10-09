@@ -29,10 +29,10 @@ export function LocationBlock({ block, ctx }: BlockProps<"location">) {
             </span>
             <span aria-hidden="true" className="inv-postmark absolute -top-8 right-14" />
             <p className="inv-caps text-[0.7rem] opacity-60">Ждём вас по адресу</p>
-            <p className="inv-postcard-line mt-2 text-3xl" style={{ fontFamily: "var(--font-title)", ...textStyle(block, "placeName") }}>
+            <p className="inv-postcard-line mt-2 text-3xl" style={{ fontFamily: "var(--font-title)", ...textStyle(block, "placeName") }} data-field="placeName">
               {block.placeName}
             </p>
-            <p className="inv-postcard-line mt-1 text-xl italic" style={textStyle(block, "address")}>{block.address}</p>
+            <p className="inv-postcard-line mt-1 text-xl italic" style={textStyle(block, "address")} data-field="address">{block.address}</p>
           </div>
         </div>
         <MapButton url={block.mapUrl} />
@@ -45,11 +45,11 @@ export function LocationBlock({ block, ctx }: BlockProps<"location">) {
       <Section block={block}>
         <div className="inv-plaque mx-auto max-w-xs px-6 py-8" data-reveal="2" data-anim="fade">
           <MapPin aria-hidden="true" strokeWidth={1.2} className="mx-auto size-8 text-[var(--accent)]" />
-          <p className="inv-heading mt-4 text-lg" style={textStyle(block, "placeName")}>{block.placeName}</p>
+          <p className="inv-heading mt-4 text-lg" style={textStyle(block, "placeName")} data-field="placeName">{block.placeName}</p>
           <div className="inv-divider text-xs" aria-hidden="true">
             ✦
           </div>
-          <p className="mt-3 text-lg leading-snug opacity-80" style={textStyle(block, "address")}>{block.address}</p>
+          <p className="mt-3 text-lg leading-snug opacity-80" style={textStyle(block, "address")} data-field="address">{block.address}</p>
         </div>
         <MapButton url={block.mapUrl} />
       </Section>
@@ -65,8 +65,8 @@ export function LocationBlock({ block, ctx }: BlockProps<"location">) {
         </div>
       )}
       <div data-reveal="3">
-        <p className="inv-heading text-lg" style={textStyle(block, "placeName")}>{block.placeName}</p>
-        <p className="mx-auto mt-3 max-w-xs text-lg leading-snug opacity-80" style={textStyle(block, "address")}>{block.address}</p>
+        <p className="inv-heading text-lg" style={textStyle(block, "placeName")} data-field="placeName">{block.placeName}</p>
+        <p className="mx-auto mt-3 max-w-xs text-lg leading-snug opacity-80" style={textStyle(block, "address")} data-field="address">{block.address}</p>
       </div>
       <MapButton url={block.mapUrl} />
     </Section>

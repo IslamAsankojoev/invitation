@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check, ChevronDown, CircleCheck, Crown, ExternalLink, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, RotateCw, Send, Users, X } from "lucide-react";
+import { AlertCircle, Check, ChevronDown, CircleCheck, Crown, ExternalLink, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, Redo2, RotateCw, Send, Undo2, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { DecorLayer } from "@/components/invitation/DecorLayer";
@@ -16,7 +16,9 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { accountGate, type ClaimNext, type Ownership } from "@/lib/access";
-import { findBlock } from "@/lib/blocks";
+import { blockById, findBlock, updateBlock } from "@/lib/blocks";
+import { createHistory, record, redo, undo } from "@/lib/history";
+import { isQuickEditField, type QuickEditField } from "@/lib/quickEdit";
 import { premiumUsage } from "@/lib/premium";
 import { loadRecent, rememberInvitation, saveRecent } from "@/lib/recent";
 import { themeStyle } from "@/lib/theme";
@@ -28,6 +30,7 @@ import { BlocksPanel, type BlockViewState } from "./BlocksPanel";
 import { IntroPreview } from "./IntroPreview";
 import { LinkPanel } from "./LinkPanel";
 import { MusicPanel } from "./MusicPanel";
+import { QuickEditBar } from "./QuickEditBar";
 import { QuickStart } from "./QuickStart";
 import { ThemePanel } from "./ThemePanel";
 import { useAutosave, type SaveStatus } from "./useAutosave";
@@ -140,7 +143,30 @@ const PICK_TIP_KEY = "editor-pick-tip";
 const SHOW_PREMIUM_ALERT = false;
 
 export function Editor({ id, token, initialSlug, initialData, account, notice, quickStart = false }: Props) {
-  const [data, setData] = useState(initialData);
+  // Состояние приглашения — с историей для «Отменить / Вернуть»; правки подряд (набор текста) склеиваются в шаг.
+  const [history, setHistory] = useState(() => createHistory(initialData));
+  const data = history.present;
+  const setData = useCallback((next: InvitationData) => {
+    const now = Date.now();
+    setHistory((h) => record(h, next, now));
+  }, []);
+  const canUndo = history.past.length > 0;
+  const canRedo = history.future.length > 0;
+  // Ctrl/⌘+Z, Shift+Ctrl/⌘+Z и Ctrl+Y — вне полей ввода (в поле работает обычная отмена набора).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
+      const key = e.key.toLowerCase();
+      if (key === "z" || key === "y") {
+        e.preventDefault();
+        setHistory((h) => (key === "y" || e.shiftKey ? redo(h) : undo(h)));
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const [slug, setSlug] = useState(initialSlug);
 
   const save = useCallback((d: InvitationData) => patchInvitation(id, token, { data: d }), [id, token]);
@@ -254,12 +280,47 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, q
     e.preventDefault();
     e.stopPropagation();
     const blockId = section.dataset.blockId;
+    // Телефон: нажали на надпись — правим её прямо здесь, приглашение остаётся видно (шторка закрыта).
+    const field = (e.target as HTMLElement).closest<HTMLElement>("[data-field]")?.dataset.field;
+    if (!desktop && isQuickEditField(field)) {
+      // Снизу поднимется клавиатура — надпись поднимаем к верху превью, чтобы правка была видна.
+      const box = previewRef.current;
+      const el = (e.target as HTMLElement).closest<HTMLElement>("[data-field]");
+      if (box && el) {
+        const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+        box.scrollTo({ top: Math.max(0, top - 48), behavior: prefersReducedMotion() ? "auto" : "smooth" });
+      }
+      setSheet(false);
+      setIntro(false);
+      setExpanded(blockId);
+      setQuickEdit({ blockId, field });
+      if (pickTip) closePickTip();
+      return;
+    }
+    setQuickEdit(null);
     setTab("Блоки");
     setSheet(true);
     setIntro(false);
     setExpanded(blockId);
     panelScrollTo.current = blockId;
     if (pickTip) closePickTip();
+  }
+
+  /** Быстрая правка надписи на телефоне: какой блок и какое поле. */
+  const [quickEdit, setQuickEdit] = useState<{ blockId: string; field: QuickEditField } | null>(null);
+  const quickBlock = quickEdit ? blockById(data, quickEdit.blockId) : undefined;
+  // Открыли панель (нижние кнопки, «Отправить») — быстрая правка закрывается, иначе легла бы поверх шторки.
+  useEffect(() => {
+    if (sheet) setQuickEdit(null);
+  }, [sheet]);
+  /** «Все настройки блока» из быстрой правки — панель с этим блоком. */
+  function quickEditMore() {
+    if (!quickEdit) return;
+    setQuickEdit(null);
+    setTab("Блоки");
+    setSheet(true);
+    setExpanded(quickEdit.blockId);
+    panelScrollTo.current = quickEdit.blockId;
   }
 
   function toggleFollow(on: boolean) {
@@ -429,9 +490,18 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, q
         >
           {/* z-[35] — над невидимой подложкой шторки: кнопки сверху нажимаются с первого раза и при открытой панели. */}
           <div className="relative z-[35] flex w-full max-w-[433px] items-center gap-2 px-3 lg:max-w-[720px] lg:px-0">
-            <Button type="button" variant="outline" size="icon-sm" onClick={reloadPreview} aria-label="Перезагрузить" title="Перезагрузить превью">
+            {/* На телефоне места мало: перезагрузка превью нужна редко, «Отменить» — часто. */}
+            <Button type="button" variant="outline" size="icon-sm" className="max-sm:hidden" onClick={reloadPreview} aria-label="Перезагрузить" title="Перезагрузить превью">
               <RotateCw />
             </Button>
+            <div className="flex">
+              <Button type="button" variant="ghost" size="icon-sm" disabled={!canUndo} onClick={() => setHistory(undo)} aria-label="Отменить" title="Отменить (Ctrl+Z)">
+                <Undo2 />
+              </Button>
+              <Button type="button" variant="ghost" size="icon-sm" disabled={!canRedo} onClick={() => setHistory(redo)} aria-label="Вернуть" title="Вернуть (Ctrl+Shift+Z)">
+                <Redo2 />
+              </Button>
+            </div>
             <Badge role="status" data-testid="save-status" variant={statusInfo.variant} title={statusInfo.text}>
               {statusInfo.icon}
               {/* На узком экране — только значок: место нужнее кнопкам справа. */}
@@ -451,7 +521,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, q
                     <ExternalLink /> <span className="max-sm:hidden">Открыть</span>
                   </Button>
                   <Button type="button" variant="outline" size="sm" onClick={() => setGateFor("guests")}>
-                    <Users /> Гости
+                    <Users /> <span className="max-sm:sr-only">Гости</span>
                   </Button>
                 </>
               ) : (
@@ -463,7 +533,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, q
                   </Button>
                   <Button asChild variant="outline" size="sm">
                     <a href={`/edit/${id}/guests?token=${token}`}>
-                      <Users /> Гости
+                      <Users /> <span className="max-sm:sr-only">Гости</span>
                     </a>
                   </Button>
                 </>
@@ -521,6 +591,16 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, q
           })}
         </nav>
       </div>
+      {quickEdit && quickBlock && (
+        <QuickEditBar
+          key={`${quickEdit.blockId}:${quickEdit.field}`}
+          block={quickBlock}
+          field={quickEdit.field}
+          onChange={(patch) => setData(updateBlock(data, quickEdit.blockId, patch))}
+          onClose={() => setQuickEdit(null)}
+          onMore={quickEditMore}
+        />
+      )}
       {starting && <QuickStart data={data} onChange={setData} onClose={() => setStarting(false)} onShare={openShare} />}
       {account && gate && (
         <Dialog open={gateFor !== null} onOpenChange={(open) => !open && setGateFor(null)}>

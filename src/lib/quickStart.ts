@@ -11,6 +11,14 @@ export const EVENT_KINDS = [
   { label: "Юбилей", text: "Приглашение на юбилей" },
 ] as const;
 
+/** Готовые фразы для подзаголовка на главном экране. */
+export const SUBTITLE_PRESETS = [
+  "Приглашаем вас разделить с нами этот день",
+  "Будем счастливы видеть вас на нашем празднике",
+  "Самый важный день нашей жизни — и мы хотим провести его с вами",
+  "Приходите разделить с нами радость",
+] as const;
+
 /** «2027-06-19T16:00» → дата и время отдельно (для полей date и time на телефоне). */
 export function splitDateTime(local: string): { date: string; time: string } {
   return { date: local.slice(0, 10), time: local.slice(11, 16) };

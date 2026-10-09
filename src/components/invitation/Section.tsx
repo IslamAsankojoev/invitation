@@ -192,13 +192,13 @@ export function Section({ block, children, bare = false, frame = false, fill, ba
         {(title || script) && (
           <header className="mb-8">
             {title && (
-              <h2 className="inv-heading inv-title" data-reveal="1" data-anim="blur" style={textStyle(block, "title")}>
+              <h2 className="inv-heading inv-title" data-reveal="1" data-anim="blur" style={textStyle(block, "title")} data-field="title">
                 {title}
               </h2>
             )}
             {script && (
               <p className="inv-script-line">
-                <span className="inv-script inline-block" data-reveal="2" data-anim="write" style={textStyle(block, "scriptLine")}>
+                <span className="inv-script inline-block" data-reveal="2" data-anim="write" style={textStyle(block, "scriptLine")} data-field="scriptLine">
                   {script}
                 </span>
               </p>

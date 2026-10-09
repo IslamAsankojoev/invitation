@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Check, MapPin, PartyPopper, Send, Users } from "lucide-react";
+import { CalendarDays, Check, ImagePlus, Loader2, MapPin, PartyPopper, Send, Users, X } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -10,8 +10,9 @@ import { findBlock, updateBlock } from "@/lib/blocks";
 import { EVENT_KINDS, joinDateTime, normalizeMapUrl, splitDateTime } from "@/lib/quickStart";
 import type { BlockOf, InvitationData } from "@/lib/schema";
 import { cn } from "@/lib/utils";
+import { useUpload } from "./controls";
 
-type Step = "names" | "date" | "place" | "done";
+type Step = "names" | "date" | "place" | "photo" | "done";
 
 type Props = {
   data: InvitationData;
@@ -25,7 +26,55 @@ const stepInfo: Record<Exclude<Step, "done">, { title: string; hint: string; ico
   names: { title: "Что празднуем?", hint: "Повод и имена — их гости увидят первыми", icon: <Users /> },
   date: { title: "Когда?", hint: "Дата и время начала — по ним идут календарь и обратный отсчёт", icon: <CalendarDays /> },
   place: { title: "Где?", hint: "Название, адрес и ссылка на карту — гости найдут дорогу в один клик", icon: <MapPin /> },
+  photo: { title: "Ваше фото", hint: "Фото на главном экране делает приглашение личным. Можно пропустить и добавить позже", icon: <ImagePlus /> },
 };
+
+/** Крупная кнопка выбора фото: на телефоне откроет галерею или камеру. */
+function PhotoStep({ value, onChange }: { value: string | null; onChange: (url: string | null) => void }) {
+  const { busy, error, upload } = useUpload(onChange);
+  return (
+    <div className="flex flex-col gap-2">
+      <label
+        className={cn(
+          "relative flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border-2 border-dashed bg-muted/40 text-sm text-muted-foreground transition hover:bg-muted focus-within:ring-3 focus-within:ring-ring/50",
+          busy && "pointer-events-none opacity-70",
+        )}
+      >
+        {value ? (
+          <img src={value} alt="" className="absolute inset-0 size-full object-cover" />
+        ) : (
+          <>
+            <ImagePlus className="size-8" />
+            Выберите фото с телефона
+          </>
+        )}
+        {busy && (
+          <span className="absolute inset-0 flex items-center justify-center bg-background/60">
+            <Loader2 className="size-6 animate-spin" />
+          </span>
+        )}
+        <input
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          aria-label="Фото на главном экране"
+          disabled={busy}
+          onChange={(e) => upload(e.target.files?.[0])}
+        />
+      </label>
+      {/* Фото-примеры шаблонов лежат в /templates/ — честно говорим, что это не их снимок. */}
+      {value?.startsWith("/templates/") && (
+        <p className="text-sm text-muted-foreground">Сейчас стоит фото из примера — нажмите на него, чтобы выбрать своё.</p>
+      )}
+      {value && (
+        <Button type="button" variant="ghost" size="sm" className="self-start" onClick={() => onChange(null)}>
+          <X /> Убрать фото
+        </Button>
+      )}
+      {error && <FieldError>{error}</FieldError>}
+    </div>
+  );
+}
 
 /**
  * Быстрый старт после выбора шаблона: три коротких шага вместо поиска полей по блокам. Всё пишется в приглашение
@@ -35,7 +84,7 @@ const stepInfo: Record<Exclude<Step, "done">, { title: string; hint: string; ico
 export function QuickStart({ data, onChange, onClose, onShare }: Props) {
   const hero = findBlock(data, "hero");
   const location = findBlock(data, "location");
-  const steps: Step[] = ["names", "date", ...(location ? (["place"] as const) : []), "done"];
+  const steps: Step[] = ["names", "date", ...(location ? (["place"] as const) : []), "photo", "done"];
   const [step, setStep] = useState<Step>("names");
   const index = steps.indexOf(step);
   const ids = useId();
@@ -216,6 +265,8 @@ export function QuickStart({ data, onChange, onClose, onShare }: Props) {
                 </Field>
               </>
             )}
+
+            {step === "photo" && <PhotoStep value={hero.photo} onChange={(photo) => setHero({ photo })} />}
 
             <div className="flex items-center gap-2">
               {index > 0 && (

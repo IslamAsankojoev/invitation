@@ -34,7 +34,7 @@ export function TextBlock({ block }: BlockProps<"text">) {
         target={block.buttonUrl.startsWith("http") ? "_blank" : undefined}
         rel="noopener noreferrer"
         className="inv-btn-outline inv-btn-shine"
-        style={textStyle(block, "button")}
+        style={textStyle(block, "button")} data-field="button"
       >
         {block.buttonLabel || "Подробнее"}
       </a>
@@ -48,7 +48,7 @@ export function TextBlock({ block }: BlockProps<"text">) {
         <div aria-hidden="true" className="-mb-2 text-5xl leading-none text-[var(--accent)] opacity-70" data-reveal="2" data-anim="blur">
           “
         </div>
-        <p className="mx-auto max-w-sm whitespace-pre-line text-2xl leading-relaxed italic" data-reveal="3" data-anim="fade" style={textStyle(block, "text")}>
+        <p className="mx-auto max-w-sm whitespace-pre-line text-2xl leading-relaxed italic" data-reveal="3" data-anim="fade" style={textStyle(block, "text")} data-field="text">
           {block.text}
         </p>
         {button}
@@ -59,7 +59,7 @@ export function TextBlock({ block }: BlockProps<"text">) {
   const body = (
     <>
       {icon}
-      <p className="mx-auto max-w-sm whitespace-pre-line text-xl leading-relaxed" data-reveal="3" style={textStyle(block, "text")}>
+      <p className="mx-auto max-w-sm whitespace-pre-line text-xl leading-relaxed" data-reveal="3" style={textStyle(block, "text")} data-field="text">
         {block.text}
       </p>
       {button}

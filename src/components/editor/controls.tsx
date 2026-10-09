@@ -33,7 +33,7 @@ export const checker =
   "bg-[conic-gradient(var(--color-muted)_25%,var(--color-background)_0_50%,var(--color-muted)_0_75%,var(--color-background)_0)] bg-[length:14px_14px]";
 
 /** Загрузка файла с состоянием «занят» и текстом ошибки. */
-function useUpload(onDone: (url: string) => void) {
+export function useUpload(onDone: (url: string) => void) {
   const uploadFile = useUploadFile();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -769,7 +769,7 @@ describe("Editor: быстрый старт и отправка гостям", (
     expect(window.location.search).toBe("?token=secret");
     const preview = screen.getByTestId("preview");
     const dialog = () => screen.getByRole("dialog");
-    expect(within(dialog()).getByText("Шаг 1 из 3")).toBeInTheDocument();
+    expect(within(dialog()).getByText("Шаг 1 из 4")).toBeInTheDocument();
 
     await user.click(within(dialog()).getByRole("button", { name: "Кыз узатуу" }));
     expect(within(dialog()).getByRole("button", { name: "Кыз узатуу" })).toHaveAttribute("aria-pressed", "true");
@@ -800,6 +800,11 @@ describe("Editor: быстрый старт и отправка гостям", (
     expect(within(preview).getByText("Ресторан «Ала-Тоо»")).toBeInTheDocument();
     // Пока открыт диалог, Radix скрывает остальное от скринридеров (aria-hidden) — ищем ссылку по разметке.
     expect(preview.querySelector('[data-block="location"] a[href="https://go.2gis.com/abc12"]')).toHaveTextContent("Посмотреть на карте");
+    await user.click(within(dialog()).getByRole("button", { name: "Далее" }));
+
+    // Фото: крупная кнопка выбора; можно пропустить.
+    expect(within(dialog()).getByText("Ваше фото")).toBeInTheDocument();
+    expect(within(dialog()).getByLabelText("Фото на главном экране")).toHaveAttribute("type", "file");
     await user.click(within(dialog()).getByRole("button", { name: "Далее" }));
 
     expect(within(dialog()).getByText("Приглашение готово!")).toBeInTheDocument();
@@ -846,5 +851,78 @@ describe("Editor: быстрый старт и отправка гостям", (
     expect(await screen.findByText("Ссылка сохранена")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Посмотреть как гость" })).toHaveAttribute("href", "/i/anna-ivan");
     expect(screen.queryByRole("button", { name: "Сделать ссылку /i/anna-ivan" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Editor: отменить/вернуть, правка в превью, готовые фразы", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("«Отменить» и «Вернуть» — кнопками и Ctrl+Z вне полей; набор текста — один шаг", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    const names = () => within(screen.getByTestId("preview")).getByTestId("hero-names");
+    const undoBtn = screen.getByRole("button", { name: "Отменить" });
+    const redoBtn = screen.getByRole("button", { name: "Вернуть" });
+    expect(undoBtn).toBeDisabled();
+    expect(redoBtn).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Главный экран" }));
+    await user.clear(screen.getByLabelText("Имена"));
+    await user.type(screen.getByLabelText("Имена"), "Мария & Пётр");
+    expect(names()).toHaveTextContent("Мария & Пётр");
+
+    await user.click(undoBtn);
+    expect(names()).toHaveTextContent("Анна & Иван");
+    expect(redoBtn).toBeEnabled();
+    await user.click(redoBtn);
+    expect(names()).toHaveTextContent("Мария & Пётр");
+
+    // Клавиатура: в поле Ctrl+Z — обычная отмена набора, вне поля — шаг истории.
+    (document.activeElement as HTMLElement).blur();
+    await user.keyboard("{Control>}z{/Control}");
+    expect(names()).toHaveTextContent("Анна & Иван");
+    await user.keyboard("{Control>}{Shift>}z{/Shift}{/Control}");
+    expect(names()).toHaveTextContent("Мария & Пётр");
+  });
+
+  it("телефон: нажатие на надпись в превью — правка снизу, шторка закрыта; «Все настройки блока» открывает блок", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    const preview = screen.getByTestId("preview");
+    const sheet = screen.getByRole("complementary", { name: "Панель редактора" });
+
+    await user.click(within(preview).getByTestId("hero-names"));
+    const bar = screen.getByRole("dialog", { name: "Правка: Имена" });
+    expect(sheet).toHaveClass("invisible");
+    const input = within(bar).getByLabelText("Имена");
+    expect(input).toHaveValue("Анна & Иван");
+    expect(input).toHaveFocus();
+    await user.clear(input);
+    await user.type(input, "Айбек & Айзада");
+    expect(within(preview).getByTestId("hero-names")).toHaveTextContent("Айбек & Айзада");
+    await user.click(within(bar).getByRole("button", { name: "Готово" }));
+    expect(screen.queryByRole("dialog", { name: /^Правка/ })).not.toBeInTheDocument();
+
+    // Заголовок блока без своего текста — в поле стандартный.
+    await user.click(within(preview.querySelector<HTMLElement>('[data-block="program"]')!).getByText("Программа дня"));
+    expect(within(screen.getByRole("dialog", { name: "Правка: Заголовок" })).getByLabelText("Заголовок")).toHaveValue("Программа дня");
+    await user.click(screen.getByRole("button", { name: "Все настройки блока" }));
+    expect(screen.queryByRole("dialog", { name: /^Правка/ })).not.toBeInTheDocument();
+    expect(sheet).not.toHaveClass("invisible");
+    expect(screen.getByRole("button", { name: "Программа" })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("готовые надписи и фразы на главном экране подставляются одним нажатием", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    const preview = screen.getByTestId("preview");
+    await user.click(screen.getByRole("button", { name: "Главный экран" }));
+    await user.click(within(screen.getByRole("group", { name: "Готовые надписи" })).getByRole("button", { name: "Юбилей" }));
+    expect(screen.getByLabelText("Надпись над именами")).toHaveValue("Приглашение на юбилей");
+    expect(within(preview).getByText("Приглашение на юбилей")).toBeInTheDocument();
+    const phrase = "Приходите разделить с нами радость";
+    await user.click(within(screen.getByRole("group", { name: "Готовые фразы" })).getByRole("button", { name: phrase }));
+    expect(screen.getByLabelText("Подзаголовок")).toHaveValue(phrase);
+    expect(within(screen.getByRole("group", { name: "Готовые фразы" })).getByRole("button", { name: phrase })).toHaveAttribute("aria-pressed", "true");
   });
 });

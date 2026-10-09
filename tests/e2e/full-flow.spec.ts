@@ -21,13 +21,16 @@ test("создать → настроить → открыть → послуш�
 
   // 2. Быстрый старт: имена, дата и время; место пропускаем
   const quick = page.getByRole("dialog");
-  await expect(quick.getByText("Шаг 1 из 3")).toBeVisible();
+  await expect(quick.getByText("Шаг 1 из 4")).toBeVisible();
   await expect(quick.getByRole("button", { name: "Свадьба" })).toHaveAttribute("aria-pressed", "true");
   await quick.getByLabel("Имена").fill("Мария & Пётр");
   await quick.getByRole("button", { name: "Далее" }).click();
   await quick.getByLabel("Дата").fill("2027-08-20");
   await quick.getByLabel("Начало").fill("17:30");
   await quick.getByRole("button", { name: "Далее" }).click();
+  await quick.getByRole("button", { name: "Далее" }).click();
+  // Фото пропускаем.
+  await expect(quick.getByText("Ваше фото")).toBeVisible();
   await quick.getByRole("button", { name: "Далее" }).click();
   await expect(quick.getByText("Приглашение готово!")).toBeVisible();
   await quick.getByRole("button", { name: "Оформить дальше" }).click();

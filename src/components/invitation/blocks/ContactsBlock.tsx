@@ -27,7 +27,7 @@ export function ContactsBlock({ block }: BlockProps<"contacts">) {
   return (
     <Section block={block}>
       {block.text && (
-        <p className="mx-auto mb-8 max-w-sm whitespace-pre-line text-xl leading-relaxed" data-reveal="2" style={textStyle(block, "text")}>
+        <p className="mx-auto mb-8 max-w-sm whitespace-pre-line text-xl leading-relaxed" data-reveal="2" style={textStyle(block, "text")} data-field="text">
           {block.text}
         </p>
       )}
@@ -40,11 +40,11 @@ export function ContactsBlock({ block }: BlockProps<"contacts">) {
             data-anim={cards && i % 2 ? "right" : undefined}
           >
             {p.role && (
-              <p className="inv-caps text-[0.7rem] opacity-70" style={textStyle(block, "personRole")}>
+              <p className="inv-caps text-[0.7rem] opacity-70" style={textStyle(block, "personRole")} data-field="personRole">
                 {p.role}
               </p>
             )}
-            <p className="mt-1 text-2xl leading-tight" style={{ fontFamily: "var(--font-title)", ...textStyle(block, "personName") }}>
+            <p className="mt-1 text-2xl leading-tight" style={{ fontFamily: "var(--font-title)", ...textStyle(block, "personName") }} data-field="personName">
               {p.name}
             </p>
             {p.phone && <p className="mt-1 text-lg opacity-80">{p.phone}</p>}

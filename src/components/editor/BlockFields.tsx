@@ -21,6 +21,7 @@ import {
   type TextStyle,
 } from "@/lib/schema";
 import { withTextStyle, type TextKey } from "@/lib/textStyle";
+import { EVENT_KINDS, SUBTITLE_PRESETS } from "@/lib/quickStart";
 import { programIconLabels, textIconLabels } from "@/lib/variants";
 import { AddFieldButton, PhotoListField, UploadField } from "./controls";
 import { TextStylePicker } from "./TextStylePicker";
@@ -75,6 +76,30 @@ function TextField({
   );
 }
 
+/** Готовые варианты под полем: нажатие подставляет текст целиком, выбранный отмечен. */
+function Presets({ label, options, value, onPick }: { label: string; options: readonly { label: string; text: string }[]; value: string | undefined; onPick: (text: string) => void }) {
+  return (
+    <div role="group" aria-label={label} className="-mt-1 flex flex-wrap gap-1.5">
+      {options.map((o) => (
+        <Button
+          key={o.text}
+          type="button"
+          size="xs"
+          variant={value === o.text ? "secondary" : "outline"}
+          aria-pressed={value === o.text}
+          title={o.text}
+          className="max-w-full rounded-full font-normal"
+          onClick={() => onPick(o.text)}
+        >
+          <span className="truncate">{o.label}</span>
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+const subtitleOptions = SUBTITLE_PRESETS.map((text) => ({ label: text, text }));
+
 const Hint = ({ children }: { children: string }) => <p className="text-sm text-muted-foreground">{children}</p>;
 
 function HeroFields(props: FieldsProps<"hero">) {
@@ -101,12 +126,14 @@ function HeroFields(props: FieldsProps<"hero">) {
         value={block.label ?? ""}
         onChange={(label) => onChange({ label: label || undefined })}
       />
+      <Presets label="Готовые надписи" options={EVENT_KINDS} value={block.label} onPick={(label) => onChange({ label })} />
       <TextField
         textStyle={styleOf(props, "subtitle")}
         label="Подзаголовок"
         value={block.subtitle ?? ""}
         onChange={(subtitle) => onChange({ subtitle: subtitle || undefined })}
       />
+      <Presets label="Готовые фразы" options={subtitleOptions} value={block.subtitle} onPick={(subtitle) => onChange({ subtitle })} />
       <UploadField label="Фото на главном экране" value={block.photo} onChange={(photo) => onChange({ photo })} />
     </>
   );
