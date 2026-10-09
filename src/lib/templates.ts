@@ -58,6 +58,12 @@ export type Template = {
    * оформление n-го блока этого типа в структуре (лишние — последнего).
    */
   layout?: LayoutBlock[];
+  /** Фото главного экрана нового приглашения (public/templates, CREDITS.md); у структуры `layout` — своё. */
+  heroPhoto?: string;
+  /** Имена в примере нового приглашения (кыргызские и казахские пары); у структуры `layout` — свои. */
+  heroNames?: string;
+  /** Адрес в примере «Места» (по умолчанию Бишкек; у казахских пар — Алматы); у структуры `layout` — свой. */
+  address?: string;
 };
 
 /** Путь картинки из библиотеки по id (webp или векторный svg). */
@@ -95,6 +101,9 @@ const plainDesign: BlockDesign = {
 export const templates: Template[] = [
   {
     id: "cream-classic",
+    heroPhoto: photo("cream-classic-hero"),
+    address: "г. Алматы, пр. Абая, 1",
+    heroNames: "Айгерим & Нурлан",
     name: "Кремовая классика",
     description: "Сухоцветы, бумага ручной работы, пергамент, бант из бечёвки и лепестки роз.",
     theme: {
@@ -130,6 +139,8 @@ export const templates: Template[] = [
   },
   {
     id: "rose-garden",
+    heroPhoto: photo("rose-garden-hero"),
+    heroNames: "Айпери & Бакыт",
     name: "Розовый сад",
     description: "Пудровые тона, акварельный фон, пышные розы с сиренью и розовые лепестки.",
     theme: {
@@ -166,6 +177,8 @@ export const templates: Template[] = [
   },
   {
     id: "golden-autumn",
+    heroPhoto: photo("golden-autumn-hero"),
+    heroNames: "Жибек & Азамат",
     name: "Золотая осень",
     description: "Тёплые охристые тона, кленовые листья, настурция и листопад.",
     theme: {
@@ -203,6 +216,9 @@ export const templates: Template[] = [
   },
   {
     id: "starry-night",
+    heroPhoto: photo("starry-night-hero"),
+    address: "г. Алматы, пр. Абая, 1",
+    heroNames: "Асель & Тимур",
     name: "Звёздная ночь",
     description: "Глубокий синий, золото, белые розы и мерцающие искры на звёздном небе.",
     theme: {
@@ -239,6 +255,8 @@ export const templates: Template[] = [
   },
   {
     id: "eucalyptus",
+    heroPhoto: photo("eucalyptus-hero"),
+    heroNames: "Нургуль & Эрлан",
     name: "Эвкалипт",
     description: "Шалфейная зелень, ветки эвкалипта, арка, льняные карточки и акварельные пятна.",
     theme: {
@@ -290,6 +308,9 @@ export const templates: Template[] = [
   },
   {
     id: "art-deco",
+    heroPhoto: photo("art-deco-hero"),
+    address: "г. Алматы, пр. Абая, 1",
+    heroNames: "Алия & Ерлан",
     name: "Великий Гэтсби",
     description: "Ар-деко: чёрное золото, геометричные рамки, золотые брызги, звёзды и конфетти.",
     theme: {
@@ -335,6 +356,9 @@ export const templates: Template[] = [
   },
   {
     id: "lavender-provence",
+    heroPhoto: photo("lavender-provence-hero"),
+    address: "г. Алматы, пр. Абая, 1",
+    heroNames: "Айжан & Данияр",
     name: "Лавандовый Прованс",
     description: "Лавандовая акварель, розы с сиренью, полароид, почтовая открытка и бант из бечёвки.",
     theme: {
@@ -383,6 +407,8 @@ export const templates: Template[] = [
   },
   {
     id: "marble-olive",
+    heroPhoto: photo("marble-olive-hero"),
+    heroNames: "Бегимай & Улан",
     name: "Мрамор и олива",
     description: "Античная классика: фарфор, золочёная рама, оливковые ветви, золотые вензели и гардении.",
     theme: {
@@ -443,7 +469,7 @@ export const templates: Template[] = [
       {
         type: "hero",
         variant: "ticket",
-        names: "Лиза & Марк",
+        names: "Динара & Арман",
         date: "2027-06-19T15:00",
         label: "Свадебный билет",
         subtitle: "Посадка на любовь открыта",
@@ -532,7 +558,7 @@ export const templates: Template[] = [
     layout: [
       {
         type: "hero",
-        names: "Анна & Михаил",
+        names: "Камила & Нурсултан",
         date: "2027-06-12T15:00",
         label: "Вместе в самое красивое завтра",
         subtitle: undefined,
@@ -555,7 +581,7 @@ export const templates: Template[] = [
         edgeTop: "torn",
         edgeBottom: "torn",
         placeName: "Вилла «Солнечная долина»",
-        address: "Московская область, д. Лесная, 15",
+        address: "Алматинская обл., Капчагай, ул. Береговая, 15",
         mapUrl: "https://yandex.ru/maps/?text=Лесная",
         photo: photo("lago-terrace"),
       },
@@ -600,7 +626,7 @@ export const templates: Template[] = [
         type: "contacts",
         title: "",
         text: "Если у вас есть вопросы, вы всегда можете связаться с нами.",
-        people: [{ name: "Мария", role: "Организатор", phone: "+7 900 123-45-67", whatsapp: true, telegram: "maria_wedding" }],
+        people: [{ name: "Дана", role: "Организатор", phone: "+7 701 123 45 67", whatsapp: true, telegram: "dana_toi" }],
       },
       { type: "countdown", title: "Увидимся", scriptLine: "через…", bgColor: SAND_STRIP, width: "full", edgeTop: "torn", edgeBottom: "torn" },
       { type: "rsvp", title: "Анкета", scriptLine: "подтверждение присутствия", deadline: "2027-05-15" },
@@ -625,7 +651,7 @@ export const templates: Template[] = [
     blocks: {},
     dresscodeColors: ["#f5f1ea", "#dccbb3", "#a88f73", "#6b5241", "#7f7a4c"],
     layout: [
-      { type: "hero", variant: "monogram", names: "Егор & София", date: "2027-08-21T16:00", label: undefined, subtitle: "Москва", photo: photo("mocha-dried") },
+      { type: "hero", variant: "monogram", names: "Санжар & Мадина", date: "2027-08-21T16:00", label: undefined, subtitle: "Бишкек", photo: photo("mocha-dried") },
       {
         type: "text",
         title: "",
@@ -663,7 +689,7 @@ export const templates: Template[] = [
         bgColor: CHOCOLATE,
         width: "full",
         placeName: "Усадьба «Вдохновение»",
-        address: "Московская область, Истринский район",
+        address: "Чуйская обл., Аламединский район",
         mapUrl: "https://yandex.ru/maps/?text=Истра",
         photo: null,
       },
@@ -704,7 +730,7 @@ export const templates: Template[] = [
         deadline: "2027-07-01",
         ornaments: [orn("wax-seal", "top-right", { size: 96, rotate: -14 })],
       },
-      { type: "text", title: "", scriptLine: "Мы ждём вас!", icon: undefined, text: "С любовью,\nЕгор и София" },
+      { type: "text", title: "", scriptLine: "Мы ждём вас!", icon: undefined, text: "С любовью,\nСанжар и Мадина" },
       { type: "photo", photo: photo("mocha-tuscany"), height: "square" },
     ],
   },
@@ -729,7 +755,7 @@ export const templates: Template[] = [
       {
         type: "hero",
         variant: "cover",
-        names: "Артём & Вероника",
+        names: "Айбек & Айсулуу",
         date: "2027-09-12T14:30",
         label: "Приглашение на свадьбу",
         subtitle: undefined,
@@ -757,8 +783,8 @@ export const templates: Template[] = [
         variant: "minimal",
         title: "",
         placeName: "Ресторан «Морская терраса»",
-        address: "г. Сочи, ул. Театральная, 8",
-        mapUrl: "https://yandex.ru/maps/?text=Сочи",
+        address: "Иссык-Куль, г. Чолпон-Ата, ул. Советская, 8",
+        mapUrl: "https://2gis.kg/cholponata",
         photo: null,
         ornaments: [orn("pearls", "top-right", { size: 64 })],
       },
@@ -790,7 +816,7 @@ export const templates: Template[] = [
         title: "Контакты",
         ornaments: [orn("shell-cockle", "left", { size: 86, rotate: -24 })],
         text: "По всем вопросам, пожалуйста, обращайтесь к нашему организатору:",
-        people: [{ name: "Анна", role: "Организатор", phone: "+7 999 123-45-67", whatsapp: true, telegram: "anna_wedding" }],
+        people: [{ name: "Айгерим", role: "Организатор", phone: "+996 555 123 456", whatsapp: true, telegram: "aigerim_toi" }],
       },
       { type: "rsvp", title: "Анкета", deadline: "2027-08-20", ornaments: [orn("pink-roses", "bottom-right", { size: 100, rotate: 8 })] },
       { type: "countdown", title: "Увидимся через…", surface: "card", bgColor: "#f3e4dd", surfaceOpacity: 0.9 },
@@ -886,7 +912,7 @@ function sampleBlock(type: BlockType, id: string): Block {
       return {
         type,
         ...base,
-        names: "Анна & Иван",
+        names: "Айгерим & Нурлан",
         date: "2027-06-19T16:00",
         label: "Приглашение на свадьбу",
         subtitle: "Приглашаем вас разделить с нами этот день",
@@ -916,7 +942,7 @@ function sampleBlock(type: BlockType, id: string): Block {
     case "dresscode":
       return { type, ...base, text: "Будем рады, если вы поддержите цветовую гамму праздника", colors: [] };
     case "location":
-      return { type, ...base, placeName: "Ресторан «Сад»", address: "г. Москва, ул. Садовая, 1", photo: null };
+      return { type, ...base, placeName: "Ресторан «Сад»", address: "г. Бишкек, ул. Киевская, 1", photo: null };
     case "rsvp":
       return { type, ...base, title: "Подтвердите, пожалуйста,", scriptLine: "своё присутствие" };
     case "text": {
@@ -933,7 +959,7 @@ function sampleBlock(type: BlockType, id: string): Block {
         ...base,
         title: "Остались вопросы?",
         text: "Звоните или пишите — с радостью подскажем.",
-        people: [{ name: "Мария", role: "Организатор", phone: "+7 900 000-00-00", whatsapp: true, telegram: "" }],
+        people: [{ name: "Айгерим", role: "Организатор", phone: "+996 555 000 000", whatsapp: true, telegram: "" }],
       };
   }
 }
@@ -944,7 +970,15 @@ function sampleBlocks(template: Template): Block[] {
   const count: Partial<Record<BlockType, number>> = {};
   return layout.map((item) => {
     const n = (count[item.type] = (count[item.type] ?? 0) + 1);
-    return { ...sampleBlock(item.type, n === 1 ? `b-${item.type}` : `b-${item.type}-${n}`), ...structuredClone(item) } as Block;
+    const block = { ...sampleBlock(item.type, n === 1 ? `b-${item.type}` : `b-${item.type}-${n}`), ...structuredClone(item) } as Block;
+    if (block.type === "location" && template.address && !("address" in item)) return { ...block, address: template.address };
+    if (block.type !== "hero") return block;
+    // Свои имена и фото обложки шаблона — если структура их не задаёт.
+    return {
+      ...block,
+      ...(template.heroNames && !("names" in item) && { names: template.heroNames }),
+      ...(template.heroPhoto && !block.photo && { photo: template.heroPhoto }),
+    };
   });
 }
 

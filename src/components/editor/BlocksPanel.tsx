@@ -12,7 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Check, ChevronDown, Circle, Copy, GripVertical, ListChecks, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, ChevronDown, Circle, Copy, Ellipsis, GripVertical, ListChecks, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useId, useState, type ComponentType } from "react";
 import {
   AlertDialog,
@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -86,6 +87,9 @@ function announcementsFor(data: InvitationData): Announcements {
   };
 }
 
+/** «Что осталось заполнить» над списком блоков — пока скрыто; вернуть — поставить true (и `it.skip` в Editor.test.tsx). */
+export const SHOW_CHECKLIST = false;
+
 export function BlocksPanel({ data, onChange, expanded, onExpandedChange, onAdded, view: viewProp, onViewChange }: Props) {
   const [adding, setAdding] = useState(false);
   // Без Editor (в тестах панели) состояние подвкладок живёт здесь.
@@ -126,7 +130,7 @@ export function BlocksPanel({ data, onChange, expanded, onExpandedChange, onAdde
 
   return (
     <>
-      <Checklist items={checklist(data)} onOpen={(id) => onExpandedChange(id)} />
+      {SHOW_CHECKLIST && <Checklist items={checklist(data)} onOpen={(id) => onExpandedChange(id)} />}
       <DndContext
         // Стабильный id: иначе счётчик dnd-kit даёт разные aria-describedby на сервере и клиенте (hydration mismatch).
         id="blocks-dnd"
@@ -142,7 +146,7 @@ export function BlocksPanel({ data, onChange, expanded, onExpandedChange, onAdde
       >
         <SortableContext items={data.blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
           <ul className="flex flex-col gap-2">
-            {data.blocks.map((block) => (
+            {data.blocks.map((block, i) => (
               <BlockItem
                 key={block.id}
                 block={block}
@@ -152,6 +156,8 @@ export function BlocksPanel({ data, onChange, expanded, onExpandedChange, onAdde
                 expanded={expanded === block.id}
                 onExpand={() => onExpandedChange(expanded === block.id ? null : block.id)}
                 onToggle={() => onChange(toggleBlock(data, block.id))}
+                onMoveUp={i > 0 ? () => onChange(moveBlock(data, i, i - 1)) : undefined}
+                onMoveDown={i < data.blocks.length - 1 ? () => onChange(moveBlock(data, i, i + 1)) : undefined}
                 onDuplicate={canAddBlock(data, block.type) ? () => duplicate(block.id) : undefined}
                 onRemove={canRemoveBlock(block) ? () => setRemoving(block) : undefined}
                 onFieldsChange={(patch) => onChange(updateBlock(data, block.id, patch))}
@@ -201,6 +207,9 @@ type ItemProps = {
   expanded: boolean;
   onExpand: () => void;
   onToggle: () => void;
+  /** Перемещение без перетаскивания (меню «⋯»): нет — блок уже первый/последний. */
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   /** Нет — копировать нельзя (одиночный тип или лимит блоков). */
   onDuplicate?: () => void;
   /** Нет — удалять нельзя (главный экран). */
@@ -213,7 +222,7 @@ type ItemProps = {
   onViewChange: (view: BlockViewState) => void;
 };
 
-function BlockItem({ block, name, summary, data, expanded, onExpand, onToggle, onDuplicate, onRemove, onFieldsChange, view, onViewChange, ...ornamentHandlers }: ItemProps) {
+function BlockItem({ block, name, summary, data, expanded, onExpand, onToggle, onMoveUp, onMoveDown, onDuplicate, onRemove, onFieldsChange, view, onViewChange, ...ornamentHandlers }: ItemProps) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id: block.id,
   });
@@ -265,16 +274,35 @@ function BlockItem({ block, name, summary, data, expanded, onExpand, onToggle, o
             )}
           </span>
         </button>
-        {onDuplicate && (
-          <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground pointer-coarse:size-10" aria-label={`Дублировать блок «${label}»`} title="Дублировать" onClick={onDuplicate}>
-            <Copy />
-          </Button>
-        )}
-        {onRemove && (
-          <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-destructive pointer-coarse:size-10" aria-label={`Удалить блок «${label}»`} title="Удалить" onClick={onRemove}>
-            <Trash2 />
-          </Button>
-        )}
+        {/* Действия — в меню «⋯»: строка блока не распухает, а «Выше/Ниже» — замена перетаскиванию для одного касания. */}
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground pointer-coarse:size-10" aria-label={`Действия с блоком «${label}»`}>
+              <Ellipsis />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-44">
+            <DropdownMenuItem disabled={!onMoveUp} onSelect={onMoveUp} className="pointer-coarse:py-2.5">
+              <ArrowUp /> Выше
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={!onMoveDown} onSelect={onMoveDown} className="pointer-coarse:py-2.5">
+              <ArrowDown /> Ниже
+            </DropdownMenuItem>
+            {onDuplicate && (
+              <DropdownMenuItem onSelect={onDuplicate} className="pointer-coarse:py-2.5">
+                <Copy /> Дублировать
+              </DropdownMenuItem>
+            )}
+            {onRemove && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onSelect={onRemove} className="pointer-coarse:py-2.5">
+                  <Trash2 /> Удалить
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Switch checked={block.visible} onCheckedChange={onToggle} aria-label={`Показывать блок «${label}»`} />
       </div>
       {expanded && (

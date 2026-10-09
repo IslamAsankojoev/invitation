@@ -27,6 +27,18 @@ describe("POST /api/invitations", () => {
     expect(saved?.data.theme.palette).toBe("night");
   });
 
+  it("с формой «главное о событии»: имена, дата, место и песня сразу в приглашении; кривая форма → 400", async () => {
+    const setup = { names: "Мария & Пётр", date: "2027-08-20T17:30", placeName: "Шале", address: "", musicUrl: null };
+    const res = await CREATE(jsonRequest("/api/invitations", "POST", { template: "rose-garden", setup }));
+    expect(res.status).toBe(201);
+    const saved = await getInvitationById((await res.json()).id);
+    expect(findBlock(saved!.data, "hero")).toMatchObject({ names: "Мария & Пётр", date: "2027-08-20T17:30" });
+    expect(findBlock(saved!.data, "location")!.placeName).toBe("Шале");
+    expect(saved!.data.music.url).toBeNull();
+    const bad = await CREATE(jsonRequest("/api/invitations", "POST", { template: "rose-garden", setup: { ...setup, names: "" } }));
+    expect(bad.status).toBe(400);
+  });
+
   it("неизвестный шаблон или битый JSON → 400", async () => {
     expect((await CREATE(jsonRequest("/api/invitations", "POST", { template: "nope" }))).status).toBe(400);
     const broken = new Request("http://localhost/api/invitations", { method: "POST", body: "{oops" });

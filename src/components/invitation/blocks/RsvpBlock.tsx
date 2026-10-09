@@ -202,7 +202,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
         )}
         <label className="inv-field">
           <span>Комментарий</span>
-          <textarea name="comment" rows={2} maxLength={1000} className="inv-input" placeholder="Пожелания, аллергии…" />
+          <textarea name="comment" rows={2} maxLength={1000} className="inv-input" placeholder="Пожелания ..." />
         </label>
         {/* Honeypot: скрыт от людей, боты заполняют. */}
         <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />

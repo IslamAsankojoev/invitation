@@ -7,17 +7,19 @@ test("создать → настроить → открыть → послуш�
   // 1. Создать приглашение из шаблона «Розовый сад»
   await page.goto("/");
   await page.getByRole("button", { name: "Выбрать шаблон «Розовый сад»" }).click();
+  // 2. Главное о событии — сразу в окне выбора шаблона (на телефоне — на весь экран)
+  const setup = page.getByRole("dialog", { name: "Главное о событии" });
+  await setup.getByLabel("Имена").fill("Мария & Пётр");
+  await setup.getByLabel("Дата").fill("2027-08-20");
+  await setup.getByLabel("Время").fill("17:30");
+  await setup.getByRole("button", { name: "Создать приглашение" }).click();
   await page.waitForURL(/\/edit\/[^/?]+\?token=/);
   const editorUrl = new URL(page.url());
   const saveStatus = page.getByTestId("save-status");
+  await expect(page.getByTestId("preview").getByTestId("hero-names")).toHaveText("Мария & Пётр");
 
   // На телефоне панель — шторка снизу: открываем «Блоки».
   await page.getByRole("button", { name: "Панель «Блоки»" }).click();
-  // 2. Имена и дата (блоки сначала свёрнуты — открываем главный экран)
-  await page.getByRole("button", { name: "Главный экран", exact: true }).click();
-  await page.getByLabel("Имена", { exact: true }).fill("Мария & Пётр");
-  await page.getByLabel("Дата и время").fill("2027-08-20T17:30");
-  await expect(page.getByTestId("preview").getByTestId("hero-names")).toHaveText("Мария & Пётр");
 
   // 3. Скрыть story
   await page.getByLabel("Показывать блок «Наша история»").uncheck();

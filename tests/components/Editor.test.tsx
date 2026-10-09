@@ -10,6 +10,20 @@ beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 200 })));
 });
 
+/** Действие из меню «⋯» строки блока. */
+async function blockAction(user: ReturnType<typeof userEvent.setup>, block: string, item: string) {
+  await user.click(screen.getByRole("button", { name: `Действия с блоком «${block}»` }));
+  await user.click(screen.getByRole("menuitem", { name: item }));
+}
+
+/** Пункты меню «⋯» блока (доступные), меню закрывается. */
+async function menuItems(user: ReturnType<typeof userEvent.setup>, block: string) {
+  await user.click(screen.getByRole("button", { name: `Действия с блоком «${block}»` }));
+  const items = screen.getAllByRole("menuitem").map((el) => el.textContent?.trim());
+  await user.keyboard("{Escape}");
+  return items;
+}
+
 const renderEditor = () =>
   render(<Editor id="inv1" token="secret" initialSlug="demo" initialData={createDefaultInvitation()} />);
 
@@ -93,7 +107,7 @@ describe("Editor", () => {
     const user = userEvent.setup();
     renderEditor();
     const preview = screen.getByTestId("preview");
-    expect(within(preview).getByTestId("hero-names")).toHaveTextContent("Анна & Иван");
+    expect(within(preview).getByTestId("hero-names")).toHaveTextContent("Айгерим & Нурлан");
     await user.click(screen.getByRole("button", { name: "Главный экран" }));
 
     const input = screen.getByLabelText("Имена");
@@ -401,16 +415,25 @@ describe("Editor на телефоне: превью на весь экран, �
     expect(screen.queryByTestId("sheet-backdrop")).not.toBeInTheDocument();
   });
 
-  it("шторку можно смахнуть вниз за ручку; короткое движение её не закрывает", async () => {
+  it("шторка: касание ручки разворачивает, жест вниз уменьшает, ещё раз — закрывает", async () => {
     const user = userEvent.setup();
     renderEditor();
     await user.click(screen.getByRole("button", { name: "Панель «Музыка»" }));
     // В шапке шторки — название раздела: второго ряда вкладок на телефоне нет, они в нижней панели.
     expect(within(sheet()).getByText("Музыка", { selector: "p" })).toBeInTheDocument();
+    expect(sheet()).toHaveClass("h-[50svh]");
+    await user.click(screen.getByRole("button", { name: "Развернуть панель" }));
+    expect(screen.getByRole("button", { name: "Уменьшить панель" })).toHaveAttribute("aria-expanded", "true");
     const handle = screen.getByTestId("sheet-handle");
-    fireEvent.pointerDown(handle, { clientY: 100 });
-    fireEvent.pointerMove(handle, { clientY: 130 });
-    fireEvent.pointerUp(handle);
+    const swipe = (to: number) => {
+      fireEvent.pointerDown(handle, { clientY: 100 });
+      fireEvent.pointerMove(handle, { clientY: to });
+      fireEvent.pointerUp(handle);
+    };
+    swipe(130); // короткое движение — ничего
+    expect(sheet()).not.toHaveClass("h-[50svh]");
+    swipe(260); // вниз из полной — половина
+    expect(sheet()).toHaveClass("h-[50svh]");
     expect(sheet()).not.toHaveClass("invisible");
     fireEvent.pointerDown(handle, { clientY: 100 });
     fireEvent.pointerMove(handle, { clientY: 260 });
@@ -443,7 +466,7 @@ describe("Editor: сводки в списке блоков и «Что оста
     const user = userEvent.setup();
     renderEditor();
     const hero = screen.getByRole("button", { name: "Главный экран" });
-    expect(hero).toHaveAccessibleDescription("Анна & Иван · 19.06.2027");
+    expect(hero).toHaveAccessibleDescription("Айгерим & Нурлан · 19.06.2027");
     await user.click(hero);
     await user.clear(screen.getByLabelText("Имена"));
     await user.type(screen.getByLabelText("Имена"), "Мария & Пётр");
@@ -451,7 +474,13 @@ describe("Editor: сводки в списке блоков и «Что оста
     expect(screen.getByRole("button", { name: "Анкета гостя" })).toHaveAccessibleDescription("срок ответа не задан");
   });
 
-  it("пункт открывает свой блок, заполненный — отмечается; список можно скрыть насовсем", async () => {
+  it("«Что осталось заполнить» пока скрыто (SHOW_CHECKLIST в BlocksPanel.tsx)", () => {
+    renderEditor();
+    expect(screen.queryByRole("region", { name: "Что осталось заполнить" })).not.toBeInTheDocument();
+  });
+
+  // Вернуть вместе с SHOW_CHECKLIST = true.
+  it.skip("пункт открывает свой блок, заполненный — отмечается; список можно скрыть насовсем", async () => {
     const user = userEvent.setup();
     const { unmount } = renderEditor();
     const card = await screen.findByRole("region", { name: "Что осталось заполнить" });
@@ -583,27 +612,66 @@ describe("Editor: добавление, копирование и удалени
     expect(screen.getByLabelText("Подпись кнопки")).toHaveFocus();
   });
 
-  it("«Дублировать» кладёт копию под блок, «Удалить» спрашивает подтверждение", async () => {
+  it("меню «⋯» блока: «Дублировать» кладёт копию под блок, «Удалить» спрашивает подтверждение", async () => {
     const user = userEvent.setup();
     renderEditor();
     const preview = screen.getByTestId("preview");
     const stories = () => preview.querySelectorAll('[data-block="story"]');
-    await user.click(screen.getByRole("button", { name: "Дублировать блок «Наша история»" }));
+    await blockAction(user, "Наша история", "Дублировать");
     expect(stories()).toHaveLength(2);
     expect(screen.getByRole("button", { name: /^Наша история 2/ })).toHaveAttribute("aria-expanded", "true");
 
-    await user.click(screen.getByRole("button", { name: "Удалить блок «Наша история 2»" }));
+    await blockAction(user, "Наша история 2", "Удалить");
     await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Отмена" }));
     expect(stories()).toHaveLength(2);
-    await user.click(screen.getByRole("button", { name: "Удалить блок «Наша история 2»" }));
+    await blockAction(user, "Наша история 2", "Удалить");
     await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Удалить" }));
     expect(stories()).toHaveLength(1);
 
     // Главный экран не удаляется и не копируется, анкета — не копируется.
-    expect(screen.queryByRole("button", { name: "Удалить блок «Главный экран»" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Дублировать блок «Главный экран»" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Дублировать блок «Анкета гостя»" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Удалить блок «Анкета гостя»" })).toBeInTheDocument();
+    expect(await menuItems(user, "Главный экран")).toEqual(["Выше", "Ниже"]);
+    expect(await menuItems(user, "Анкета гостя")).toEqual(["Выше", "Ниже", "Удалить"]);
+  });
+
+  it("«Выше/Ниже» в меню блока — перемещение без перетаскивания; у крайних блоков недоступно", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    const order = () => Array.from(screen.getByTestId("preview").querySelectorAll("[data-block]")).map((el) => el.getAttribute("data-block"));
+    const before = order();
+    const i = before.indexOf("program");
+    await blockAction(user, "Программа", "Выше");
+    expect(order()[i - 1]).toBe("program");
+    await blockAction(user, "Программа", "Ниже");
+    expect(order()).toEqual(before);
+    await user.click(screen.getByRole("button", { name: "Действия с блоком «Главный экран»" }));
+    expect(screen.getByRole("menuitem", { name: "Выше" })).toHaveAttribute("aria-disabled", "true");
+    await user.keyboard("{Escape}");
+  });
+
+  it("«Отменить / Повторить»: кнопками и ⌘Z вне полей ввода; набор текста — один шаг", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    const undoBtn = screen.getByRole("button", { name: "Отменить" });
+    expect(undoBtn).toBeDisabled();
+    const visible = () => screen.getByTestId("preview").querySelector('[data-block="story"]');
+    await user.click(screen.getByRole("switch", { name: "Показывать блок «Наша история»" }));
+    expect(visible()).toBeNull();
+    await user.click(undoBtn);
+    expect(visible()).not.toBeNull();
+    await user.click(screen.getByRole("button", { name: "Повторить" }));
+    expect(visible()).toBeNull();
+    // ⌘Z / Ctrl+Z на странице (не в поле) — тоже отмена.
+    await user.click(document.body);
+    await user.keyboard("{Control>}z{/Control}");
+    expect(visible()).not.toBeNull();
+
+    // Слово, набранное подряд, отменяется целиком.
+    await user.click(screen.getByRole("button", { name: "Главный экран" }));
+    const names = screen.getByLabelText("Имена");
+    const before = (names as HTMLInputElement).value;
+    await user.type(names, " и гости");
+    await user.click(undoBtn);
+    expect(screen.getByLabelText("Имена")).toHaveValue(before);
   });
 
   it("загрузка из редактора идёт в это приглашение — с id и token", async () => {

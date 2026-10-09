@@ -151,3 +151,19 @@ pngwing.com сам ничего не лицензирует (пометка «No
 | `seaside-g-table.webp` | Стол на пляже | Alexander Mass | Unsplash License | [unsplash.com/photos/e1HAnOK0K9k](https://unsplash.com/photos/a-beach-wedding-setup-with-an-umbrella-table-and-flowers-e1HAnOK0K9k) |
 | `seaside-g-veil.webp` | Фата у моря | Nathan Dumlao | Unsplash License | [unsplash.com/photos/H_cZqryUuok](https://unsplash.com/photos/newly-wedded-couple-standing-on-shore-during-daytime-H_cZqryUuok) |
 | `seaside-g-rings.webp` | Кольца в пионах | Beatriz Pérez Moya | Unsplash License | [unsplash.com/photos/M2T1j-6Fn8w](https://unsplash.com/photos/gold-colored-bridal-ring-set-on-pink-rose-flower-bouquet-M2T1j-6Fn8w) |
+
+### Обложки шаблонов с toichakyru.com
+
+Сайт toichakyru.com принадлежит владельцу проекта; картинки взяты с его страницы шаблонов (10.10.2026). Три файла лежали
+там в папках `pinterest-references/` и `wedding-references/` — **перед продакшеном уточнить их происхождение**.
+
+| Файл | Что | Автор | Лицензия | Источник |
+|---|---|---|---|---|
+| `cream-classic-hero.webp` | Кремовый шёлк с веткой | toichakyru.com | уточняется (pinterest-references) | toichakyru.com/images/pinterest-references/gold-clean.png |
+| `rose-garden-hero.webp` | Пара в калпаке на закате в горах | toichakyru.com | Собственность проекта | toichakyru.com/images/hero.jpg |
+| `golden-autumn-hero.webp` | Невеста в красном с украшениями | toichakyru.com | Собственность проекта | toichakyru.com/images/template-restored/kyz-gold-bride-hero.webp |
+| `starry-night-hero.webp` | Пара, тёмно-синее платье | toichakyru.com | уточняется (wedding-references) | toichakyru.com/images/wedding-references/stars-hero-clean.png |
+| `eucalyptus-hero.webp` | Пара в цветущем саду | toichakyru.com | Собственность проекта | toichakyru.com/images/templates/beshik-nur/hero-wedding.webp |
+| `art-deco-hero.webp` | Бокалы шампанского | toichakyru.com | Собственность проекта | toichakyru.com/images/anniversary/celebration.webp |
+| `lavender-provence-hero.webp` | Руки и вуаль | toichakyru.com | уточняется (pinterest-references) | toichakyru.com/images/pinterest-references/hands-clean.png |
+| `marble-olive-hero.webp` | Пара в мраморном зале | toichakyru.com | Собственность проекта | toichakyru.com/images/templates/balalyk/hero-nike.webp |

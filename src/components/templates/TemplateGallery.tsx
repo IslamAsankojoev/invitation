@@ -1,31 +1,14 @@
 "use client";
 
-import { Check, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Setup } from "@/lib/setup";
 import { templates, type Template } from "@/lib/templates";
-import { palettes, titleFonts } from "@/lib/theme";
+import { SetupDialog } from "./SetupDialog";
 import { TemplatePreview } from "./TemplatePreview";
 
-/** Цвета палитры шаблона + шрифт имён — короткая «этикетка» стиля. */
-export function TemplateSwatch({ template }: { template: Template }) {
-  const p = palettes[template.theme.palette];
-  return (
-    <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
-      <span className="flex -space-x-1">
-        {[p.bg, p.accent, p.text].map((c) => (
-          <span key={c} className="size-4 rounded-full ring-2 ring-card" style={{ background: c }} />
-        ))}
-      </span>
-      <span className="truncate">{titleFonts[template.theme.font].label}</span>
-    </div>
-  );
-}
-
 /**
- * Превью во всю ширину карточки: на телефоне карточки в два столбца уже, чем на компьютере.
- * Место под превью зарезервировано пропорцией экрана (без скачка вёрстки), ширина уточняется после измерения.
+ * Превью карточки: верх главного экрана шаблона (имена, дата) во всю ширину карточки, обрезано до 4:5 — полный экран
+ * 390×700 делал карточки слишком длинными. Место зарезервировано пропорцией (без скачка вёрстки).
  */
 function FitPreview({ template }: { template: Template }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -40,7 +23,10 @@ function FitPreview({ template }: { template: Template }) {
     return () => observer.disconnect();
   }, []);
   return (
-    <div ref={ref} className="aspect-[390/700] w-full overflow-hidden bg-muted/50">
+    <div
+      ref={ref}
+      className="aspect-[4/5] w-full overflow-hidden bg-muted transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+    >
       <TemplatePreview template={template} width={width} />
     </div>
   );
@@ -49,14 +35,16 @@ function FitPreview({ template }: { template: Template }) {
 export function TemplateGallery() {
   const [creating, setCreating] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** Шаблон, для которого открыта форма «Главное о событии». */
+  const [picked, setPicked] = useState<Template | null>(null);
 
-  async function create(template: Template) {
+  async function create(template: Template, setup: Setup | null) {
     setCreating(template.id);
     setError(null);
     const res = await fetch("/api/invitations", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ template: template.id }),
+      body: JSON.stringify({ template: template.id, ...(setup && { setup }) }),
     }).catch(() => null);
     if (!res?.ok) {
       setCreating(null);
@@ -69,39 +57,52 @@ export function TemplateGallery() {
 
   return (
     <div className="flex flex-col gap-4">
-      {error && (
-        <p role="alert" className="rounded-lg bg-destructive/10 px-4 py-3 text-center text-sm text-destructive">
-          {error}
-        </p>
-      )}
-      <ul className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4" aria-label="Шаблоны">
+      <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 lg:grid-cols-4" aria-label="Шаблоны">
         {templates.map((t) => (
           <li key={t.id}>
-            {/* Вся карточка нажимается: кнопка «Выбрать» растянута на неё псевдоэлементом (вложенных кнопок нет). */}
-            <Card className="relative h-full gap-0 overflow-hidden py-0 transition-[box-shadow,translate] duration-200 focus-within:ring-2 focus-within:ring-ring hover:-translate-y-0.5 hover:shadow-lg motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+            {/*
+              Карточка = превью + градиент снизу с названием. Выбор — прозрачная кнопка на всю карточку (поверх превью:
+              в превью свои кнопки, вложенные <button> ломают гидратацию). На компьютере при наведении/фокусе
+              появляется «Выбрать»; на телефоне наведения нет — карточку просто нажимают.
+            */}
+            <div className="group relative overflow-hidden rounded-[24px] bg-card shadow-[0_18px_40px_rgb(15_12_10/0.06)] transition-[translate,box-shadow,scale] duration-300 ease-out has-[button:focus-visible]:ring-3 has-[button:focus-visible]:ring-ring active:scale-[0.98] pointer-fine:hover:-translate-y-1 pointer-fine:hover:shadow-[0_24px_48px_rgb(15_12_10/0.12)] motion-reduce:transition-none motion-reduce:active:scale-100 motion-reduce:hover:translate-y-0 sm:rounded-[28px]">
               <FitPreview template={t} />
-              <CardHeader className="gap-1 px-3 pt-3 sm:gap-1.5 sm:px-4 sm:pt-4">
-                <CardTitle className="text-sm sm:text-base">{t.name}</CardTitle>
-                <CardDescription className="line-clamp-2 text-xs sm:line-clamp-none sm:text-sm">{t.description}</CardDescription>
-                <TemplateSwatch template={t} />
-              </CardHeader>
-              <CardFooter className="mt-auto px-3 pt-3 pb-3 sm:px-4 sm:pt-4 sm:pb-4">
-                <Button
-                  type="button"
-                  className="w-full after:absolute after:inset-0 after:content-[''] focus-visible:ring-0 pointer-coarse:h-10"
-                  aria-label={`Выбрать шаблон «${t.name}»`}
-                  disabled={creating !== null}
-                  aria-busy={creating === t.id}
-                  onClick={() => create(t)}
-                >
-                  {creating === t.id ? <Loader2 className="animate-spin" /> : <Check />}
-                  {creating === t.id ? "Создаю…" : "Выбрать"}
-                </Button>
-              </CardFooter>
-            </Card>
+              {/* Градиент только под подписью и полупрозрачный — превью почти целиком видно; белый текст держит тень у букв. */}
+              {/* Размытие под подписью (маска сходит на нет кверху): мелкий текст приглашения не спорит с названием. */}
+              <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[30%] backdrop-blur-[8px] [mask-image:linear-gradient(to_top,black_45%,transparent)]" />
+              <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgb(20_14_10/0.42)_0%,rgb(20_14_10/0.26)_16%,rgb(20_14_10/0.06)_30%,transparent_40%)]" />
+              <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-1 p-5 text-white sm:p-5">
+                {/* Настроение шаблона — первая фраза описания («Пудровые тона»); при наведении её сменяет «Выбрать →». */}
+                <span className="relative flex items-center">
+                  <span className="min-w-0 truncate text-[10px] tracking-[0.2em] text-white/80 uppercase transition-opacity duration-300 group-hover:pointer-fine:opacity-0 group-has-[button:focus-visible]:opacity-0 motion-reduce:transition-none sm:text-[10px] sm:tracking-[0.2em]">
+                    {t.description.split(",")[0]}
+                  </span>
+                  {/* Только мышь/клавиатура: на телефоне нажимают саму карточку. */}
+                  <span className="absolute left-0 hidden -translate-x-1 text-[10px] tracking-[0.16em] whitespace-nowrap uppercase opacity-0 transition-[opacity,translate] duration-300 group-hover:translate-x-0 group-hover:opacity-100 group-has-[button:focus-visible]:translate-x-0 group-has-[button:focus-visible]:opacity-100 motion-reduce:transition-none pointer-fine:inline">
+                    Выбрать →
+                  </span>
+                </span>
+                <span className="truncate text-2xl leading-tight tracking-tight [font-family:var(--font-playfair),serif] sm:text-xl">{t.name}</span>
+              </div>
+              <button
+                type="button"
+                className="absolute inset-0 cursor-pointer outline-none disabled:cursor-wait"
+                aria-label={`Выбрать шаблон «${t.name}»`}
+                aria-describedby={`tpl-${t.id}-desc`}
+                disabled={creating !== null}
+                onClick={() => {
+                  setError(null);
+                  setPicked(t);
+                }}
+              />
+              <span id={`tpl-${t.id}-desc`} className="sr-only">
+                {t.description}
+              </span>
+            </div>
           </li>
         ))}
       </ul>
+      <SetupDialog template={picked} onClose={() => setPicked(null)} onCreate={create} creating={creating !== null} error={error} />
     </div>
   );
 }

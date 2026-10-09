@@ -238,6 +238,6 @@ describe("InvitationView", () => {
 
   it("имена через «&» выводятся в две строки, но читаются целиком", () => {
     render(<InvitationView data={createDefaultInvitation()} slug="demo" />);
-    expect(screen.getByTestId("hero-names")).toHaveTextContent("Анна & Иван");
+    expect(screen.getByTestId("hero-names")).toHaveTextContent("Айгерим & Нурлан");
   });
 });

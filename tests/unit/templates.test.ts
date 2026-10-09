@@ -168,7 +168,7 @@ describe("шаблоны со своей структурой", () => {
     }
     const lago = createFromTemplate(findTemplate("lago")!);
     expect(lago.blocks.filter((b) => b.type === "photo").map((b) => b.id)).toEqual(["b-photo", "b-photo-2"]);
-    expect(findBlock(lago, "hero")).toMatchObject({ names: "Анна & Михаил", photo: "/templates/lago-walk.webp", edgeBottom: "torn" });
+    expect(findBlock(lago, "hero")).toMatchObject({ names: "Камила & Нурсултан", photo: "/templates/lago-walk.webp", edgeBottom: "torn" });
   });
 
   it("смена шаблона раздаёт оформление по номеру блока своего типа, а содержимое и число блоков сохраняет", () => {

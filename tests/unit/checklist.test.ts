@@ -11,7 +11,7 @@ const done = (data: InvitationData) => Object.fromEntries(checklist(data).map((i
 describe("сводка блока в списке", () => {
   it("показывает главное, не раскрывая блок", () => {
     const data = createDefaultInvitation();
-    expect(blockSummary(data, block(data, "hero"))).toBe("Анна & Иван · 19.06.2027");
+    expect(blockSummary(data, block(data, "hero"))).toBe("Айгерим & Нурлан · 19.06.2027");
     expect(blockSummary(data, block(data, "countdown"))).toBe("19.06.2027");
     expect(blockSummary(data, block(data, "program"))).toBe("3 пункта: 16:00 Сбор гостей");
     expect(blockSummary(data, block(data, "location"))).toBe("Ресторан «Сад»");

@@ -47,7 +47,7 @@ describe("Шаблоны с новыми возможностями", () => {
     const data = createFromTemplate(findTemplate("boarding-pass")!);
     const { container } = render(<InvitationView data={data} slug="demo" />);
     const hero = within(section(container, "hero"));
-    expect(hero.getByTestId("hero-names")).toHaveTextContent("Лиза");
+    expect(hero.getByTestId("hero-names")).toHaveTextContent("Динара");
     expect(hero.getByText("19.06.2027")).toBeInTheDocument();
     expect(hero.getByText("15:00")).toBeInTheDocument();
     expect(hero.getByText(findBlock(data, "location")!.placeName)).toBeInTheDocument();
@@ -57,12 +57,12 @@ describe("Шаблоны с новыми возможностями", () => {
   it("монограмма — инициалы и дата словами; фото сверху — фото и имена", () => {
     const { container, rerender } = render(<InvitationView data={createFromTemplate(findTemplate("mocha")!)} slug="demo" />);
     const hero = section(container, "hero");
-    expect(hero).toHaveTextContent("ЕС".split("").join(""));
+    expect(hero).toHaveTextContent("СМ");
     expect(hero).toHaveTextContent("21 августа 2027");
     expect(within(hero).getByTestId("hero-photo")).toHaveAttribute("src", "/templates/mocha-dried.webp");
     rerender(<InvitationView data={createFromTemplate(findTemplate("seaside")!)} slug="demo" />);
     expect(within(section(container, "hero")).getByTestId("hero-photo")).toHaveAttribute("src", "/templates/seaside-couple.webp");
-    expect(within(section(container, "hero")).getByTestId("hero-names")).toHaveTextContent("Артём");
+    expect(within(section(container, "hero")).getByTestId("hero-names")).toHaveTextContent("Айбек");
   });
 });
 

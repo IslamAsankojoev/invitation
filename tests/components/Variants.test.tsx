@@ -27,7 +27,7 @@ describe("Виды блоков", () => {
     expect(section).not.toBeNull();
     const ui = within(section);
 
-    if (type === "hero") expect(ui.getByTestId("hero-names")).toHaveTextContent("Анна");
+    if (type === "hero") expect(ui.getByTestId("hero-names")).toHaveTextContent("Айгерим");
     if (type === "calendar") expect(section).toHaveTextContent("7");
     if (type === "story") expect(section).toHaveTextContent("Мы познакомились весной");
     if (type === "program") expect(section).toHaveTextContent("Церемония");
@@ -38,7 +38,7 @@ describe("Виды блоков", () => {
     if (type === "photo") expect(section.querySelector("img[src='/uploads/a.jpg']")).not.toBeNull();
     if (type === "photo") expect(section).toHaveTextContent("Мы у моря");
     if (type === "gallery") expect(ui.getAllByRole("button", { name: /Открыть фото \d из 3/ })).toHaveLength(3);
-    if (type === "contacts") expect(ui.getByRole("link", { name: "WhatsApp — Мария" })).toHaveAttribute("href", "https://wa.me/79000000000");
+    if (type === "contacts") expect(ui.getByRole("link", { name: "WhatsApp — Айгерим" })).toHaveAttribute("href", "https://wa.me/996555000000");
   });
 
   it("календарь «Неделя» отмечает день события", () => {

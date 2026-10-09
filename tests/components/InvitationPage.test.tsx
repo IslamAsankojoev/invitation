@@ -100,7 +100,7 @@ describe("InvitationPage", () => {
   it("конверт показывает монограмму, дату и подсказку про музыку", () => {
     render(<InvitationPage data={withMusic()} slug="demo" />);
     const envelope = screen.getByTestId("envelope");
-    expect(envelope).toHaveTextContent("А&И");
+    expect(envelope).toHaveTextContent("А&Н");
     expect(envelope).toHaveTextContent("19 . 06 . 2027");
     expect(envelope).toHaveTextContent("включится музыка");
   });

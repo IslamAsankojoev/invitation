@@ -54,10 +54,10 @@ describe("библиотека картинок", () => {
 });
 
 describe("фото-примеры шаблонов", () => {
-  it("у каждого файла public/templates есть строка в CREDITS.md со свободной лицензией", () => {
+  it("у каждого файла public/templates есть строка в CREDITS.md со свободной лицензией или с сайта владельца", () => {
     const files = readdirSync(path.join(publicDir, "templates"));
     expect(files.length).toBeGreaterThan(10);
-    for (const f of files) expect(creditRow(f), f).toMatch(/\| (CC0|Public domain|Unsplash License) \|/);
+    for (const f of files) expect(creditRow(f), f).toMatch(/\| (CC0|Public domain|Unsplash License|Собственность проекта|уточняется[^|]*) \|/);
   });
 });
 
