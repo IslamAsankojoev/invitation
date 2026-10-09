@@ -1,10 +1,9 @@
-import { ArrowLeft, Download, Eye, Inbox, Send, UserCheck, UserX, Users } from "lucide-react";
+import { ArrowLeft, UserCheck, UserX, Users } from "lucide-react";
 import { forbidden, redirect } from "next/navigation";
 import { SignInButton } from "@/components/account/AccountMenu";
-import { Badge } from "@/components/ui/badge";
+import { GuestAnswers } from "@/components/guests/GuestAnswers";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { findBlock } from "@/lib/blocks";
 import { canEdit, claimUrl, guestsPageAccess } from "@/lib/access";
 import { getInvitationById, listRsvps } from "@/lib/invitations";
@@ -40,7 +39,6 @@ export default async function GuestsPage({ params, searchParams }: Props) {
   const names = findBlock(inv.data, "hero")?.names ?? "Приглашение";
   const publicUrl = new URL(`/i/${inv.slug}`, (await requestOrigin()) ?? "http://localhost").href;
   const message = shareMessage(inv.data, publicUrl);
-  const when = (d: Date) => d.toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
   const statCards = [
     { label: "Придут", value: stats.attending, testId: "stat-attending", icon: UserCheck },
@@ -77,87 +75,15 @@ export default async function GuestsPage({ params, searchParams }: Props) {
           ))}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Все ответы</CardTitle>
-            <CardDescription>{rsvps.length === 0 ? "Пока никто не ответил" : `Ответов: ${rsvps.length}`}</CardDescription>
-            <CardAction>
-              <Button asChild variant="outline" size="sm">
-                <a href={csvHref} download={`guests-${inv.slug}.csv`}>
-                  <Download /> Экспорт в CSV
-                </a>
-              </Button>
-            </CardAction>
-          </CardHeader>
-          <CardContent>
-            {rsvps.length === 0 ? (
-              // Пустой список — повод отправить приглашение: те же кнопки, что во вкладке «Ссылка» редактора.
-              <div className="flex flex-col items-center gap-4 py-8 text-center">
-                <Inbox className="size-8 text-muted-foreground" />
-                <p className="max-w-xs text-sm text-muted-foreground">
-                  Отправьте ссылку гостям — как только они ответят, ответы появятся здесь.
-                </p>
-                <div className="grid w-full max-w-sm grid-cols-2 gap-2">
-                  <Button asChild className="bg-[#25d366] text-white hover:bg-[#1ebe5b]">
-                    <a href={whatsappShareUrl(message)} target="_blank" rel="noopener noreferrer" aria-label="Отправить в WhatsApp">
-                      <Send /> WhatsApp
-                    </a>
-                  </Button>
-                  <Button asChild className="bg-[#2aabee] text-white hover:bg-[#1e96d4]">
-                    <a href={telegramShareUrl(publicUrl, message)} target="_blank" rel="noopener noreferrer" aria-label="Отправить в Telegram">
-                      <Send /> Telegram
-                    </a>
-                  </Button>
-                </div>
-                <Button asChild variant="ghost" size="sm">
-                  <a href={`/i/${inv.slug}`} target="_blank">
-                    <Eye /> Посмотреть как гость
-                  </a>
-                </Button>
-              </div>
-            ) : (
-              <>
-              {/* Телефон: таблица в пять столбцов не помещается — карточки ответов. */}
-              <ul data-testid="guest-list" className="flex flex-col divide-y sm:hidden">
-                {rsvps.map((r) => (
-                  <li key={r.id} className="flex flex-col gap-1 py-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium">{r.name}</span>
-                      {r.attending ? <Badge>Придёт · {r.guestsCount}</Badge> : <Badge variant="secondary">Не придёт</Badge>}
-                    </div>
-                    {r.comment && <p className="text-sm text-muted-foreground">{r.comment}</p>}
-                    <span className="text-xs text-muted-foreground">{when(r.createdAt)}</span>
-                  </li>
-                ))}
-              </ul>
-              <Table className="max-sm:hidden">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Имя</TableHead>
-                    <TableHead>Ответ</TableHead>
-                    <TableHead className="text-right">Гостей</TableHead>
-                    <TableHead>Комментарий</TableHead>
-                    <TableHead className="text-right">Дата</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rsvps.map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-medium">{r.name}</TableCell>
-                      <TableCell>
-                        {r.attending ? <Badge>Придёт</Badge> : <Badge variant="secondary">Не придёт</Badge>}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{r.attending ? r.guestsCount : "—"}</TableCell>
-                      <TableCell className="max-w-64 whitespace-normal text-muted-foreground">{r.comment}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">{when(r.createdAt)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <GuestAnswers
+          invitationId={inv.id}
+          slug={inv.slug}
+          token={inv.editToken}
+          answers={rsvps.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }))}
+          csvHref={csvHref}
+          csvName={`guests-${inv.slug}.csv`}
+          share={{ whatsapp: whatsappShareUrl(message), telegram: telegramShareUrl(publicUrl, message) }}
+        />
       </div>
     </main>
   );

@@ -926,3 +926,34 @@ describe("Editor: отменить/вернуть, правка в превью,
     expect(within(screen.getByRole("group", { name: "Готовые фразы" })).getByRole("button", { name: phrase })).toHaveAttribute("aria-pressed", "true");
   });
 });
+
+describe("Editor: проверка перед отправкой и правка надписи на компьютере", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("«Ссылка» предупреждает о текстах из примера; «Заполнить» открывает блок", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(screen.getByRole("button", { name: "Отправить гостям" }));
+    const check = screen.getByTestId("presend-check");
+    expect(check).toHaveTextContent("Перед отправкой проверьте");
+    await user.click(within(check).getByRole("button", { name: "Заполнить: Место" }));
+    expect(screen.getByRole("tab", { name: "Блоки" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("button", { name: "Место" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByLabelText("Название места")).toBeInTheDocument();
+  });
+
+  it("компьютер: нажатие на надпись в превью ставит курсор в её поле в панели", async () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({ matches: true, media: query, addEventListener() {}, removeEventListener() {} })) as never;
+    try {
+      const user = userEvent.setup();
+      renderEditor();
+      const preview = screen.getByTestId("preview");
+      await user.click(within(preview.querySelector<HTMLElement>('[data-block="location"]')!).getByText("Ресторан «Сад»"));
+      expect(screen.queryByRole("dialog", { name: /^Правка/ })).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Название места")).toHaveFocus();
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+});

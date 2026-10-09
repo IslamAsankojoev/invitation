@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getInvitationById, getInvitationBySlug, hasValidToken, listRsvps } from "@/lib/invitations";
@@ -7,12 +8,17 @@ import { formatZodErrors } from "@/lib/schema";
 
 type Ctx = { params: Promise<{ key: string }> };
 
-/** Гость отправляет ответ. key = slug приглашения. */
+/**
+ * Гость отправляет ответ. key = slug приглашения. В ответ — id и editKey: браузер гостя хранит их, чтобы потом
+ * поправить свой ответ, а не прислать второй (PUT …/rsvp/<id>).
+ * С ?token= (ссылка редактора) — организатор вносит ответ за гостя, который ответил по телефону: без лимита частоты.
+ */
 export async function POST(req: Request, { params }: Ctx) {
   const inv = await getInvitationBySlug((await params).key);
   if (!inv) return NextResponse.json({ error: "Приглашение не найдено" }, { status: 404 });
 
-  if (!rsvpRateLimiter.check(clientIp(req))) {
+  const organizer = hasValidToken(inv, new URL(req.url).searchParams.get("token"));
+  if (!organizer && !rsvpRateLimiter.check(clientIp(req))) {
     return NextResponse.json({ error: "Слишком много ответов, попробуйте через минуту" }, { status: 429 });
   }
 
@@ -25,10 +31,11 @@ export async function POST(req: Request, { params }: Ctx) {
   }
 
   const { name, attending, guestsCount, comment } = parsed.data;
+  const editKey = organizer ? null : randomBytes(18).toString("base64url");
   const rsvp = await prisma.rsvp.create({
-    data: { invitationId: inv.id, name, attending, guestsCount, comment: comment || null },
+    data: { invitationId: inv.id, name, attending, guestsCount, comment: comment || null, editKey },
   });
-  return NextResponse.json({ id: rsvp.id }, { status: 201 });
+  return NextResponse.json({ id: rsvp.id, editKey }, { status: 201 });
 }
 
 /** Организатор получает список ответов. key = id приглашения, нужен token. */

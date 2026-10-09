@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { accountGate, type ClaimNext, type Ownership } from "@/lib/access";
 import { blockById, findBlock, updateBlock } from "@/lib/blocks";
 import { createHistory, record, redo, undo } from "@/lib/history";
-import { isQuickEditField, type QuickEditField } from "@/lib/quickEdit";
+import { isQuickEditField, QUICK_EDIT_FIELDS, type QuickEditField } from "@/lib/quickEdit";
 import { premiumUsage } from "@/lib/premium";
 import { loadRecent, rememberInvitation, saveRecent } from "@/lib/recent";
 import { themeStyle } from "@/lib/theme";
@@ -261,6 +261,21 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, q
     scrollAfterRender.current = null;
   }, [data, scrollPreview]);
 
+  /** Поле надписи, на которую нажали в превью (компьютер), — фокус после рендера панели. Ищем по подписи поля. */
+  const focusField = useRef<{ blockId: string; label: string } | null>(null);
+  useEffect(() => {
+    const target = focusField.current;
+    if (!target) return;
+    focusField.current = null;
+    const item = document.querySelector(`[data-block-item="${target.blockId}"]`);
+    const label = Array.from(item?.querySelectorAll("label") ?? []).find((l) => l.textContent?.trim() === target.label);
+    const input = label?.htmlFor ? document.getElementById(label.htmlFor) : null;
+    if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+      input.focus({ preventScroll: true });
+      input.scrollIntoView({ block: "center", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    }
+  });
+
   /** Карточка блока в панели появится после рендера — тогда и прокручиваем панель к ней. */
   const panelScrollTo = useRef<string | null>(null);
   useEffect(() => {
@@ -298,11 +313,17 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, q
       return;
     }
     setQuickEdit(null);
+    // Компьютер: нажали на надпись — в панели сразу поле этой надписи (с курсором), а не просто блок.
+    if (isQuickEditField(field)) {
+      setBlockView((v) => ({ ...v, tab: "content" }));
+      focusField.current = { blockId, label: QUICK_EDIT_FIELDS[field] };
+    }
     setTab("Блоки");
     setSheet(true);
     setIntro(false);
     setExpanded(blockId);
-    panelScrollTo.current = blockId;
+    // К полю панель прокрутит фокус; иначе — к карточке блока.
+    panelScrollTo.current = focusField.current ? null : blockId;
     if (pickTip) closePickTip();
   }
 
@@ -326,6 +347,17 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, q
   function toggleFollow(on: boolean) {
     setFollow(on);
     if (on && expanded) scrollPreview(expanded);
+  }
+
+  /** Открыть блок для правки из другого места панели (проверка перед отправкой): «Блоки», текст, превью к блоку. */
+  function openBlock(blockId: string) {
+    setTab("Блоки");
+    setSheet(true);
+    setIntro(false);
+    setBlockView((v) => ({ ...v, tab: "content" }));
+    setExpanded(blockId);
+    panelScrollTo.current = blockId;
+    if (follow) scrollPreview(blockId);
   }
 
   /** «Отправить гостям»: панель «Ссылка» с кнопками WhatsApp и Telegram. */
@@ -476,7 +508,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, q
                 <MusicPanel data={data} onChange={setData} />
               </TabsContent>
               <TabsContent value="Ссылка">
-                <LinkPanel id={id} token={token} slug={slug} onSlugChange={setSlug} account={account} data={data} />
+                <LinkPanel id={id} token={token} slug={slug} onSlugChange={setSlug} account={account} data={data} onFix={openBlock} />
               </TabsContent>
             </div>
           </Tabs>

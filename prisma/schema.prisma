@@ -34,7 +34,10 @@ model Rsvp {
   attending    Boolean
   guestsCount  Int
   comment      String?
+  /// Секрет гостя для правки своего ответа (хранится у него в браузере); у ответов до правок — null.
+  editKey      String?
   createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
 
   @@index([invitationId])
 }

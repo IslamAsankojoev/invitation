@@ -1,12 +1,13 @@
 "use client";
 
-import { Check, Copy, Eye, KeyRound, Link2, Send, Share2, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, CircleCheck, Copy, Eye, KeyRound, Link2, Send, Share2, Sparkles } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { accountGate } from "@/lib/access";
+import { checklist } from "@/lib/checklist";
 import type { InvitationData } from "@/lib/schema";
 import { shareMessage, slugSuggestions, telegramShareUrl, whatsappShareUrl } from "@/lib/share";
 import { slugSchema } from "@/lib/slug";
@@ -23,6 +24,8 @@ type Props = {
   account?: EditorAccount;
   /** Для текста сообщения гостям и ссылки из имён. */
   data: InvitationData;
+  /** «Заполнить» в проверке перед отправкой — открыть этот блок в панели. */
+  onFix?: (blockId: string) => void;
 };
 
 function CopyButton({ text, label }: { text: string; label: string }) {
@@ -44,7 +47,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   );
 }
 
-export function LinkPanel({ id, token, slug, onSlugChange, account, data }: Props) {
+export function LinkPanel({ id, token, slug, onSlugChange, account, data, onFix }: Props) {
   const [value, setValue] = useState(slug);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [origin, setOrigin] = useState("");
@@ -83,10 +86,41 @@ export function LinkPanel({ id, token, slug, onSlugChange, account, data }: Prop
   }
 
   const text = shareMessage(data, publicUrl);
+  // Проверка перед отправкой: тексты из примера шаблона гостям уйдут как есть («Ресторан «Сад»» вместо своего места).
+  const missing = checklist(data).filter((item) => !item.done);
   const suggestions = slugSuggestions(data).filter((s) => s !== slug);
 
   return (
     <div className="flex flex-col gap-4">
+      {missing.length > 0 ? (
+        <Alert data-testid="presend-check" className="border-amber-300 bg-amber-50 text-amber-950">
+          <AlertTriangle />
+          <AlertTitle>Перед отправкой проверьте</AlertTitle>
+          <AlertDescription className="text-amber-900">
+            <p>Ещё как в примере шаблона — гости увидят чужие данные:</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {missing.map((item) => (
+                <Button
+                  key={item.key}
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="border-amber-300 bg-white"
+                  aria-label={`Заполнить: ${item.label}`}
+                  onClick={() => onFix?.(item.blockId)}
+                >
+                  {item.label}
+                </Button>
+              ))}
+            </div>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <p data-testid="presend-check" className="flex items-center gap-2 text-sm text-emerald-700">
+          <CircleCheck className="size-4" /> Главное заполнено — можно отправлять
+        </p>
+      )}
+
       <Group title="Отправьте гостям">
         <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
           <Link2 className="size-4 shrink-0 text-muted-foreground" />
@@ -125,6 +159,10 @@ export function LinkPanel({ id, token, slug, onSlugChange, account, data }: Prop
             <Eye /> Посмотреть как гость
           </a>
         </Button>
+        <p className="text-xs text-muted-foreground">
+          Совет: откройте приглашение как гость на телефоне и отправьте ответ сами — так проверите анкету. Пробный ответ
+          потом можно удалить на странице «Гости».
+        </p>
       </Group>
 
       <Group title="Красивая ссылка">

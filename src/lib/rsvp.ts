@@ -57,3 +57,14 @@ export function guestsWord(n: number): string {
   if (d >= 2 && d <= 4 && (dd < 12 || dd > 14)) return "гостя";
   return "гостей";
 }
+
+export type AnswerFilter = "all" | "yes" | "no";
+
+/** Список ответов для организатора: «все / придут / не придут» и поиск по имени без учёта регистра и «ё». */
+export function filterAnswers<T extends { name: string; attending: boolean }>(answers: T[], filter: AnswerFilter, query: string): T[] {
+  const norm = (s: string) => s.toLowerCase().replace(/ё/g, "е").trim();
+  const q = norm(query);
+  return answers.filter(
+    (a) => (filter === "all" || a.attending === (filter === "yes")) && (!q || norm(a.name).includes(q)),
+  );
+}

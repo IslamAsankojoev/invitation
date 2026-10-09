@@ -89,8 +89,9 @@ export async function updateInvitation(id: string, patch: { data?: InvitationDat
   return fromRow(row);
 }
 
+/** Ответы гостей для организатора — без editKey (это секрет гостя для правки своего ответа). */
 export async function listRsvps(invitationId: string) {
-  return prisma.rsvp.findMany({ where: { invitationId }, orderBy: { createdAt: "desc" } });
+  return prisma.rsvp.findMany({ where: { invitationId }, orderBy: { createdAt: "desc" }, omit: { editKey: true } });
 }
 
 /** Публичное представление — без editToken. */
