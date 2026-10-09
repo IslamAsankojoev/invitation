@@ -19,6 +19,11 @@ describe("Анкета гостя", () => {
     await user.click(rsvp().getByRole("button", { name: "Подтвердить" }));
     expect(rsvp().getByRole("alert")).toHaveTextContent("Укажите имя");
     expect(fetchMock).not.toHaveBeenCalled();
+    // Ошибка — у самого поля: фокус возвращается к нему, поле помечено и связано с текстом ошибки.
+    const field = rsvp().getByLabelText("Ваше имя");
+    expect(field).toHaveFocus();
+    expect(field).toHaveAttribute("aria-invalid", "true");
+    expect(field).toHaveAccessibleDescription("Укажите имя");
 
     // Стоит начать вводить имя — ошибка исчезает.
     await user.type(rsvp().getByLabelText("Ваше имя"), "О");

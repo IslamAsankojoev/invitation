@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { guestsWord, rsvpInputSchema } from "@/lib/rsvp";
 import { heartBurst } from "../burst";
 import { prefersReducedMotion } from "../motion";
 import { Section } from "../Section";
 import type { BlockProps } from "./types";
 
-type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent" } | { kind: "error"; message: string };
+/** field — ошибка конкретного поля: показывается под ним, а не над кнопкой. */
+type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent" } | { kind: "error"; message: string; field?: "name" };
 
 const formatDeadline = (d: string) => d.split("-").reverse().join(".");
 
@@ -21,6 +22,8 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
   const [chosen, setChosen] = useState(false);
   const submitRef = useRef<HTMLButtonElement>(null);
   const guestsRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const nameErrorId = useId();
   /** Куда перелистнуть цифру гостей: 1 — вверх (+), −1 — вниз (−), 0 — без анимации (ввод с клавиатуры). */
   const flip = useRef(0);
 
@@ -50,7 +53,15 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
       website: String(form.get("website") ?? "") || undefined,
     };
     const parsed = rsvpInputSchema.safeParse(input);
-    if (!parsed.success) return setStatus({ kind: "error", message: parsed.error.issues[0].message });
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      if (issue.path[0] === "name") {
+        // Поле имени выше кнопки — на телефоне его не видно: возвращаем к нему фокус (и прокрутку).
+        nameRef.current?.focus();
+        return setStatus({ kind: "error", message: issue.message, field: "name" });
+      }
+      return setStatus({ kind: "error", message: issue.message });
+    }
 
     setStatus({ kind: "sending" });
     const res = await fetch(`/api/invitations/${ctx.slug}/rsvp`, {
@@ -90,6 +101,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
     );
   }
 
+  const nameError = status.kind === "error" && status.field === "name";
   const clampGuests = (n: number) => Math.min(10, Math.max(1, Number.isFinite(n) ? Math.round(n) : 1));
   const step = (dir: 1 | -1) => {
     flip.current = dir;
@@ -134,21 +146,33 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
             </button>
           </p>
         )}
-        <label className="inv-field">
-          <span>Ваше имя</span>
-          <input
-            name="name"
-            required
-            maxLength={100}
-            className="inv-input"
-            placeholder="Имя и фамилия"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              if (status.kind === "error") setStatus({ kind: "idle" });
-            }}
-          />
-        </label>
+        {/* Ошибка — под полем, но вне label: иначе она стала бы частью подписи поля. */}
+        <div className="flex flex-col gap-1.5">
+          <label className="inv-field">
+            <span>Ваше имя</span>
+            <input
+              ref={nameRef}
+              name="name"
+              required
+              maxLength={100}
+              autoComplete="name"
+              className="inv-input"
+              placeholder="Имя и фамилия"
+              aria-invalid={nameError || undefined}
+              aria-describedby={nameError ? nameErrorId : undefined}
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (status.kind === "error") setStatus({ kind: "idle" });
+              }}
+            />
+          </label>
+          {nameError && (
+            <p id={nameErrorId} role="alert" className="inv-fade-up pl-5 text-sm text-red-700">
+              {status.message}
+            </p>
+          )}
+        </div>
         <fieldset className={`flex gap-2 ${compact ? "hidden" : ""}`}>
           <legend className="sr-only">Придёте?</legend>
           {[
@@ -206,7 +230,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
         </label>
         {/* Honeypot: скрыт от людей, боты заполняют. */}
         <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
-        {status.kind === "error" && (
+        {status.kind === "error" && !nameError && (
           <p role="alert" className="inv-fade-up text-center text-sm text-red-700">
             {status.message}
           </p>

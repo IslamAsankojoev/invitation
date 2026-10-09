@@ -1,4 +1,4 @@
-import { ArrowLeft, Download, Inbox, UserCheck, UserX, Users } from "lucide-react";
+import { ArrowLeft, Download, Eye, Inbox, Send, UserCheck, UserX, Users } from "lucide-react";
 import { forbidden, redirect } from "next/navigation";
 import { SignInButton } from "@/components/account/AccountMenu";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { findBlock } from "@/lib/blocks";
 import { canEdit, claimUrl, guestsPageAccess } from "@/lib/access";
 import { getInvitationById, listRsvps } from "@/lib/invitations";
+import { requestOrigin } from "@/lib/origin";
+import { shareMessage, telegramShareUrl, whatsappShareUrl } from "@/lib/share";
 import { authEnabled, currentUser } from "@/lib/session";
 import { computeRsvpStats, rsvpsToCsv } from "@/lib/rsvp";
 
@@ -36,6 +38,9 @@ export default async function GuestsPage({ params, searchParams }: Props) {
   // BOM — чтобы Excel правильно открыл кириллицу.
   const csvHref = `data:text/csv;charset=utf-8,${encodeURIComponent("﻿" + rsvpsToCsv(rsvps))}`;
   const names = findBlock(inv.data, "hero")?.names ?? "Приглашение";
+  const publicUrl = new URL(`/i/${inv.slug}`, (await requestOrigin()) ?? "http://localhost").href;
+  const message = shareMessage(inv.data, publicUrl);
+  const when = (d: Date) => d.toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
   const statCards = [
     { label: "Придут", value: stats.attending, testId: "stat-attending", icon: UserCheck },
@@ -60,8 +65,9 @@ export default async function GuestsPage({ params, searchParams }: Props) {
           {statCards.map(({ label, value, testId, icon: Icon }) => (
             <Card key={testId} size="sm">
               <CardHeader>
-                <CardDescription className="flex items-center gap-1.5">
-                  <Icon className="size-3.5" /> {label}
+                {/* На телефоне карточки узкие: подпись в одну строку, без значка. */}
+                <CardDescription className="flex items-center gap-1.5 text-xs whitespace-nowrap sm:text-sm">
+                  <Icon className="size-3.5 max-sm:hidden" /> {label}
                 </CardDescription>
                 <p data-testid={testId} className="text-3xl leading-none font-semibold tabular-nums">
                   {value}
@@ -85,12 +91,46 @@ export default async function GuestsPage({ params, searchParams }: Props) {
           </CardHeader>
           <CardContent>
             {rsvps.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground">
-                <Inbox className="size-8" />
-                Как только гости ответят, их ответы появятся здесь.
+              // Пустой список — повод отправить приглашение: те же кнопки, что во вкладке «Ссылка» редактора.
+              <div className="flex flex-col items-center gap-4 py-8 text-center">
+                <Inbox className="size-8 text-muted-foreground" />
+                <p className="max-w-xs text-sm text-muted-foreground">
+                  Отправьте ссылку гостям — как только они ответят, ответы появятся здесь.
+                </p>
+                <div className="grid w-full max-w-sm grid-cols-2 gap-2">
+                  <Button asChild className="bg-[#25d366] text-white hover:bg-[#1ebe5b]">
+                    <a href={whatsappShareUrl(message)} target="_blank" rel="noopener noreferrer" aria-label="Отправить в WhatsApp">
+                      <Send /> WhatsApp
+                    </a>
+                  </Button>
+                  <Button asChild className="bg-[#2aabee] text-white hover:bg-[#1e96d4]">
+                    <a href={telegramShareUrl(publicUrl, message)} target="_blank" rel="noopener noreferrer" aria-label="Отправить в Telegram">
+                      <Send /> Telegram
+                    </a>
+                  </Button>
+                </div>
+                <Button asChild variant="ghost" size="sm">
+                  <a href={`/i/${inv.slug}`} target="_blank">
+                    <Eye /> Посмотреть как гость
+                  </a>
+                </Button>
               </div>
             ) : (
-              <Table>
+              <>
+              {/* Телефон: таблица в пять столбцов не помещается — карточки ответов. */}
+              <ul data-testid="guest-list" className="flex flex-col divide-y sm:hidden">
+                {rsvps.map((r) => (
+                  <li key={r.id} className="flex flex-col gap-1 py-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium">{r.name}</span>
+                      {r.attending ? <Badge>Придёт · {r.guestsCount}</Badge> : <Badge variant="secondary">Не придёт</Badge>}
+                    </div>
+                    {r.comment && <p className="text-sm text-muted-foreground">{r.comment}</p>}
+                    <span className="text-xs text-muted-foreground">{when(r.createdAt)}</span>
+                  </li>
+                ))}
+              </ul>
+              <Table className="max-sm:hidden">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Имя</TableHead>
@@ -109,13 +149,12 @@ export default async function GuestsPage({ params, searchParams }: Props) {
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{r.attending ? r.guestsCount : "—"}</TableCell>
                       <TableCell className="max-w-64 whitespace-normal text-muted-foreground">{r.comment}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        {r.createdAt.toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" })}
-                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">{when(r.createdAt)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              </>
             )}
           </CardContent>
         </Card>

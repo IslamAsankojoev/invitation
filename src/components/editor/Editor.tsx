@@ -16,7 +16,9 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { accountGate, type ClaimNext, type Ownership } from "@/lib/access";
+import { findBlock } from "@/lib/blocks";
 import { premiumUsage } from "@/lib/premium";
+import { loadRecent, rememberInvitation, saveRecent } from "@/lib/recent";
 import { themeStyle } from "@/lib/theme";
 import type { SessionUser } from "@/lib/session";
 import { formatZodErrors, invitationDataSchema, type InvitationData } from "@/lib/schema";
@@ -166,6 +168,14 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, q
   const [intro, setIntro] = useState(false);
   /** Вкладка панели — управляемая: нажатие на блок в превью переключает на «Блоки». */
   const [tab, setTab] = useState<string>(notice ? "Ссылка" : TABS[0]);
+  // «Недавние приглашения» на главной: этот браузер помнит, куда вернуться, даже если секретную ссылку не сохранили.
+  const hero = findBlock(data, "hero");
+  const heroNames = hero?.names ?? "";
+  const heroDate = hero?.date ?? "";
+  useEffect(() => {
+    saveRecent(rememberInvitation(loadRecent(), { id, token, names: heroNames, date: heroDate, at: Date.now() }));
+  }, [id, token, heroNames, heroDate]);
+
   const [starting, setStarting] = useState(quickStart);
   // Быстрый старт — один раз: убираем ?start=1 из адреса, чтобы он не открылся снова после перезагрузки.
   useEffect(() => {

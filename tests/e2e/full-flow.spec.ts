@@ -157,7 +157,8 @@ test("создать → настроить → открыть → послуш�
 
   // 10. Ответ виден на странице гостей
   await page.goto(`${editorUrl.pathname}/guests${editorUrl.search}`);
-  await expect(page.getByRole("cell", { name: "Ольга Иванова" })).toBeVisible();
+  // На телефоне ответы — карточками (таблица — с 640 px).
+  await expect(page.getByTestId("guest-list").getByText("Ольга Иванова")).toBeVisible();
   await expect(page.getByTestId("stat-attending")).toHaveText("1");
   await expect(page.getByTestId("stat-not-attending")).toHaveText("0");
   await expect(page.getByTestId("stat-total-guests")).toHaveText("2");
