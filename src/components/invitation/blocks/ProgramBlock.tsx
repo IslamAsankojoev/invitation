@@ -36,10 +36,10 @@ export function ProgramBlock({ block }: BlockProps<"program">) {
               data-reveal={i + 2}
               data-anim={i % 2 ? "right" : undefined}
             >
-              <span className="inv-script shrink-0 text-3xl leading-none" style={textStyle(block, "time")}>{item.time}</span>
+              <span className="inv-script shrink-0 text-3xl leading-none" style={textStyle(block, "time")} data-field="time">{item.time}</span>
               <span className="min-w-0 border-l border-[var(--accent)]/40 pl-4">
-                <span className="inv-caps block text-[0.72rem]" style={textStyle(block, "itemTitle")}>{item.title}</span>
-                {item.description && <span className="mt-1 block text-base leading-snug opacity-70" style={textStyle(block, "itemDescription")}>{item.description}</span>}
+                <span className="inv-caps block text-[0.72rem]" style={textStyle(block, "itemTitle")} data-field="itemTitle">{item.title}</span>
+                {item.description && <span className="mt-1 block text-base leading-snug opacity-70" style={textStyle(block, "itemDescription")} data-field="itemDescription">{item.description}</span>}
               </span>
             </li>
           ))}
@@ -60,9 +60,9 @@ export function ProgramBlock({ block }: BlockProps<"program">) {
                 <span className="flex h-16 w-16 items-center justify-center rounded-full border border-[var(--accent)]/60 text-[var(--accent)]">
                   <Icon aria-hidden="true" strokeWidth={1.2} className="size-7" />
                 </span>
-                <span className="mt-3 text-2xl leading-tight" style={textStyle(block, "time")}>{item.time}</span>
-                <span className="inv-caps mt-1 text-[0.72rem]" style={textStyle(block, "itemTitle")}>{item.title}</span>
-                {item.description && <span className="mt-1 max-w-[16rem] text-base leading-snug opacity-70" style={textStyle(block, "itemDescription")}>{item.description}</span>}
+                <span className="mt-3 text-2xl leading-tight" style={textStyle(block, "time")} data-field="time">{item.time}</span>
+                <span className="inv-caps mt-1 text-[0.72rem]" style={textStyle(block, "itemTitle")} data-field="itemTitle">{item.title}</span>
+                {item.description && <span className="mt-1 max-w-[16rem] text-base leading-snug opacity-70" style={textStyle(block, "itemDescription")} data-field="itemDescription">{item.description}</span>}
               </li>
             );
           })}
@@ -118,9 +118,9 @@ function ProgramTimeline({ block }: { block: BlockProps<"program">["block"] }) {
         {block.items.map((item, i) => (
           <li key={i} className="relative pb-8 pl-9 last:pb-0" data-reveal={i + 2} data-anim="right">
             <span aria-hidden="true" data-dot="" className="inv-timeline-dot absolute left-0 top-2 h-[11px] w-[11px] rounded-full" />
-            <div className="text-2xl leading-tight" style={textStyle(block, "time")}>{item.time}</div>
-            <div className="inv-caps mt-1 text-[0.72rem]" style={textStyle(block, "itemTitle")}>{item.title}</div>
-            {item.description && <div className="mt-1 text-base leading-snug opacity-70" style={textStyle(block, "itemDescription")}>{item.description}</div>}
+            <div className="text-2xl leading-tight" style={textStyle(block, "time")} data-field="time">{item.time}</div>
+            <div className="inv-caps mt-1 text-[0.72rem]" style={textStyle(block, "itemTitle")} data-field="itemTitle">{item.title}</div>
+            {item.description && <div className="mt-1 text-base leading-snug opacity-70" style={textStyle(block, "itemDescription")} data-field="itemDescription">{item.description}</div>}
           </li>
         ))}
       </ol>

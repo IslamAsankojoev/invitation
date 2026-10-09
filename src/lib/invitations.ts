@@ -76,21 +76,49 @@ export function hasValidToken(invitation: Pick<Invitation, "editToken"> | null, 
   return !!invitation && !!token && invitation.editToken === token;
 }
 
+/** Адрес занят другим приглашением — текущим адресом или прежним (по прежнему адресу гости ещё приходят). */
 export async function isSlugTaken(slug: string, exceptId?: string): Promise<boolean> {
-  const row = await prisma.invitation.findUnique({ where: { slug }, select: { id: true } });
-  return !!row && row.id !== exceptId;
+  const [row, alias] = await Promise.all([
+    prisma.invitation.findUnique({ where: { slug }, select: { id: true } }),
+    prisma.slugAlias.findUnique({ where: { slug }, select: { invitationId: true } }),
+  ]);
+  return (!!row && row.id !== exceptId) || (!!alias && alias.invitationId !== exceptId);
 }
 
+/**
+ * Смена адреса не ломает разосланные ссылки: прежний адрес остаётся этому приглашению (SlugAlias → редирект).
+ * Вернулись к прежнему адресу — он снова основной, а не псевдоним.
+ */
 export async function updateInvitation(id: string, patch: { data?: InvitationData; slug?: string }): Promise<Invitation> {
-  const row = await prisma.invitation.update({
-    where: { id },
-    data: { slug: patch.slug, data: patch.data ? toJson(patch.data) : undefined },
+  const row = await prisma.$transaction(async (tx) => {
+    const current = await tx.invitation.findUniqueOrThrow({ where: { id }, select: { slug: true } });
+    if (patch.slug && patch.slug !== current.slug) {
+      await tx.slugAlias.deleteMany({ where: { slug: patch.slug, invitationId: id } });
+      await tx.slugAlias.upsert({
+        where: { slug: current.slug },
+        create: { slug: current.slug, invitationId: id },
+        update: { invitationId: id },
+      });
+    }
+    return tx.invitation.update({
+      where: { id },
+      data: { slug: patch.slug, data: patch.data ? toJson(patch.data) : undefined },
+    });
   });
   return fromRow(row);
 }
 
+/** Приглашение по адресу гостя: текущий адрес — само приглашение, прежний — куда перенаправить. */
+export async function resolveSlug(slug: string): Promise<{ invitation: Invitation } | { redirectTo: string } | null> {
+  const invitation = await getInvitationBySlug(slug);
+  if (invitation) return { invitation };
+  const alias = await prisma.slugAlias.findUnique({ where: { slug }, select: { invitation: { select: { slug: true } } } });
+  return alias ? { redirectTo: alias.invitation.slug } : null;
+}
+
+/** Ответы гостей для организатора — без editKey (это секрет гостя для правки своего ответа). */
 export async function listRsvps(invitationId: string) {
-  return prisma.rsvp.findMany({ where: { invitationId }, orderBy: { createdAt: "desc" } });
+  return prisma.rsvp.findMany({ where: { invitationId }, orderBy: { createdAt: "desc" }, omit: { editKey: true } });
 }
 
 /** Публичное представление — без editToken. */

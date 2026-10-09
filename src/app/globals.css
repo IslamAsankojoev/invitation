@@ -69,7 +69,7 @@ body {
     font-family: var(--font-heading);
     text-transform: uppercase;
     letter-spacing: 0.28em;
-    font-size: 0.72rem;
+    font-size: 0.75rem;
   }
   .inv-script {
     font-family: var(--font-title);
@@ -103,7 +103,7 @@ body {
     font-family: var(--font-heading);
     text-transform: uppercase;
     letter-spacing: 0.22em;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     border-color: var(--accent);
     color: var(--text);
   }
@@ -114,9 +114,10 @@ body {
     font-family: var(--font-heading);
     text-transform: uppercase;
     letter-spacing: 0.22em;
-    font-size: 0.68rem;
+    /* Подписи полей анкеты читают и пожилые гости: не мельче 12 px и без сильной прозрачности. */
+    font-size: 0.75rem;
     padding-left: 1.25rem;
-    opacity: 0.75;
+    opacity: 0.85;
   }
   .inv-input {
     @apply w-full rounded-full border px-5 py-3 text-lg outline-none;
@@ -136,6 +137,10 @@ body {
     box-shadow:
       0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent),
       0 8px 24px -10px color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  /* Незаполненное обязательное поле анкеты — красная рамка поверх цвета палитры. */
+  .inv-input[aria-invalid="true"] {
+    border-color: #b91c1c;
   }
   .inv-choice {
     @apply flex-1 cursor-pointer rounded-full border py-2.5 text-center text-lg transition;
@@ -333,10 +338,10 @@ body {
 }
 .inv-ticket-grid dt {
   font-family: var(--font-heading);
-  font-size: 0.56rem;
+  font-size: 0.62rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  opacity: 0.65;
+  opacity: 0.75;
 }
 .inv-ticket-grid dd {
   margin-top: 0.1rem;

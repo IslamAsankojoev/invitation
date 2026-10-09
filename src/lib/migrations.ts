@@ -10,7 +10,7 @@
  *
  * Версия — формата приглашений, а не сайта: package.json тут ни при чём.
  */
-export const SCHEMA_VERSION = "1.0.0";
+export const SCHEMA_VERSION = "1.1.0";
 
 /** Приглашения, сохранённые до появления версии, — это формат 1.0.0. */
 export const INITIAL_SCHEMA_VERSION = "1.0.0";

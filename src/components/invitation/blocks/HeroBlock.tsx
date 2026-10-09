@@ -1,5 +1,6 @@
 "use client";
 
+import { focusPosition, photoStyle } from "@/lib/photoFocus";
 import { Plane } from "lucide-react";
 import { useEffect, useId, useRef, type CSSProperties } from "react";
 import { textStyle } from "@/lib/textStyle";
@@ -70,6 +71,7 @@ function HeroNames({
   return (
     <h1
       data-testid="hero-names"
+      data-field="names"
       className="break-words leading-[1.05]"
       style={{ fontFamily: "var(--font-title)", fontSize: size, color, textShadow: shadow ? "0 2px 20px rgba(40,30,20,.4)" : undefined, ...style }}
     >
@@ -148,7 +150,7 @@ function HeroDetails({ block, ctx, light = false }: HeroProps & { light?: boolea
         </span>
       </div>
       {block.subtitle && (
-        <p className="mx-auto mt-4 max-w-xs text-xl italic leading-snug opacity-90" data-reveal="4" data-anim="blur" data-delay="3.9" style={textStyle(block, "subtitle")}>
+        <p className="mx-auto mt-4 max-w-xs text-xl italic leading-snug opacity-90" data-reveal="4" data-anim="blur" data-delay="3.9" style={textStyle(block, "subtitle")} data-field="subtitle">
           {block.subtitle}
         </p>
       )}
@@ -214,7 +216,7 @@ function HeroClassic({ block, ctx }: HeroProps) {
               <div
                 data-testid="hero-photo"
                 className="inv-hero-photo absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url("${block.photo}")` }}
+                style={{ backgroundImage: `url("${block.photo}")`, backgroundPosition: focusPosition(block.photoFocus) }}
               />
             </div>
             <div aria-hidden="true" className="inv-hero-overlay absolute inset-0" />
@@ -229,7 +231,7 @@ function HeroClassic({ block, ctx }: HeroProps) {
       }
     >
       {block.label && (
-        <p className="inv-caps mb-8 opacity-80" data-reveal="1" data-delay="0.4" style={textStyle(block, "label")}>
+        <p className="inv-caps mb-8 opacity-80" data-reveal="1" data-delay="0.4" style={textStyle(block, "label")} data-field="label">
           {block.label}
         </p>
       )}
@@ -254,14 +256,14 @@ function HeroArch({ block, ctx }: HeroProps) {
       }
     >
       {block.label && (
-        <p className="inv-caps mb-6 opacity-80" data-reveal="1" data-delay="0.2" style={textStyle(block, "label")}>
+        <p className="inv-caps mb-6 opacity-80" data-reveal="1" data-delay="0.2" style={textStyle(block, "label")} data-field="label">
           {block.label}
         </p>
       )}
       <div className="inv-arch relative mx-auto w-[74%] max-w-[300px]" data-reveal="1" data-anim="curtain" data-delay="0.3">
         <div className="aspect-[3/4] overflow-hidden rounded-t-full">
           {block.photo ? (
-            <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" />
+            <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" style={photoStyle(block)} />
           ) : (
             <PhotoPlaceholder names={block.names} />
           )}
@@ -280,7 +282,7 @@ function HeroPolaroid({ block, ctx }: HeroProps) {
   return (
     <Section block={block} bare className="inv-hero flex min-h-[min(100svh,780px)] flex-col items-center justify-center px-8 pt-16 pb-28" background={<ScrollHint />}>
       {block.label && (
-        <p className="inv-caps mb-8 opacity-80" data-reveal="1" data-delay="0.2" style={textStyle(block, "label")}>
+        <p className="inv-caps mb-8 opacity-80" data-reveal="1" data-delay="0.2" style={textStyle(block, "label")} data-field="label">
           {block.label}
         </p>
       )}
@@ -289,7 +291,7 @@ function HeroPolaroid({ block, ctx }: HeroProps) {
         <span aria-hidden="true" className="inv-tape right-[12%] rotate-12" />
         <div className="aspect-square overflow-hidden bg-neutral-200">
           {block.photo ? (
-            <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" />
+            <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" style={photoStyle(block)} />
           ) : (
             <PhotoPlaceholder names={block.names} />
           )}
@@ -312,11 +314,11 @@ function HeroMinimal({ block, ctx }: HeroProps) {
     <Section block={block} bare frame className="inv-hero flex min-h-[min(100svh,780px)] flex-col items-center justify-center px-8 pt-16 pb-28" background={<ScrollHint />}>
       {block.photo && (
         <div className="mx-auto mb-8 h-28 w-28 overflow-hidden rounded-full ring-1 ring-[var(--accent)] ring-offset-4 ring-offset-[var(--bg)]" data-reveal="1" data-anim="pop" data-delay="0.2">
-          <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" />
+          <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" style={photoStyle(block)} />
         </div>
       )}
       {block.label && (
-        <p className="inv-caps mb-6 opacity-70" data-reveal="1" data-delay="0.4" style={textStyle(block, "label")}>
+        <p className="inv-caps mb-6 opacity-70" data-reveal="1" data-delay="0.4" style={textStyle(block, "label")} data-field="label">
           {block.label}
         </p>
       )}
@@ -329,7 +331,7 @@ function HeroMinimal({ block, ctx }: HeroProps) {
         {year} · {time}
       </p>
       <div className="mx-auto my-8 h-16 w-px bg-[var(--accent)]/60" data-reveal="3" data-anim="fade" data-delay="1.6" aria-hidden="true" />
-      <h1 data-testid="hero-names" style={textStyle(block, "names")} className="inv-heading text-[1.6rem] leading-snug" data-reveal="3" data-anim="blur" data-delay="1.9">
+      <h1 data-testid="hero-names" style={textStyle(block, "names")} data-field="names" className="inv-heading text-[1.6rem] leading-snug" data-reveal="3" data-anim="blur" data-delay="1.9">
         {parts.length === 2 ? (
           <>
             <span className="block">{parts[0]}</span> <span className="inv-script my-1 block text-3xl normal-case tracking-normal">&amp;</span>{" "}
@@ -340,7 +342,7 @@ function HeroMinimal({ block, ctx }: HeroProps) {
         )}
       </h1>
       {block.subtitle && (
-        <p className="mx-auto mt-6 max-w-xs text-xl italic leading-snug opacity-85" data-reveal="4" data-anim="blur" data-delay="2.6" style={textStyle(block, "subtitle")}>
+        <p className="mx-auto mt-6 max-w-xs text-xl italic leading-snug opacity-85" data-reveal="4" data-anim="blur" data-delay="2.6" style={textStyle(block, "subtitle")} data-field="subtitle">
           {block.subtitle}
         </p>
       )}
@@ -355,7 +357,7 @@ function HeroMinimal({ block, ctx }: HeroProps) {
 function StackedNames({ block, className, amp }: { block: HeroProps["block"]; className: string; amp: string }) {
   const parts = splitNames(block.names);
   return (
-    <h1 data-testid="hero-names" className={className} style={{ fontFamily: "var(--font-title)", ...textStyle(block, "names") }}>
+    <h1 data-testid="hero-names" className={className} style={{ fontFamily: "var(--font-title)", ...textStyle(block, "names") }} data-field="names">
       {parts.length === 2 ? (
         <>
           <span className="block" data-reveal="2" data-anim="blur" data-delay="0.5">
@@ -384,14 +386,14 @@ function HeroCover({ block, ctx }: HeroProps) {
     <Section block={block} bare className="inv-hero flex min-h-[min(100svh,780px)] flex-col pb-14">
       <div className="inv-cover-photo relative h-[54svh] max-h-[470px] min-h-[330px] w-full overflow-hidden" data-reveal="1" data-anim="fade">
         {block.photo ? (
-          <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" />
+          <img src={block.photo} alt="" data-testid="hero-photo" className="h-full w-full object-cover" style={photoStyle(block)} />
         ) : (
           <PhotoPlaceholder names={block.names} />
         )}
       </div>
       <div className="relative flex flex-1 flex-col items-center justify-center px-8 pt-4 text-center">
         {block.label && (
-          <p className="inv-caps mb-5 opacity-75" data-reveal="1" data-delay="0.3" style={textStyle(block, "label")}>
+          <p className="inv-caps mb-5 opacity-75" data-reveal="1" data-delay="0.3" style={textStyle(block, "label")} data-field="label">
             {block.label}
           </p>
         )}
@@ -403,7 +405,7 @@ function HeroCover({ block, ctx }: HeroProps) {
           {time}
         </p>
         {block.subtitle && (
-          <p className="mx-auto mt-5 max-w-xs text-xl leading-snug italic opacity-90" data-reveal="4" data-anim="blur" data-delay="1.9" style={textStyle(block, "subtitle")}>
+          <p className="mx-auto mt-5 max-w-xs text-xl leading-snug italic opacity-90" data-reveal="4" data-anim="blur" data-delay="1.9" style={textStyle(block, "subtitle")} data-field="subtitle">
             {block.subtitle}
           </p>
         )}
@@ -445,7 +447,7 @@ function HeroMonogram({ block, ctx }: HeroProps) {
         </span>
       </div>
       {block.label && (
-        <p className="inv-caps mt-8 opacity-75" data-reveal="1" data-delay="0.5" style={textStyle(block, "label")}>
+        <p className="inv-caps mt-8 opacity-75" data-reveal="1" data-delay="0.5" style={textStyle(block, "label")} data-field="label">
           {block.label}
         </p>
       )}
@@ -456,7 +458,7 @@ function HeroMonogram({ block, ctx }: HeroProps) {
         {day} {monthGenitive} {year} · {time}
       </p>
       {block.subtitle && (
-        <p className="inv-caps mt-2 opacity-70" data-reveal="3" data-delay="2.9" style={textStyle(block, "subtitle")}>
+        <p className="inv-caps mt-2 opacity-70" data-reveal="3" data-delay="2.9" style={textStyle(block, "subtitle")} data-field="subtitle">
           {block.subtitle}
         </p>
       )}
@@ -466,7 +468,7 @@ function HeroMonogram({ block, ctx }: HeroProps) {
       {block.photo ? (
         // Фото — во всю ширину блока (выходит за поля) и проявляется из фона сверху.
         <div className="inv-monogram-photo relative -mx-8 mt-10 h-[300px]" data-reveal="4" data-anim="fade" data-delay="0.6">
-          <img src={block.photo} alt="" data-testid="hero-photo" className="absolute inset-0 h-full w-full object-cover" />
+          <img src={block.photo} alt="" data-testid="hero-photo" className="absolute inset-0 h-full w-full object-cover" style={photoStyle(block)} />
         </div>
       ) : (
         <div className="pb-24" />
@@ -523,7 +525,7 @@ function HeroTicket({ block, ctx }: HeroProps) {
           <span aria-hidden="true" className="inv-caps absolute top-1/2 left-2.5 -translate-y-1/2 rotate-180 text-[0.55rem] opacity-70 [writing-mode:vertical-rl]">
             ▲ Вылет
           </span>
-          <p className="inv-caps pb-3 text-[0.62rem]" style={textStyle(block, "label")}>
+          <p className="inv-caps pb-3 text-[0.62rem]" style={textStyle(block, "label")} data-field="label">
             {block.label || "Свадебный билет"}
           </p>
           <div className="inv-ticket-rule" />
@@ -531,7 +533,7 @@ function HeroTicket({ block, ctx }: HeroProps) {
           <div className="mt-2 opacity-80">
             <TicketGlobe />
           </div>
-          <h1 data-testid="hero-names" className="inv-ticket-names mt-3" style={{ fontFamily: "var(--font-title)", ...textStyle(block, "names") }}>
+          <h1 data-testid="hero-names" className="inv-ticket-names mt-3" style={{ fontFamily: "var(--font-title)", ...textStyle(block, "names") }} data-field="names">
             {parts.length === 2 ? (
               <>
                 <span className="block">{parts[0]}</span> <span className="inv-amp block text-[1.9rem] leading-[0.9] normal-case">и</span>{" "}
@@ -561,7 +563,7 @@ function HeroTicket({ block, ctx }: HeroProps) {
             <Postmark names={parts.join(" & ")} date={dotted.replace(/ /g, "")} />
           </div>
           <div className="inv-ticket-rule mt-3" />
-          <p className="inv-caps pt-3 text-[0.62rem]" style={textStyle(block, "subtitle")}>
+          <p className="inv-caps pt-3 text-[0.62rem]" style={textStyle(block, "subtitle")} data-field="subtitle">
             {block.subtitle || "Посадка на любовь"}
           </p>
         </div>

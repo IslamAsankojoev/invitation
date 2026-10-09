@@ -63,7 +63,7 @@ export function CalendarBlock({ block, ctx }: BlockProps<"calendar">) {
         <div className="inv-calendar mx-auto mt-6 grid max-w-sm grid-cols-7 gap-1" data-reveal="3" data-anim="fade" aria-label={`Неделя ${info.day} ${info.monthGenitive}`}>
           {week.map((d, i) => (
             <div key={i} className="inv-cal-day flex flex-col items-center gap-2" style={{ "--w": i } as CSSProperties}>
-              <span className={`inv-caps text-[0.55rem] ${d.isEvent ? "text-[var(--accent)]" : "opacity-60"}`}>{WEEKDAYS_SHORT[i]}</span>
+              <span className={`inv-caps text-[0.62rem] ${d.isEvent ? "text-[var(--accent)]" : "opacity-70"}`}>{WEEKDAYS_SHORT[i]}</span>
               {d.isEvent ? <EventDay day={d.day} /> : <span className="flex h-9 items-center text-lg opacity-80">{d.day}</span>}
             </div>
           ))}
@@ -111,7 +111,7 @@ export function CalendarBlock({ block, ctx }: BlockProps<"calendar">) {
         <thead>
           <tr>
             {WEEKDAYS_SHORT.map((d) => (
-              <th key={d} className="inv-caps pb-3 text-[0.6rem] font-normal opacity-60">
+              <th key={d} className="inv-caps pb-3 text-[0.65rem] font-normal opacity-70">
                 {d}
               </th>
             ))}

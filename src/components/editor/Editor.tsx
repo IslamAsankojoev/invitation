@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check, ChevronDown, CircleCheck, Crown, ExternalLink, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, RotateCw, Users, X } from "lucide-react";
+import { AlertCircle, Check, ChevronDown, CircleCheck, Crown, ExternalLink, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, Redo2, RotateCw, Send, Undo2, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { DecorLayer } from "@/components/invitation/DecorLayer";
@@ -16,7 +16,11 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { accountGate, type ClaimNext, type Ownership } from "@/lib/access";
+import { blockById, findBlock, updateBlock } from "@/lib/blocks";
+import { createHistory, record, redo, undo } from "@/lib/history";
+import { isQuickEditField, QUICK_EDIT_FIELDS, type QuickEditField } from "@/lib/quickEdit";
 import { premiumUsage } from "@/lib/premium";
+import { loadRecent, rememberInvitation, saveRecent } from "@/lib/recent";
 import { themeStyle } from "@/lib/theme";
 import type { SessionUser } from "@/lib/session";
 import { formatZodErrors, invitationDataSchema, type InvitationData } from "@/lib/schema";
@@ -26,6 +30,8 @@ import { BlocksPanel, type BlockViewState } from "./BlocksPanel";
 import { IntroPreview } from "./IntroPreview";
 import { LinkPanel } from "./LinkPanel";
 import { MusicPanel } from "./MusicPanel";
+import { QuickEditBar } from "./QuickEditBar";
+import { QuickStart } from "./QuickStart";
 import { ThemePanel } from "./ThemePanel";
 import { useAutosave, type SaveStatus } from "./useAutosave";
 
@@ -42,6 +48,8 @@ type Props = {
   initialData: InvitationData;
   account?: EditorAccount;
   notice?: SaveNotice;
+  /** Только что создано из шаблона — сначала быстрый старт (имена, дата, место). */
+  quickStart?: boolean;
 };
 
 const noticeText: Record<SaveNotice, { ok: boolean; text: string }> = {
@@ -134,8 +142,31 @@ const PICK_TIP_KEY = "editor-pick-tip";
 /** Плашка «PRO-оформление» над вкладками. Пока тарифов нет — скрыта; значки PRO на плитках остаются. */
 const SHOW_PREMIUM_ALERT = false;
 
-export function Editor({ id, token, initialSlug, initialData, account, notice }: Props) {
-  const [data, setData] = useState(initialData);
+export function Editor({ id, token, initialSlug, initialData, account, notice, quickStart = false }: Props) {
+  // Состояние приглашения — с историей для «Отменить / Вернуть»; правки подряд (набор текста) склеиваются в шаг.
+  const [history, setHistory] = useState(() => createHistory(initialData));
+  const data = history.present;
+  const setData = useCallback((next: InvitationData) => {
+    const now = Date.now();
+    setHistory((h) => record(h, next, now));
+  }, []);
+  const canUndo = history.past.length > 0;
+  const canRedo = history.future.length > 0;
+  // Ctrl/⌘+Z, Shift+Ctrl/⌘+Z и Ctrl+Y — вне полей ввода (в поле работает обычная отмена набора).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
+      const key = e.key.toLowerCase();
+      if (key === "z" || key === "y") {
+        e.preventDefault();
+        setHistory((h) => (key === "y" || e.shiftKey ? redo(h) : undo(h)));
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const [slug, setSlug] = useState(initialSlug);
 
   const save = useCallback((d: InvitationData) => patchInvitation(id, token, { data: d }), [id, token]);
@@ -163,6 +194,22 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
   const [intro, setIntro] = useState(false);
   /** Вкладка панели — управляемая: нажатие на блок в превью переключает на «Блоки». */
   const [tab, setTab] = useState<string>(notice ? "Ссылка" : TABS[0]);
+  // «Недавние приглашения» на главной: этот браузер помнит, куда вернуться, даже если секретную ссылку не сохранили.
+  const hero = findBlock(data, "hero");
+  const heroNames = hero?.names ?? "";
+  const heroDate = hero?.date ?? "";
+  useEffect(() => {
+    saveRecent(rememberInvitation(loadRecent(), { id, token, names: heroNames, date: heroDate, at: Date.now() }));
+  }, [id, token, heroNames, heroDate]);
+
+  const [starting, setStarting] = useState(quickStart);
+  // Быстрый старт — один раз: убираем ?start=1 из адреса, чтобы он не открылся снова после перезагрузки.
+  useEffect(() => {
+    if (!quickStart) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("start");
+    window.history.replaceState(window.history.state, "", url);
+  }, [quickStart]);
   /** Подсказка «нажмите на блок в превью» — до первого закрытия (запоминается в браузере). */
   const [pickTip, setPickTip] = useState(false);
   useEffect(() => {
@@ -214,6 +261,21 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
     scrollAfterRender.current = null;
   }, [data, scrollPreview]);
 
+  /** Поле надписи, на которую нажали в превью (компьютер), — фокус после рендера панели. Ищем по подписи поля. */
+  const focusField = useRef<{ blockId: string; label: string } | null>(null);
+  useEffect(() => {
+    const target = focusField.current;
+    if (!target) return;
+    focusField.current = null;
+    const item = document.querySelector(`[data-block-item="${target.blockId}"]`);
+    const label = Array.from(item?.querySelectorAll("label") ?? []).find((l) => l.textContent?.trim() === target.label);
+    const input = label?.htmlFor ? document.getElementById(label.htmlFor) : null;
+    if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+      input.focus({ preventScroll: true });
+      input.scrollIntoView({ block: "center", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    }
+  });
+
   /** Карточка блока в панели появится после рендера — тогда и прокручиваем панель к ней. */
   const panelScrollTo = useRef<string | null>(null);
   useEffect(() => {
@@ -233,17 +295,77 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
     e.preventDefault();
     e.stopPropagation();
     const blockId = section.dataset.blockId;
+    // Телефон: нажали на надпись — правим её прямо здесь, приглашение остаётся видно (шторка закрыта).
+    const field = (e.target as HTMLElement).closest<HTMLElement>("[data-field]")?.dataset.field;
+    if (!desktop && isQuickEditField(field)) {
+      // Снизу поднимется клавиатура — надпись поднимаем к верху превью, чтобы правка была видна.
+      const box = previewRef.current;
+      const el = (e.target as HTMLElement).closest<HTMLElement>("[data-field]");
+      if (box && el) {
+        const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+        box.scrollTo({ top: Math.max(0, top - 48), behavior: prefersReducedMotion() ? "auto" : "smooth" });
+      }
+      setSheet(false);
+      setIntro(false);
+      setExpanded(blockId);
+      setQuickEdit({ blockId, field });
+      if (pickTip) closePickTip();
+      return;
+    }
+    setQuickEdit(null);
+    // Компьютер: нажали на надпись — в панели сразу поле этой надписи (с курсором), а не просто блок.
+    if (isQuickEditField(field)) {
+      setBlockView((v) => ({ ...v, tab: "content" }));
+      focusField.current = { blockId, label: QUICK_EDIT_FIELDS[field] };
+    }
     setTab("Блоки");
     setSheet(true);
     setIntro(false);
     setExpanded(blockId);
-    panelScrollTo.current = blockId;
+    // К полю панель прокрутит фокус; иначе — к карточке блока.
+    panelScrollTo.current = focusField.current ? null : blockId;
     if (pickTip) closePickTip();
+  }
+
+  /** Быстрая правка надписи на телефоне: какой блок и какое поле. */
+  const [quickEdit, setQuickEdit] = useState<{ blockId: string; field: QuickEditField } | null>(null);
+  const quickBlock = quickEdit ? blockById(data, quickEdit.blockId) : undefined;
+  // Открыли панель (нижние кнопки, «Отправить») — быстрая правка закрывается, иначе легла бы поверх шторки.
+  useEffect(() => {
+    if (sheet) setQuickEdit(null);
+  }, [sheet]);
+  /** «Все настройки блока» из быстрой правки — панель с этим блоком. */
+  function quickEditMore() {
+    if (!quickEdit) return;
+    setQuickEdit(null);
+    setTab("Блоки");
+    setSheet(true);
+    setExpanded(quickEdit.blockId);
+    panelScrollTo.current = quickEdit.blockId;
   }
 
   function toggleFollow(on: boolean) {
     setFollow(on);
     if (on && expanded) scrollPreview(expanded);
+  }
+
+  /** Открыть блок для правки из другого места панели (проверка перед отправкой): «Блоки», текст, превью к блоку. */
+  function openBlock(blockId: string) {
+    setTab("Блоки");
+    setSheet(true);
+    setIntro(false);
+    setBlockView((v) => ({ ...v, tab: "content" }));
+    setExpanded(blockId);
+    panelScrollTo.current = blockId;
+    if (follow) scrollPreview(blockId);
+  }
+
+  /** «Отправить гостям»: панель «Ссылка» с кнопками WhatsApp и Telegram. */
+  function openShare() {
+    setStarting(false);
+    setIntro(false);
+    setTab("Ссылка");
+    setSheet(true);
   }
 
   function reloadPreview() {
@@ -301,7 +423,8 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
               <ChevronDown />
             </Button>
           </div>
-          <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-background/95 px-4 pb-3 backdrop-blur lg:pt-3">
+          {/* На телефоне шапка нужна только для меню аккаунта: «Открыть», «Гости» и «Отправить» — над превью. */}
+          <header className={cn("sticky top-0 z-20 flex items-center gap-3 border-b bg-background/95 px-4 pb-3 backdrop-blur lg:pt-3", !account && "max-lg:hidden")}>
             {/* <a href="/" aria-label="На главную" className="shrink-0">
               <img src="/logo.webp" alt="" width={44} height={32} className="h-8 w-auto" />
             </a> */}
@@ -310,29 +433,6 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
               <h1 className="sr-only text-base leading-none font-semibold lg:not-sr-only">Редактор приглашения</h1>
             </div>
             <nav className="flex gap-2">
-              {gate ? (
-                <>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setGateFor("editor")}>
-                    <ExternalLink /> Открыть
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setGateFor("guests")}>
-                    <Users /> Гости
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button asChild variant="outline" size="sm">
-                    <a href={`/i/${slug}`} target="_blank">
-                      <ExternalLink /> Открыть
-                    </a>
-                  </Button>
-                  <Button asChild variant="outline" size="sm">
-                    <a href={`/edit/${id}/guests?token=${token}`}>
-                      <Users /> Гости
-                    </a>
-                  </Button>
-                </>
-              )}
               {account && <AccountMenu user={account.user} />}
             </nav>
           </header>
@@ -345,7 +445,8 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
             }}
             className="flex min-h-0 flex-1 flex-col gap-0"
           >
-            <div className="border-b px-4 py-3">
+            {/* На телефоне разделы переключает нижняя панель — второй ряд вкладок в шторке не нужен. */}
+            <div className="border-b px-4 py-3 max-lg:hidden">
               <TabsList className="w-full">
                 {TABS.map((t) => (
                   <TabsTrigger key={t} value={t}>
@@ -407,7 +508,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
                 <MusicPanel data={data} onChange={setData} />
               </TabsContent>
               <TabsContent value="Ссылка">
-                <LinkPanel id={id} token={token} slug={slug} onSlugChange={setSlug} account={account} />
+                <LinkPanel id={id} token={token} slug={slug} onSlugChange={setSlug} account={account} data={data} onFix={openBlock} />
               </TabsContent>
             </div>
           </Tabs>
@@ -419,21 +520,60 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
           aria-label="Превью"
           className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-hidden pt-2 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:h-svh lg:gap-3 lg:p-8"
         >
-          <div className="flex w-full max-w-[433px] flex-wrap items-center gap-2 px-3 lg:px-0">
-            <Button type="button" variant="outline" size="icon-sm" onClick={reloadPreview} aria-label="Перезагрузить" title="Перезагрузить превью">
+          {/* z-[35] — над невидимой подложкой шторки: кнопки сверху нажимаются с первого раза и при открытой панели. */}
+          <div className="relative z-[35] flex w-full max-w-[433px] items-center gap-2 px-3 lg:max-w-[720px] lg:px-0">
+            {/* На телефоне места мало: перезагрузка превью нужна редко, «Отменить» — часто. */}
+            <Button type="button" variant="outline" size="icon-sm" className="max-sm:hidden" onClick={reloadPreview} aria-label="Перезагрузить" title="Перезагрузить превью">
               <RotateCw />
             </Button>
-            <Badge role="status" data-testid="save-status" variant={statusInfo.variant}>
+            <div className="flex">
+              <Button type="button" variant="ghost" size="icon-sm" disabled={!canUndo} onClick={() => setHistory(undo)} aria-label="Отменить" title="Отменить (Ctrl+Z)">
+                <Undo2 />
+              </Button>
+              <Button type="button" variant="ghost" size="icon-sm" disabled={!canRedo} onClick={() => setHistory(redo)} aria-label="Вернуть" title="Вернуть (Ctrl+Shift+Z)">
+                <Redo2 />
+              </Button>
+            </div>
+            <Badge role="status" data-testid="save-status" variant={statusInfo.variant} title={statusInfo.text}>
               {statusInfo.icon}
-              {statusInfo.text}
+              {/* На узком экране — только значок: место нужнее кнопкам справа. */}
+              <span className={cn(status === "saved" && "max-sm:sr-only")}>{statusInfo.text}</span>
             </Badge>
             <label
-              className="ml-auto flex cursor-pointer items-center gap-2 text-sm"
+              className="ml-auto flex cursor-pointer items-center gap-2 text-sm max-lg:hidden"
               title="Прокручивать превью к блоку, который открыт в редакторе"
             >
               <Switch checked={follow} onCheckedChange={toggleFollow} aria-label="Следовать за редактируемым блоком" />
-              Следовать за контентом
+              Листать к блоку
             </label>
+            <div className="ml-auto flex gap-2 lg:ml-2">
+              {gate ? (
+                <>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setGateFor("editor")} aria-label="Открыть">
+                    <ExternalLink /> <span className="max-sm:hidden">Открыть</span>
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setGateFor("guests")}>
+                    <Users /> <span className="max-sm:sr-only">Гости</span>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button asChild variant="outline" size="sm">
+                    <a href={`/i/${slug}`} target="_blank" aria-label="Открыть">
+                      <ExternalLink /> <span className="max-sm:hidden">Открыть</span>
+                    </a>
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <a href={`/edit/${id}/guests?token=${token}`}>
+                      <Users /> <span className="max-sm:sr-only">Гости</span>
+                    </a>
+                  </Button>
+                </>
+              )}
+              <Button type="button" size="sm" onClick={openShare}>
+                <Send /> Отправить{" "}<span className="max-sm:sr-only">гостям</span>
+              </Button>
+            </div>
           </div>
           {pickTip && (
             <p role="note" className="mx-3 flex w-[calc(100%-1.5rem)] max-w-[433px] items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm lg:mx-0 lg:w-full">
@@ -483,6 +623,17 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
           })}
         </nav>
       </div>
+      {quickEdit && quickBlock && (
+        <QuickEditBar
+          key={`${quickEdit.blockId}:${quickEdit.field}`}
+          block={quickBlock}
+          field={quickEdit.field}
+          onChange={(patch) => setData(updateBlock(data, quickEdit.blockId, patch))}
+          onClose={() => setQuickEdit(null)}
+          onMore={quickEditMore}
+        />
+      )}
+      {starting && <QuickStart data={data} onChange={setData} onClose={() => setStarting(false)} onShare={openShare} />}
       {account && gate && (
         <Dialog open={gateFor !== null} onOpenChange={(open) => !open && setGateFor(null)}>
           <DialogContent className="sm:max-w-md">

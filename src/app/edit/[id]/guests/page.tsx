@@ -1,13 +1,14 @@
-import { ArrowLeft, Download, Inbox, UserCheck, UserX, Users } from "lucide-react";
+import { ArrowLeft, UserCheck, UserX, Users } from "lucide-react";
 import { forbidden, redirect } from "next/navigation";
 import { SignInButton } from "@/components/account/AccountMenu";
-import { Badge } from "@/components/ui/badge";
+import { GuestAnswers } from "@/components/guests/GuestAnswers";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { findBlock } from "@/lib/blocks";
 import { canEdit, claimUrl, guestsPageAccess } from "@/lib/access";
 import { getInvitationById, listRsvps } from "@/lib/invitations";
+import { requestOrigin } from "@/lib/origin";
+import { shareMessage, telegramShareUrl, whatsappShareUrl } from "@/lib/share";
 import { authEnabled, currentUser } from "@/lib/session";
 import { computeRsvpStats, rsvpsToCsv } from "@/lib/rsvp";
 
@@ -36,6 +37,8 @@ export default async function GuestsPage({ params, searchParams }: Props) {
   // BOM — чтобы Excel правильно открыл кириллицу.
   const csvHref = `data:text/csv;charset=utf-8,${encodeURIComponent("﻿" + rsvpsToCsv(rsvps))}`;
   const names = findBlock(inv.data, "hero")?.names ?? "Приглашение";
+  const publicUrl = new URL(`/i/${inv.slug}`, (await requestOrigin()) ?? "http://localhost").href;
+  const message = shareMessage(inv.data, publicUrl);
 
   const statCards = [
     { label: "Придут", value: stats.attending, testId: "stat-attending", icon: UserCheck },
@@ -60,8 +63,9 @@ export default async function GuestsPage({ params, searchParams }: Props) {
           {statCards.map(({ label, value, testId, icon: Icon }) => (
             <Card key={testId} size="sm">
               <CardHeader>
-                <CardDescription className="flex items-center gap-1.5">
-                  <Icon className="size-3.5" /> {label}
+                {/* На телефоне карточки узкие: подпись в одну строку, без значка. */}
+                <CardDescription className="flex items-center gap-1.5 text-xs whitespace-nowrap sm:text-sm">
+                  <Icon className="size-3.5 max-sm:hidden" /> {label}
                 </CardDescription>
                 <p data-testid={testId} className="text-3xl leading-none font-semibold tabular-nums">
                   {value}
@@ -71,54 +75,15 @@ export default async function GuestsPage({ params, searchParams }: Props) {
           ))}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Все ответы</CardTitle>
-            <CardDescription>{rsvps.length === 0 ? "Пока никто не ответил" : `Ответов: ${rsvps.length}`}</CardDescription>
-            <CardAction>
-              <Button asChild variant="outline" size="sm">
-                <a href={csvHref} download={`guests-${inv.slug}.csv`}>
-                  <Download /> Экспорт в CSV
-                </a>
-              </Button>
-            </CardAction>
-          </CardHeader>
-          <CardContent>
-            {rsvps.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground">
-                <Inbox className="size-8" />
-                Как только гости ответят, их ответы появятся здесь.
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Имя</TableHead>
-                    <TableHead>Ответ</TableHead>
-                    <TableHead className="text-right">Гостей</TableHead>
-                    <TableHead>Комментарий</TableHead>
-                    <TableHead className="text-right">Дата</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rsvps.map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-medium">{r.name}</TableCell>
-                      <TableCell>
-                        {r.attending ? <Badge>Придёт</Badge> : <Badge variant="secondary">Не придёт</Badge>}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{r.attending ? r.guestsCount : "—"}</TableCell>
-                      <TableCell className="max-w-64 whitespace-normal text-muted-foreground">{r.comment}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        {r.createdAt.toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" })}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        <GuestAnswers
+          invitationId={inv.id}
+          slug={inv.slug}
+          token={inv.editToken}
+          answers={rsvps.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }))}
+          csvHref={csvHref}
+          csvName={`guests-${inv.slug}.csv`}
+          share={{ whatsapp: whatsappShareUrl(message), telegram: telegramShareUrl(publicUrl, message) }}
+        />
       </div>
     </main>
   );

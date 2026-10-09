@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor, type EditorAccount } from "@/components/editor/Editor";
+import { updateBlock } from "@/lib/blocks";
 import { createDefaultInvitation } from "@/lib/defaults";
 import { openBlockView, openThemeSection } from "./editorHelpers";
 
@@ -557,25 +558,32 @@ describe("Editor: добавление, копирование и удалени
     expect(screen.getByLabelText("Подпись кнопки")).toHaveFocus();
   });
 
-  it("«Дублировать» кладёт копию под блок, «Удалить» спрашивает подтверждение", async () => {
+  it("«Дублировать» кладёт копию под блок, «Удалить» спрашивает подтверждение (оба — в меню «⋯»)", async () => {
     const user = userEvent.setup();
     renderEditor();
     const preview = screen.getByTestId("preview");
     const stories = () => preview.querySelectorAll('[data-block="story"]');
+    const menu = (label: string) => user.click(screen.getByRole("button", { name: `Ещё: блок «${label}»` }));
+    // В строке блока — одно «⋯» вместо двух значков.
+    expect(screen.queryByRole("button", { name: "Дублировать блок «Наша история»" })).not.toBeInTheDocument();
+    await menu("Наша история");
     await user.click(screen.getByRole("button", { name: "Дублировать блок «Наша история»" }));
     expect(stories()).toHaveLength(2);
     expect(screen.getByRole("button", { name: /^Наша история 2/ })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.queryByRole("button", { name: "Дублировать блок «Наша история»" })).not.toBeInTheDocument();
 
+    await menu("Наша история 2");
     await user.click(screen.getByRole("button", { name: "Удалить блок «Наша история 2»" }));
     await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Отмена" }));
     expect(stories()).toHaveLength(2);
+    await menu("Наша история 2");
     await user.click(screen.getByRole("button", { name: "Удалить блок «Наша история 2»" }));
     await user.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Удалить" }));
     expect(stories()).toHaveLength(1);
 
-    // Главный экран не удаляется и не копируется, анкета — не копируется.
-    expect(screen.queryByRole("button", { name: "Удалить блок «Главный экран»" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Дублировать блок «Главный экран»" })).not.toBeInTheDocument();
+    // Главный экран не удаляется и не копируется — у него нет «⋯»; анкета — не копируется.
+    expect(screen.queryByRole("button", { name: "Ещё: блок «Главный экран»" })).not.toBeInTheDocument();
+    await menu("Анкета гостя");
     expect(screen.queryByRole("button", { name: "Дублировать блок «Анкета гостя»" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Удалить блок «Анкета гостя»" })).toBeInTheDocument();
   });
@@ -747,5 +755,235 @@ describe("Editor: добавление, копирование и удалени
     await openThemeSection(user, "Падающий декор", { fine: true });
     await user.click(screen.getByRole("switch", { name: "Мини-игра: лопаются от касания" }));
     expect(layer()).not.toHaveAttribute("data-pop");
+  });
+});
+
+describe("Editor: быстрый старт и отправка гостям", () => {
+  const renderNew = () =>
+    render(<Editor id="inv1" token="secret" initialSlug="x7k2m9qa" initialData={createDefaultInvitation()} quickStart />);
+
+  it("три шага: повод и имена, дата и время, место — всё сразу в превью; в конце «Отправить гостям»", async () => {
+    const user = userEvent.setup();
+    window.history.replaceState(null, "", "/edit/inv1?token=secret&start=1");
+    renderNew();
+    // Повторно после перезагрузки не откроется: start убран из адреса, token остался.
+    expect(window.location.search).toBe("?token=secret");
+    const preview = screen.getByTestId("preview");
+    const dialog = () => screen.getByRole("dialog");
+    expect(within(dialog()).getByText("Шаг 1 из 4")).toBeInTheDocument();
+
+    await user.click(within(dialog()).getByRole("button", { name: "Кыз узатуу" }));
+    expect(within(dialog()).getByRole("button", { name: "Кыз узатуу" })).toHaveAttribute("aria-pressed", "true");
+    // Поле пустое, пример шаблона — подсказкой: стирать «Анна & Иван» не нужно.
+    const names = within(dialog()).getByLabelText("Имена");
+    expect(names).toHaveValue("");
+    expect(names).toHaveAttribute("placeholder", "Анна & Иван");
+    await user.type(names, "Айбек & Айзада");
+    expect(within(preview).getByTestId("hero-names")).toHaveTextContent("Айбек & Айзада");
+    expect(within(preview).getByText("Приглашение на кыз узатуу")).toBeInTheDocument();
+    await user.click(within(dialog()).getByRole("button", { name: "Далее" }));
+
+    fireEvent.change(within(dialog()).getByLabelText("Дата"), { target: { value: "2027-08-14" } });
+    fireEvent.change(within(dialog()).getByLabelText("Начало"), { target: { value: "18:00" } });
+    expect(within(dialog()).getByLabelText("Дата")).toHaveValue("2027-08-14");
+    expect(within(dialog()).getByLabelText("Начало")).toHaveValue("18:00");
+    await user.click(within(dialog()).getByRole("button", { name: "Далее" }));
+
+    await user.type(within(dialog()).getByLabelText("Название места"), "Ресторан «Ала-Тоо»");
+    const map = within(dialog()).getByLabelText("Ссылка на карту");
+    await user.type(map, "где-то рядом");
+    expect(within(dialog()).getByText("Не похоже на ссылку — скопируйте её ещё раз")).toBeInTheDocument();
+    expect(within(dialog()).getByRole("button", { name: "Далее" })).toBeDisabled();
+    await user.clear(map);
+    // «Поделиться» в 2ГИС копирует текст со ссылкой — берём ссылку.
+    await user.click(map);
+    await user.paste("Ала-Тоо, Бишкек https://go.2gis.com/abc12");
+    expect(within(preview).getByText("Ресторан «Ала-Тоо»")).toBeInTheDocument();
+    // Пока открыт диалог, Radix скрывает остальное от скринридеров (aria-hidden) — ищем ссылку по разметке.
+    expect(preview.querySelector('[data-block="location"] a[href="https://go.2gis.com/abc12"]')).toHaveTextContent("Посмотреть на карте");
+    await user.click(within(dialog()).getByRole("button", { name: "Далее" }));
+
+    // Фото: крупная кнопка выбора; можно пропустить.
+    expect(within(dialog()).getByText("Ваше фото")).toBeInTheDocument();
+    expect(within(dialog()).getByLabelText("Фото на главном экране")).toHaveAttribute("type", "file");
+    await user.click(within(dialog()).getByRole("button", { name: "Далее" }));
+
+    expect(within(dialog()).getByText("Приглашение готово!")).toBeInTheDocument();
+    await user.click(within(dialog()).getByRole("button", { name: "Отправить гостям" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Ссылка" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("link", { name: "Отправить в WhatsApp" }).getAttribute("href")).toContain(
+      encodeURIComponent("Айбек & Айзада"),
+    );
+  });
+
+  it("«Пропустить всё» закрывает быстрый старт, шаблон остаётся как был", async () => {
+    const user = userEvent.setup();
+    renderNew();
+    await user.click(screen.getByRole("button", { name: "Пропустить всё" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(within(screen.getByTestId("preview")).getByTestId("hero-names")).toHaveTextContent("Анна & Иван");
+  });
+
+  it("без ?start быстрый старт не показывается", () => {
+    renderEditor();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("«Отправить гостям» над превью: WhatsApp, Telegram и ссылка из имён в один клик", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    renderEditor();
+    await user.click(screen.getByRole("button", { name: "Отправить гостям" }));
+    expect(screen.getByRole("tab", { name: "Ссылка" })).toHaveAttribute("aria-selected", "true");
+    const url = `${window.location.origin}/i/demo`;
+    const wa = new URL(screen.getByRole("link", { name: "Отправить в WhatsApp" }).getAttribute("href")!);
+    expect(wa.origin).toBe("https://wa.me");
+    expect(wa.searchParams.get("text")).toBe(`Приглашение на свадьбу\nАнна & Иван\n19 июня 2027, 16:00\nРесторан «Сад»\n\n${url}`);
+    const tg = new URL(screen.getByRole("link", { name: "Отправить в Telegram" }).getAttribute("href")!);
+    expect(tg.searchParams.get("url")).toBe(url);
+
+    await user.click(screen.getByRole("button", { name: "Сделать ссылку /i/anna-ivan" }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/invitations/inv1?token=secret",
+      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ slug: "anna-ivan" }) }),
+    );
+    expect(await screen.findByText("Ссылка сохранена")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Посмотреть как гость" })).toHaveAttribute("href", "/i/anna-ivan");
+    expect(screen.queryByRole("button", { name: "Сделать ссылку /i/anna-ivan" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Editor: отменить/вернуть, правка в превью, готовые фразы", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("«Отменить» и «Вернуть» — кнопками и Ctrl+Z вне полей; набор текста — один шаг", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    const names = () => within(screen.getByTestId("preview")).getByTestId("hero-names");
+    const undoBtn = screen.getByRole("button", { name: "Отменить" });
+    const redoBtn = screen.getByRole("button", { name: "Вернуть" });
+    expect(undoBtn).toBeDisabled();
+    expect(redoBtn).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Главный экран" }));
+    await user.clear(screen.getByLabelText("Имена"));
+    await user.type(screen.getByLabelText("Имена"), "Мария & Пётр");
+    expect(names()).toHaveTextContent("Мария & Пётр");
+
+    await user.click(undoBtn);
+    expect(names()).toHaveTextContent("Анна & Иван");
+    expect(redoBtn).toBeEnabled();
+    await user.click(redoBtn);
+    expect(names()).toHaveTextContent("Мария & Пётр");
+
+    // Клавиатура: в поле Ctrl+Z — обычная отмена набора, вне поля — шаг истории.
+    (document.activeElement as HTMLElement).blur();
+    await user.keyboard("{Control>}z{/Control}");
+    expect(names()).toHaveTextContent("Анна & Иван");
+    await user.keyboard("{Control>}{Shift>}z{/Shift}{/Control}");
+    expect(names()).toHaveTextContent("Мария & Пётр");
+  });
+
+  it("телефон: нажатие на надпись в превью — правка снизу, шторка закрыта; «Все настройки блока» открывает блок", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    const preview = screen.getByTestId("preview");
+    const sheet = screen.getByRole("complementary", { name: "Панель редактора" });
+
+    await user.click(within(preview).getByTestId("hero-names"));
+    const bar = screen.getByRole("dialog", { name: "Правка: Имена" });
+    expect(sheet).toHaveClass("invisible");
+    const input = within(bar).getByLabelText("Имена");
+    expect(input).toHaveValue("Анна & Иван");
+    expect(input).toHaveFocus();
+    await user.clear(input);
+    await user.type(input, "Айбек & Айзада");
+    expect(within(preview).getByTestId("hero-names")).toHaveTextContent("Айбек & Айзада");
+    await user.click(within(bar).getByRole("button", { name: "Готово" }));
+    expect(screen.queryByRole("dialog", { name: /^Правка/ })).not.toBeInTheDocument();
+
+    // Заголовок блока без своего текста — в поле стандартный.
+    await user.click(within(preview.querySelector<HTMLElement>('[data-block="program"]')!).getByText("Программа дня"));
+    expect(within(screen.getByRole("dialog", { name: "Правка: Заголовок" })).getByLabelText("Заголовок")).toHaveValue("Программа дня");
+    await user.click(screen.getByRole("button", { name: "Все настройки блока" }));
+    expect(screen.queryByRole("dialog", { name: /^Правка/ })).not.toBeInTheDocument();
+    expect(sheet).not.toHaveClass("invisible");
+    expect(screen.getByRole("button", { name: "Программа" })).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("готовые надписи и фразы на главном экране подставляются одним нажатием", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    const preview = screen.getByTestId("preview");
+    await user.click(screen.getByRole("button", { name: "Главный экран" }));
+    await user.click(within(screen.getByRole("group", { name: "Готовые надписи" })).getByRole("button", { name: "Юбилей" }));
+    expect(screen.getByLabelText("Надпись над именами")).toHaveValue("Приглашение на юбилей");
+    expect(within(preview).getByText("Приглашение на юбилей")).toBeInTheDocument();
+    const phrase = "Приходите разделить с нами радость";
+    await user.click(within(screen.getByRole("group", { name: "Готовые фразы" })).getByRole("button", { name: phrase }));
+    expect(screen.getByLabelText("Подзаголовок")).toHaveValue(phrase);
+    expect(within(screen.getByRole("group", { name: "Готовые фразы" })).getByRole("button", { name: phrase })).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
+describe("Editor: проверка перед отправкой и правка надписи на компьютере", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("«Ссылка» предупреждает о текстах из примера; «Заполнить» открывает блок", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(screen.getByRole("button", { name: "Отправить гостям" }));
+    const check = screen.getByTestId("presend-check");
+    expect(check).toHaveTextContent("Перед отправкой проверьте");
+    await user.click(within(check).getByRole("button", { name: "Заполнить: Место" }));
+    expect(screen.getByRole("tab", { name: "Блоки" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("button", { name: "Место" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByLabelText("Название места")).toBeInTheDocument();
+  });
+
+  it("компьютер: нажатие на надпись в превью ставит курсор в её поле в панели", async () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({ matches: true, media: query, addEventListener() {}, removeEventListener() {} })) as never;
+    try {
+      const user = userEvent.setup();
+      renderEditor();
+      const preview = screen.getByTestId("preview");
+      await user.click(within(preview.querySelector<HTMLElement>('[data-block="location"]')!).getByText("Ресторан «Сад»"));
+      expect(screen.queryByRole("dialog", { name: /^Правка/ })).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Название места")).toHaveFocus();
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+});
+
+describe("Editor: фото и QR-код", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("«Что главное на фото»: точка двигается стрелками, фото в превью сдвигается; новое фото — снова по центру", async () => {
+    const user = userEvent.setup();
+    const data = updateBlock(createDefaultInvitation(), "hero", { photo: "/templates/seaside-couple.webp" });
+    render(<Editor id="inv1" token="secret" initialSlug="demo" initialData={data} />);
+    await user.click(screen.getByRole("button", { name: "Главный экран" }));
+    const picker = screen.getByRole("button", { name: /^Главное место на фото: 50% по ширине, 50% по высоте/ });
+    picker.focus();
+    await user.keyboard("{ArrowRight}{ArrowUp}{ArrowUp}");
+    expect(screen.getByRole("button", { name: /^Главное место на фото: 55% по ширине, 40% по высоте/ })).toBeInTheDocument();
+    expect(within(screen.getByTestId("preview")).getByTestId("hero-photo")).toHaveStyle({ backgroundPosition: "55% 40%" });
+    await user.click(screen.getByRole("button", { name: "По центру" }));
+    expect(screen.getByRole("button", { name: /^Главное место на фото: 50% по ширине, 50% по высоте/ })).toBeInTheDocument();
+  });
+
+  it("QR-код ссылки для гостей и PNG для печати", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(screen.getByRole("button", { name: "Отправить гостям" }));
+    await user.click(screen.getByText("QR-код для бумажных приглашений"));
+    const qr = await screen.findByRole("img", { name: "QR-код ссылки для гостей" });
+    await waitFor(() => expect(qr.querySelector("svg")).not.toBeNull());
+    await waitFor(() => expect(screen.getByRole("link", { name: "Скачать PNG" }).getAttribute("href")).toMatch(/^data:image\/png;base64,/));
+    expect(screen.getByRole("link", { name: "Скачать PNG" })).toHaveAttribute("download", "qr-demo.png");
   });
 });

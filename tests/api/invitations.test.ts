@@ -3,7 +3,7 @@ import { GET, PATCH } from "@/app/api/invitations/[key]/route";
 import { POST as CREATE } from "@/app/api/invitations/route";
 import { findBlock, updateBlock } from "@/lib/blocks";
 import { createDefaultInvitation } from "@/lib/defaults";
-import { createInvitation, getInvitationById } from "@/lib/invitations";
+import { createInvitation, getInvitationById, resolveSlug } from "@/lib/invitations";
 import { createFromTemplate, findTemplate } from "@/lib/templates";
 import { ctx, jsonRequest, resetDb } from "./helpers";
 
@@ -99,5 +99,28 @@ describe("PATCH /api/invitations/[id]", () => {
     expect((await patch(b.slug)).status).toBe(409);
     expect((await patch("anna-ivan")).status).toBe(200);
     expect((await getInvitationById(a.id))?.slug).toBe("anna-ivan");
+  });
+
+  it("прежний адрес ведёт на новый и не достаётся другому приглашению; вернуться к нему можно", async () => {
+    const a = await createInvitation();
+    const b = await createInvitation();
+    const first = a.slug;
+    const patchA = (slug: string) => PATCH(jsonRequest(`/api/invitations/${a.id}?token=${a.editToken}`, "PATCH", { slug }), ctx(a.id));
+    const patchB = (slug: string) => PATCH(jsonRequest(`/api/invitations/${b.id}?token=${b.editToken}`, "PATCH", { slug }), ctx(b.id));
+
+    expect((await patchA("aibek-aizada")).status).toBe(200);
+    expect(await resolveSlug(first)).toEqual({ redirectTo: "aibek-aizada" });
+    expect(await resolveSlug("aibek-aizada")).toMatchObject({ invitation: { id: a.id } });
+    expect((await patchB(first)).status).toBe(409);
+
+    // Ещё раз сменили — обе прежние ссылки ведут на текущую.
+    expect((await patchA("aibek-aizada-2027")).status).toBe(200);
+    expect(await resolveSlug(first)).toEqual({ redirectTo: "aibek-aizada-2027" });
+    expect(await resolveSlug("aibek-aizada")).toEqual({ redirectTo: "aibek-aizada-2027" });
+
+    // Вернулись к первой — она снова основная.
+    expect((await patchA(first)).status).toBe(200);
+    expect(await resolveSlug(first)).toMatchObject({ invitation: { id: a.id } });
+    expect(await resolveSlug("nobody-here")).toBeNull();
   });
 });

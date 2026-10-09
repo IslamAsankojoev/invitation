@@ -1,5 +1,6 @@
 "use client";
 
+import { photoStyle } from "@/lib/photoFocus";
 import { useState, type CSSProperties } from "react";
 import type { PhotoHeight } from "@/lib/schema";
 import { textStyle } from "@/lib/textStyle";
@@ -43,8 +44,8 @@ export function PhotoBlock({ block, ctx }: BlockProps<"photo">) {
     return (
       <Section block={block}>
         <figure className="inv-polaroid relative mx-auto w-[80%] max-w-[320px]" data-reveal="2" data-anim="drop">
-          <img src={block.photo} alt={caption ?? ""} className="w-full object-cover" style={frame} {...measure} />
-          <figcaption className="inv-script min-h-8 px-2 pt-2 pb-1 text-2xl text-[#3e3630]" style={textStyle(block, "caption")}>
+          <img src={block.photo} alt={caption ?? ""} className="w-full object-cover" style={{ ...frame, ...photoStyle(block) }} {...measure} />
+          <figcaption className="inv-script min-h-8 px-2 pt-2 pb-1 text-2xl text-[#3e3630]" style={textStyle(block, "caption")} data-field="caption">
             {caption}
           </figcaption>
         </figure>
@@ -58,10 +59,10 @@ export function PhotoBlock({ block, ctx }: BlockProps<"photo">) {
         <figure className="relative mx-auto w-[86%] max-w-[340px]">
           <span aria-hidden="true" className="absolute top-3 left-3 -right-3 -bottom-3 border border-[var(--accent)]/60" data-reveal="3" data-anim="fade" />
           <div className="relative overflow-hidden" data-reveal="2" data-anim="curtain">
-            <img src={block.photo} alt={caption ?? ""} className="w-full object-cover" style={frame} {...measure} />
+            <img src={block.photo} alt={caption ?? ""} className="w-full object-cover" style={{ ...frame, ...photoStyle(block) }} {...measure} />
           </div>
           {caption && (
-            <figcaption className="mt-8 text-lg italic opacity-80" data-reveal="4" style={textStyle(block, "caption")}>
+            <figcaption className="mt-8 text-lg italic opacity-80" data-reveal="4" style={textStyle(block, "caption")} data-field="caption">
               {caption}
             </figcaption>
           )}
@@ -84,6 +85,7 @@ export function PhotoBlock({ block, ctx }: BlockProps<"photo">) {
             src={block.photo}
             alt={caption ?? ""}
             className="absolute inset-0 h-full w-full object-cover"
+            style={photoStyle(block)}
             data-reveal="1"
             data-anim="fade"
             {...measure}
@@ -93,7 +95,7 @@ export function PhotoBlock({ block, ctx }: BlockProps<"photo">) {
       }
     >
       {caption && (
-        <p className="px-8 pb-10 text-xl text-white italic [text-shadow:0_1px_8px_rgba(0,0,0,.45)]" data-reveal="2" style={textStyle(block, "caption")}>
+        <p className="px-8 pb-10 text-xl text-white italic [text-shadow:0_1px_8px_rgba(0,0,0,.45)]" data-reveal="2" style={textStyle(block, "caption")} data-field="caption">
           {caption}
         </p>
       )}

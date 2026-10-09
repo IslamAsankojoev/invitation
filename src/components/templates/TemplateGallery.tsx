@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { templates, type Template } from "@/lib/templates";
@@ -19,6 +19,29 @@ export function TemplateSwatch({ template }: { template: Template }) {
         ))}
       </span>
       {titleFonts[template.theme.font].label}
+    </div>
+  );
+}
+
+/**
+ * Превью во всю ширину карточки: на телефоне в два столбца карточка ≈ 180 px, на компьютере — 240+. До замера (и на
+ * сервере) — 240, лишнее обрезается.
+ */
+function FitPreview({ template }: { template: Template }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(240);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => el.clientWidth > 0 && setWidth(Math.min(300, el.clientWidth));
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className="flex justify-center overflow-hidden bg-muted/50">
+      <TemplatePreview template={template} width={width} />
     </div>
   );
 }
@@ -41,7 +64,8 @@ export function TemplateGallery() {
     }
     const { editUrl } = await res.json();
     // Полная навигация, а не router.push: надёжнее при первой компиляции маршрута в dev-режиме.
-    window.location.assign(editUrl);
+    // start=1 — редактор начнётся с быстрого старта (имена, дата, место).
+    window.location.assign(`${editUrl}&start=1`);
   }
 
   return (
@@ -51,19 +75,20 @@ export function TemplateGallery() {
           {error}
         </p>
       )}
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* На телефоне — два столбца: двенадцать шаблонов видно за пару экранов, а не за двадцать. */}
+      <ul className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {templates.map((t) => (
           <li key={t.id}>
             <Card className="h-full gap-0 overflow-hidden py-0 transition hover:shadow-md hover:ring-foreground/20">
-              <div className="flex justify-center bg-muted/50">
-                <TemplatePreview template={t} width={240} />
-              </div>
-              <CardHeader className="gap-1.5 pt-4">
-                <CardTitle>{t.name}</CardTitle>
-                <CardDescription>{t.description}</CardDescription>
-                <TemplateSwatch template={t} />
+              <FitPreview template={t} />
+              <CardHeader className="gap-1.5 px-3 pt-3 sm:px-4 sm:pt-4">
+                <CardTitle className="text-sm sm:text-base">{t.name}</CardTitle>
+                <CardDescription className="max-sm:hidden">{t.description}</CardDescription>
+                <div className="max-sm:hidden">
+                  <TemplateSwatch template={t} />
+                </div>
               </CardHeader>
-              <CardFooter className="mt-auto pt-4 pb-4">
+              <CardFooter className="mt-auto px-3 pt-3 pb-3 sm:px-4 sm:pt-4 sm:pb-4">
                 <Button
                   type="button"
                   className="w-full"

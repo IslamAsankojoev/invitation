@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { photoStyle } from "@/lib/photoFocus";
 import { textStyle } from "@/lib/textStyle";
 import { blockTitle, findBlock } from "@/lib/blocks";
 import { Section } from "../Section";
@@ -43,11 +44,11 @@ export function StoryBlock({ block, ctx }: BlockProps<"story">) {
           <div className="relative mx-auto mb-10 w-[80%] max-w-[320px]">
             <span aria-hidden="true" className="absolute top-3 left-3 -right-3 -bottom-3 rounded-[20px] border border-[var(--accent)]/60" data-reveal="3" data-anim="fade" />
             <div className="relative overflow-hidden rounded-[20px]" data-reveal="2" data-anim="curtain">
-              <img src={block.photo} alt="" className="aspect-[4/5] w-full object-cover" />
+              <img src={block.photo} alt="" className="aspect-[4/5] w-full object-cover" style={photoStyle(block)} />
             </div>
           </div>
         )}
-        <p className="mx-auto max-w-sm whitespace-pre-line text-xl leading-relaxed" data-reveal="3" style={textStyle(block, "text")}>
+        <p className="mx-auto max-w-sm whitespace-pre-line text-xl leading-relaxed" data-reveal="3" style={textStyle(block, "text")} data-field="text">
           {block.text}
         </p>
       </Section>
@@ -60,7 +61,7 @@ export function StoryBlock({ block, ctx }: BlockProps<"story">) {
     return (
       <Section block={block}>
         <div className="inv-letter relative mx-auto max-w-sm rounded-sm px-7 pt-8 pb-7 text-left text-[#3e3630]" data-reveal="2" data-anim="drop">
-          <p className="whitespace-pre-line text-lg leading-[2rem]" style={textStyle(block, "text")}>
+          <p className="whitespace-pre-line text-lg leading-[2rem]" style={textStyle(block, "text")} data-field="text">
             <span aria-hidden="true" className="inv-letter-cap">
               {text.charAt(0)}
             </span>
@@ -88,7 +89,7 @@ export function StoryBlock({ block, ctx }: BlockProps<"story">) {
           <div aria-hidden="true" className="-mb-2 text-5xl leading-none text-[var(--accent)] opacity-70" data-reveal="1" data-anim="blur">
             “
           </div>
-          <p className="mx-auto max-w-sm text-xl leading-relaxed" data-reveal="2" data-anim="fade" style={textStyle(block, "text")}>
+          <p className="mx-auto max-w-sm text-xl leading-relaxed" data-reveal="2" data-anim="fade" style={textStyle(block, "text")} data-field="text">
             <WordByWord text={block.text} />
           </p>
           <div className="inv-divider mt-6 text-sm" aria-hidden="true" data-reveal="4">
@@ -96,7 +97,7 @@ export function StoryBlock({ block, ctx }: BlockProps<"story">) {
           </div>
         </>
       ) : (
-        <p className="mx-auto max-w-sm whitespace-pre-line text-xl leading-relaxed" data-reveal="3" style={textStyle(block, "text")}>
+        <p className="mx-auto max-w-sm whitespace-pre-line text-xl leading-relaxed" data-reveal="3" style={textStyle(block, "text")} data-field="text">
           {block.text}
         </p>
       )}

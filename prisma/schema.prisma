@@ -19,11 +19,23 @@ model Invitation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   rsvps     Rsvp[]
+  /// Прежние адреса: ссылка, уже разосланная гостям, после смены адреса ведёт на новый.
+  aliases   SlugAlias[]
   /// Владелец (вход через Google). Нет — приглашение создано без входа и доступно только по editToken.
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+}
+
+/// Старый адрес приглашения (/i/<slug>) — редирект на текущий. Занят так же, как адрес другого приглашения.
+model SlugAlias {
+  slug         String     @id
+  invitationId String
+  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@index([invitationId])
 }
 
 model Rsvp {
@@ -34,7 +46,10 @@ model Rsvp {
   attending    Boolean
   guestsCount  Int
   comment      String?
+  /// Секрет гостя для правки своего ответа (хранится у него в браузере); у ответов до правок — null.
+  editKey      String?
   createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @default(now()) @updatedAt
 
   @@index([invitationId])
 }

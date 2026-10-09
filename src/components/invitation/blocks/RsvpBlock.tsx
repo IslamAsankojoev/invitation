@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { guestsWord, rsvpInputSchema } from "@/lib/rsvp";
+import { loadAnswer, saveAnswer, type SavedAnswer } from "@/lib/rsvpMemory";
 import { heartBurst } from "../burst";
 import { prefersReducedMotion } from "../motion";
 import { Section } from "../Section";
 import type { BlockProps } from "./types";
 
-type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent" } | { kind: "error"; message: string };
+/** field — ошибка конкретного поля: показывается под ним, а не над кнопкой. */
+type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent" } | { kind: "error"; message: string; field?: "name" };
 
 const formatDeadline = (d: string) => d.split("-").reverse().join(".");
 
@@ -15,12 +17,30 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
   const [name, setName] = useState("");
   const [attending, setAttending] = useState(true);
   const [guests, setGuests] = useState(1);
+  const [comment, setComment] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  /** Ответ, уже отправленный с этого устройства: показываем его, правка обновит ту же запись. */
+  const [saved, setSaved] = useState<SavedAnswer | null>(null);
+  /** Гость вернулся с готовым ответом и нажал «Изменить ответ» — показываем форму. */
+  const [editing, setEditing] = useState(false);
+  useEffect(() => {
+    if (ctx.preview) return;
+    const answer = loadAnswer(ctx.slug);
+    if (!answer) return;
+    setSaved(answer);
+    setName(answer.name);
+    setAttending(answer.attending);
+    setGuests(answer.guests);
+    setComment(answer.comment);
+    setChosen(true);
+  }, [ctx.preview, ctx.slug]);
   const compact = block.variant === "compact";
   /** Компактный вид: сначала только выбор «приду / не смогу», поля — после него. */
   const [chosen, setChosen] = useState(false);
   const submitRef = useRef<HTMLButtonElement>(null);
   const guestsRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const nameErrorId = useId();
   /** Куда перелистнуть цифру гостей: 1 — вверх (+), −1 — вниз (−), 0 — без анимации (ввод с клавиатуры). */
   const flip = useRef(0);
 
@@ -46,19 +66,40 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
       name,
       attending,
       guestsCount: attending ? guests : 1,
-      comment: String(form.get("comment") ?? "") || undefined,
+      comment: comment.trim() || undefined,
       website: String(form.get("website") ?? "") || undefined,
     };
     const parsed = rsvpInputSchema.safeParse(input);
-    if (!parsed.success) return setStatus({ kind: "error", message: parsed.error.issues[0].message });
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      if (issue.path[0] === "name") {
+        // Поле имени выше кнопки — на телефоне его не видно: возвращаем к нему фокус (и прокрутку).
+        nameRef.current?.focus();
+        return setStatus({ kind: "error", message: issue.message, field: "name" });
+      }
+      return setStatus({ kind: "error", message: issue.message });
+    }
 
     setStatus({ kind: "sending" });
-    const res = await fetch(`/api/invitations/${ctx.slug}/rsvp`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(parsed.data),
-    }).catch(() => null);
+    const send = (method: "POST" | "PUT", url: string, body: object) =>
+      fetch(url, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) }).catch(() => null);
+    // Уже отвечали с этого устройства — правим ту же запись; её удалили (404) — отправляем как новый ответ.
+    let res = saved ? await send("PUT", `/api/invitations/${ctx.slug}/rsvp/${saved.id}`, { ...parsed.data, editKey: saved.editKey }) : null;
+    let id = saved?.id;
+    let editKey = saved?.editKey;
+    if (!res || res.status === 404) {
+      res = await send("POST", `/api/invitations/${ctx.slug}/rsvp`, parsed.data);
+      const body = res?.ok ? await res.clone().json().catch(() => null) : null;
+      id = body?.id;
+      editKey = body?.editKey;
+    }
     if (res?.ok) {
+      if (id && editKey) {
+        const answer = { id, editKey, name: parsed.data.name, attending, guests: input.guestsCount, comment };
+        saveAnswer(ctx.slug, answer);
+        setSaved(answer);
+      }
+      setEditing(false);
       if (submitRef.current && !prefersReducedMotion()) heartBurst(submitRef.current);
       return setStatus({ kind: "sent" });
     }
@@ -82,7 +123,14 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
               ? `${first}, мы получили ваше подтверждение: ${guests} ${guestsWord(guests)}.`
               : `${first}, жаль, что вы не сможете прийти. Ваш ответ получен.`}
           </p>
-          <button type="button" className="inv-btn-outline inv-thanks-after mt-6" onClick={() => setStatus({ kind: "idle" })}>
+          <button
+            type="button"
+            className="inv-btn-outline inv-thanks-after mt-6"
+            onClick={() => {
+              setEditing(true);
+              setStatus({ kind: "idle" });
+            }}
+          >
             Изменить ответ
           </button>
         </div>
@@ -90,6 +138,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
     );
   }
 
+  const nameError = status.kind === "error" && status.field === "name";
   const clampGuests = (n: number) => Math.min(10, Math.max(1, Number.isFinite(n) ? Math.round(n) : 1));
   const step = (dir: 1 | -1) => {
     flip.current = dir;
@@ -101,6 +150,26 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
       до {formatDeadline(block.deadline)}
     </p>
   );
+
+  // Вернулся гость, который уже ответил с этого устройства, — его ответ и «Изменить ответ», а не пустая форма.
+  if (saved && !editing && status.kind === "idle") {
+    const first = saved.name.trim().split(/\s+/)[0];
+    return (
+      <Section block={block}>
+        <div className="inv-thanks" data-testid="rsvp-answered">
+          <p className="inv-caps opacity-70">Вы уже ответили</p>
+          <p className="mx-auto mt-3 max-w-xs text-xl leading-snug">
+            {saved.attending
+              ? `${first}, вы придёте: ${saved.guests} ${guestsWord(saved.guests)}. Ждём вас! ♡`
+              : `${first}, вы ответили, что не сможете прийти.`}
+          </p>
+          <button type="button" className="inv-btn-outline mt-6" onClick={() => setEditing(true)}>
+            Изменить ответ
+          </button>
+        </div>
+      </Section>
+    );
+  }
 
   if (compact && !chosen) {
     const choose = (value: boolean) => {
@@ -134,21 +203,33 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
             </button>
           </p>
         )}
-        <label className="inv-field">
-          <span>Ваше имя</span>
-          <input
-            name="name"
-            required
-            maxLength={100}
-            className="inv-input"
-            placeholder="Имя и фамилия"
-            value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              if (status.kind === "error") setStatus({ kind: "idle" });
-            }}
-          />
-        </label>
+        {/* Ошибка — под полем, но вне label: иначе она стала бы частью подписи поля. */}
+        <div className="flex flex-col gap-1.5">
+          <label className="inv-field">
+            <span>Ваше имя</span>
+            <input
+              ref={nameRef}
+              name="name"
+              required
+              maxLength={100}
+              autoComplete="name"
+              className="inv-input"
+              placeholder="Имя и фамилия"
+              aria-invalid={nameError || undefined}
+              aria-describedby={nameError ? nameErrorId : undefined}
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (status.kind === "error") setStatus({ kind: "idle" });
+              }}
+            />
+          </label>
+          {nameError && (
+            <p id={nameErrorId} role="alert" className="inv-fade-up pl-5 text-sm text-red-700">
+              {status.message}
+            </p>
+          )}
+        </div>
         <fieldset className={`flex gap-2 ${compact ? "hidden" : ""}`}>
           <legend className="sr-only">Придёте?</legend>
           {[
@@ -202,11 +283,19 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
         )}
         <label className="inv-field">
           <span>Комментарий</span>
-          <textarea name="comment" rows={2} maxLength={1000} className="inv-input" placeholder="Пожелания, аллергии…" />
+          <textarea
+            name="comment"
+            rows={2}
+            maxLength={1000}
+            className="inv-input"
+            placeholder="Пожелания, аллергии…"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+          />
         </label>
         {/* Honeypot: скрыт от людей, боты заполняют. */}
         <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
-        {status.kind === "error" && (
+        {status.kind === "error" && !nameError && (
           <p role="alert" className="inv-fade-up text-center text-sm text-red-700">
             {status.message}
           </p>

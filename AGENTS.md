@@ -62,7 +62,7 @@ build`, регион функций `dub1` (vercel.json) — рядом с ба�
 `NEXT_DIST_DIR=.next-build npx next build` (отдельная папка, чтобы не мешать запущенному dev-серверу; после сборки
 верни `tsconfig.json`/`next-env.d.ts`, Next дописывает туда `.next-build/types`).
 
-Текущее состояние: **322 теста Vitest, E2E и `next build` проходят** (после шаблонов по примерам). Края, фоновые
+Текущее состояние: **412 тестов Vitest, E2E и `next build` проходят** (после быстрого старта и «Отправить гостям»). Края, фоновые
 картинки, ширина и стиль текста всё ещё без своих тестов — см. «Долг по тестам» в `next-blocks.md`.
 
 Если порт 3000 занят другим dev-сервером — в `.claude/launch.json` есть `dev-3200` (своя папка `.next-3200`).
@@ -70,7 +70,8 @@ build`, регион функций `dub1` (vercel.json) — рядом с ба�
 ## 3. Карта кода
 
 ```
-prisma/schema.prisma        Invitation(id, slug unique, editToken, userId?, data: Json, timestamps), Rsvp,
+prisma/schema.prisma        Invitation(id, slug unique, editToken, userId?, data: Json, timestamps), Rsvp (+ editKey? — секрет
+                            гостя для правки своего ответа, updatedAt), SlugAlias (прежние адреса → редирект на текущий),
                             User/Account/Session/VerificationToken (Auth.js)
 src/auth.ts                 Auth.js: Google + PrismaAdapter, сессии в БД; без ключей провайдеров нет
 prisma/migrations/          миграции (prisma migrate) — менять схему только через новую миграцию
@@ -93,7 +94,8 @@ src/app/
   globals.css               токены shadcn + стили приглашения (.inv-*, .surface-*, анимации)
   icon.png, apple-icon.png  фавикон и иконка iOS (из public/keleber-logo.png; лого в шапках — public/logo.webp)
   page.tsx                  главная = галерея шаблонов
-  i/[slug]/page.tsx         публичная страница (server) → <InvitationPage>
+  i/[slug]/page.tsx         публичная страница (server) → <InvitationPage>; og:title/description — shareMeta
+  i/[slug]/opengraph-image.ts  картинка превью ссылки в WhatsApp/Telegram (JPEG 1200×630, lib/shareImage.ts)
   edit/[id]/page.tsx        редактор (server, проверка token → forbidden()) → <Editor>
   edit/[id]/guests/page.tsx ответы гостей: статистика, таблица, CSV (server)
   my/page.tsx               «Мои приглашения» (только при включённом входе)
@@ -102,7 +104,10 @@ src/app/
   forbidden.tsx             403
   api/invitations/route.ts            POST создать (body {template?})
   api/invitations/[key]/route.ts      GET/PATCH по id
-  api/invitations/[key]/rsvp/route.ts POST по slug (гость), GET по id (организатор, token)
+  api/invitations/[key]/rsvp/route.ts POST по slug (гость → {id, editKey}; с ?token= — организатор за гостя, без
+                                      лимита), GET по id (организатор, token)
+  api/invitations/[key]/rsvp/[rsvpId]/route.ts  PUT по slug + editKey (гость правит свой ответ), DELETE по id + token
+
   api/upload/route.ts                 POST multipart file
   api/edges/torn/route.ts             GET полоса рваного края по зерну (webp, кэш в памяти + вечный HTTP-кэш)
 src/lib/                    логика без UI, покрыта unit-тестами
@@ -127,6 +132,15 @@ src/lib/                    логика без UI, покрыта unit-тест
   music.ts        встроенные песни, DEFAULT_MUSIC_URL, findTrack, флаг CUSTOM_MUSIC_ENABLED (своя музыка выключена)
   images.ts       optimizeImage: sharp → поворот по EXIF, ≤ 1600 px, WebP, без метаданных (GIF — анимированный WebP)
   storage.ts      Storage: LocalStorage (public/uploads) или SupabaseStorage (@supabase/storage-js) — по наличию ключей
+  share.ts        ссылка из имён (транслит рус./кырг.), текст сообщения гостям, ссылки WhatsApp/Telegram, og-заголовок
+  shareImage.ts   картинка превью ссылки: фото приглашения или украшение на цвете палитры (sharp; только public/ и наш бакет)
+  history.ts      «Отменить / Вернуть» редактора: record/undo/redo, правки чаще 1 с склеиваются, ≤ 50 шагов
+  quickEdit.ts    правка надписи прямо в превью (телефон): какие поля (data-field) и их значения
+  photoFocus.ts   главное место на фото (photoFocus) → object-position / background-position, точка по нажатию
+  rsvpMemory.ts   ответ гостя в его браузере (id, editKey, ответ) — «Вы уже ответили» и правка той же записи
+  recent.ts       «Продолжить» на главной: недавние приглашения этого браузера (localStorage, id + token + имена)
+  origin.ts       requestOrigin() — адрес сайта из заголовков запроса (og:image, ссылка в тексте для WhatsApp)
+  quickStart.ts   поводы (свадьба, той, кыз узатуу…), дата/время отдельно, ссылка на карту из текста «Поделиться» 2ГИС
   countdown.ts ics.ts slug.ts rsvp.ts upload.ts storage.ts rateLimit.ts invitations.ts db.ts utils.ts
 src/components/
   ui/             shadcn-компоненты (принадлежат проекту, их можно править)
@@ -178,6 +192,7 @@ InvitationData
                     idle: auto|sway|swing|float|breathe|flutter|shimmer|spin|none, idleSpeed 0.25–3, idleAmplitude 0.2–3 }
    hero      { names, date "YYYY-MM-DDTHH:mm", label?, subtitle?, photo }
    countdown {}                calendar {}       (оба берут дату из hero)
+   photoFocus? { x, y } 0–100 % — у hero/story/location/photo: главное место фото при обрезке (нет — центр; 1.1.0)
    story     { text, photo }   program   { items[{ time, title, description?, icon? }] }
    location  { placeName, address, mapUrl?, photo }
    dresscode { text, colors: #hex[] }             rsvp { deadline? "YYYY-MM-DD" }
@@ -267,7 +282,11 @@ InvitationData
   из `blocks` по типу, иначе «классика, без фона, без украшений». Блоки, которых в шаблоне нет, шаблон не добавляет.
   Тема копируется `structuredClone` (`themeOf`, по умолчанию `headings: "caps"`) — иначе вложенные `decor/envelope`
   были бы общими с константой шаблона и мутировались.
-- Главная (`TemplateGallery`): карточки с живым превью; «Выбрать» → `POST /api/invitations {template}` →
+- Главная (`app/page.tsx`): заголовок «Приглашение на свадьбу и той — за 5 минут», «Выбрать шаблон» (#templates),
+  «Продолжить» (`RecentInvitations`: приглашения, открытые в этом браузере — пишет `Editor` при смене имён/даты; «×»
+  убирает из списка), три шага. Галерея — на телефоне в два столбца, превью по ширине карточки (`FitPreview`,
+  ResizeObserver), описание и палитра — только с 640 px.
+- `TemplateGallery`: карточки с живым превью; «Выбрать» → `POST /api/invitations {template}` →
   `window.location.assign(editUrl)`.
 - Редактор («Оформление» → «Шаблон»): мини-превью, подтверждение через shadcn `AlertDialog`.
 - `TemplatePreview` рендерит настоящий `InvitationView` (только hero, 390×700) и масштабирует `transform: scale`;
@@ -293,7 +312,9 @@ InvitationData
   Contacts (кнопки tel/WhatsApp/Telegram — `lib/contacts.ts`). Фото/галерея без фото: гостю не видны, в превью — подсказка.
 - Блоки: Hero (опц. фото с затемнением, рамка, кнопка .ics), Countdown (client, считает только на клиенте),
   Calendar (месяц, день в сердечке), Story, Program (таймлайн), Location (фото, «Посмотреть на карте»),
-  Dresscode (кружки цветов), Rsvp (форма, степпер гостей, honeypot `website`, в превью не отправляет).
+  Dresscode (кружки цветов), Rsvp (форма, степпер гостей, honeypot `website`, в превью не отправляет; пустое имя —
+  ошибка под полем, `aria-invalid` + фокус на поле, не над кнопкой; ответ запоминается в браузере гостя
+  (`rsvpMemory`), вернувшись — «Вы уже ответили» и «Изменить ответ» → PUT той же записи, удалённая (404) — новый POST).
 - `DecorLayer`: canvas `fixed` (в превью `absolute`), `pointer-events: none`, частицы из `decorDrawers`,
   тип `image` рисует картинку с «переворотом» (scaleX), `prefers-reduced-motion` → статично.
 - `TextureLayer`: узоры нарисованы чёрным; светлая тема → `multiply`, тёмная → `invert(1)` + `screen`;
@@ -303,6 +324,32 @@ InvitationData
   --font-body --font-heading --title-scale --field --glow --on-accent`. **shadcn внутри приглашения не используется.**
 
 ### 5.3 Редактор (`components/editor/*`, всё на shadcn)
+- **Быстрый старт** (`QuickStart.tsx`): после выбора шаблона галерея ведёт на `/edit/…&start=1` → диалог из трёх шагов
+  (повод-чип + имена, дата и время отдельными полями, место + ссылка на карту) и «Готово» → «Отправить гостям» /
+  «Оформить дальше». Поля пустые, пример шаблона — в placeholder; пишется в `data` сразу (превью, автосохранение).
+  `start` убирается из адреса `history.replaceState` — повторно не откроется. Нет блока «Место» — шаг пропускается.
+  Последний шаг — «Ваше фото» (крупная кнопка выбора, `hero.photo`; фото-пример шаблона `/templates/…` подписан).
+- **Отменить / Вернуть** (`lib/history.ts`): состояние `Editor` — история, `setData` пишет в неё; кнопки над превью и
+  Ctrl/⌘+Z, Shift+Ctrl/⌘+Z, Ctrl+Y вне полей ввода (в поле — обычная отмена набора).
+- **Правка в превью (телефон)**: редактируемые надписи приглашения размечены `data-field="<ключ textStyle>"` (ставь его
+  рядом с `textStyle(block, "…")` на новых текстах). Нажатие на такую надпись (`QUICK_EDIT_FIELDS`) открывает
+  `QuickEditBar` снизу над клавиатурой (`visualViewport`), шторка закрыта, надпись прокручивается к верху; «Все
+  настройки блока» — панель с блоком. Остальные элементы (программа, контакты, дата) открывают панель, как раньше.
+- Главный экран в панели: под «Надписью над именами» и «Подзаголовком» — готовые варианты (`EVENT_KINDS`,
+  `SUBTITLE_PRESETS` в quickStart.ts).
+- **Над превью** (оба раскладки): перезагрузка, статус, «Листать к блоку» (только компьютер), «Открыть», «Гости» и главная
+  кнопка **«Отправить гостям»** (вкладка «Ссылка»). Ряд — `z-[35]`, над невидимой подложкой шторки.
+  На телефоне второй ряд вкладок в шторке скрыт (разделы — нижняя панель), шапка шторки — только при входе (меню аккаунта).
+  «Дублировать»/«Удалить» блока — в меню «⋯» (`BlockMenu`, Popover; кнопка «Ещё: блок «…»»).
+- **Проверка перед отправкой** (`LinkPanel`, `presend-check`): незаполненное из `checklist(data)` (всё ещё как в примере
+  шаблона) — предупреждение с кнопками «Заполнить: …» → `openBlock` в `Editor`. На компьютере нажатие на надпись в
+  превью ставит курсор в её поле в панели (`focusField`, поле ищется по подписи = `QUICK_EDIT_FIELDS`).
+- **Фото:** под полем фото (обложка, история «с фото», место, блок «Фото») — `PhotoFocusField` «Что главное на фото»
+  (нажатие или стрелки, «По центру»); новое фото сбрасывает точку. **QR-код** (`QrCode.tsx`, библиотека `qrcode`) —
+  в «Ссылке», PNG 1024 px для печати.
+- «Ссылка» (`LinkPanel`): «Отправьте гостям» — ссылка + копировать, WhatsApp (`wa.me/?text=`), Telegram, системное
+  «Поделиться» (если есть `navigator.share`), «Текст сообщения», «Посмотреть как гость»; «Красивая ссылка» — варианты из
+  имён (`slugSuggestions`: aibek-aizada, aibek-aizada-2027) одним нажатием + ручной ввод.
 - `Editor`: слева панель (шапка с Badge статуса сохранения, «Открыть», «Гости»; Tabs: Блоки / Оформление /
   Музыка / Ссылка; Alert с ошибками Zod), справа превью в рамке телефона — Magic UI `Iphone` (`ui/iphone.tsx`, доработан: `children` в экране,
   рамка `pointer-events-none`; экран в натуральную величину ≈ 402×856 — как iPhone 16 Pro;
@@ -377,6 +424,9 @@ InvitationData
 - Next не позволяет разные имена динамических сегментов на одном уровне → папка `api/invitations/[key]`:
   для GET/PATCH и GET rsvp это **id**, для POST rsvp — **slug**.
 - PATCH: `{ data?, slug? }`, 400 с плоским списком ошибок Zod (`formatZodErrors`), 403, 409 (slug занят).
+  Смена slug оставляет прежний адрес этому приглашению (`SlugAlias`, `updateInvitation` в транзакции): `/i/<старый>`
+  редиректит на текущий (`resolveSlug`), другому приглашению прежний адрес не достаётся (`isSlugTaken`); вернулись к
+  прежнему — он снова основной.
 - RSVP POST: валидация `rsvpInputSchema`, honeypot `website` → 400, лимит 5 ответов/мин с IP (in-memory), 429.
 - Рваный край: `GET /api/edges/torn?v=&seed=0…2147483646&side=top|bottom&layer=mask|paper` → webp. Картинка —
   чистая функция параметров: кэш в памяти (≤400, параллельные запросы одного зерна считаются один раз) и
@@ -387,6 +437,13 @@ InvitationData
   Нечитаемая картинка — 400, сбой хранилища — 502. Файл — `inv/<id приглашения>/<uuid>.webp` (чистить по приглашению)., сохраняется через интерфейс `Storage`
   (`LocalStorage` → `public/uploads`). Только в своё приглашение: `?id=&token=` или владелец (404/403). Клиент берёт
   id и token из `UploadTargetContext` (кладёт `Editor`, хук `useUploadFile` в `editor/api.ts`).
+- Превью ссылки: `generateMetadata` (metadataBase — из заголовков запроса) + `opengraph-image.ts`. Картинка — первое фото
+  видимых блоков (`sharePhoto`), иначе украшение заставки на `bg` палитры; текст не рисуем (на сервере нет кириллических
+  шрифтов). Фото скачиваются **только** из `${SUPABASE_URL}/storage/v1/object/public/` и `public/` — не произвольные URL.
+- Страница ответов (`components/guests/GuestAnswers.tsx`, client): поиск по имени и «Все / Придут / Не придут»
+  (`filterAnswers` в rsvp.ts), удаление с подтверждением, «Добавить ответ» за гостя (POST с token), после правки —
+  `router.refresh()`. На телефоне — карточки (`guest-list`), таблица — с 640 px; пустой список — кнопки WhatsApp/Telegram.
+  editKey организатору не отдаётся (`listRsvps` — `omit`).
 - «Всего гостей» = сумма `guestsCount` только у пришедших. CSV с BOM для Excel.
 
 ### 5.5 Шрифты, темы, библиотека
@@ -586,6 +643,8 @@ InvitationData
 23. **shadcn `accordion` генерируется с ошибками:** импорт `cn` из `"cn"` и фиксированная высота
     `h-(--radix-accordion-content-height)` у внутреннего блока — раздел не рос, когда внутри раскрывалась «Тонкая
     настройка», и низ обрезался. Обе правки уже в `ui/accordion.tsx`; при повторном `shadcn add accordion` — проверь.
+24. **Node 26:** встроенный `localStorage` перекрывает jsdom — тесты с `localStorage.clear()` падают. Проект на Node 20;
+    на новом Node запускай `NODE_OPTIONS=--no-experimental-webstorage npm test`.
 
 ## 8. Тесты
 
@@ -600,9 +659,9 @@ InvitationData
 - Версия формата: `schemaVersion.test.ts` (сторож: формат = слепок, версии подняты правильно, у мажорных есть
   миграции), `migrations.test.ts` (semver, порядок миграций, `diffSchemas` мажор/минор),
   `components/InvitationFixtures.test.tsx` (все фикстуры прошлых форматов читаются и отрисовываются).
-- `tests/e2e/full-flow.spec.ts` — главная → шаблон «Розовый сад» → имена и дата → скрыть story → перетащить
+- `tests/e2e/full-flow.spec.ts` — главная → шаблон «Розовый сад» → быстрый старт (имена, дата и время) → скрыть story → перетащить
   program выше countdown → украшение «Красные розы» и фон «Бумага» на «Место» → декор petals, шрифт Prata,
-  текстура «Узор» → песня «A Thousand Years» из списка → публичная страница (порядок, текстура, шрифт Prata загружен, розы на конверте, палитра)
+  текстура «Узор» → песня «A Thousand Years» из списка → «Отправить гостям» (WhatsApp, ссылка из имён) → публичная страница (порядок, текстура, шрифт Prata загружен, розы на конверте, палитра)
   → «Открыть приглашение» → `audio.paused === false` → RSVP → ответ на странице гостей.
 
 ## 9. Рецепты
@@ -707,3 +766,16 @@ Vercel (Postgres + migrate уже сделаны), rate limit в Redis, чист
     Этап 5: нажатие на блок в превью открывает его, открытый блок подсвечен заливкой цвета шаблона.
     Этап 6: сводки под названиями блоков и «Что осталось заполнить». Этап 7 (на пробу): телефонный режим — превью
     на весь экран и панель-шторка. Коммит `ux-v1` (ветка `ux-v1`) — состояние до переделки.
+23. Плавный путь для Кыргызстана: быстрый старт после выбора шаблона (поводы той/кыз узатуу/сүннөт той…, дата и время,
+    место со ссылкой 2ГИС), «Отправить гостям» над превью, WhatsApp/Telegram, ссылка из имён, превью ссылки
+    (og-заголовок и картинка), на телефоне — один ряд разделов и «⋯» у блоков. Затем: главная (заголовок, три шага,
+    «Продолжить» из localStorage, галерея в два столбца на телефоне), ошибка имени в анкете у поля, ответы гостей
+    карточками на телефоне и кнопки отправки в пустом списке. Потом: «Отменить / Вернуть», правка надписей прямо
+    в превью на телефоне, шаг «Ваше фото» в быстром старте, готовые надписи и фразы. Затем (по мотивам Joy, Zola,
+    Wedsites): проверка перед отправкой, один ответ на гостя (правка по editKey, миграция `rsvp_edit_key`), поиск/фильтр/
+    удаление/«Добавить ответ» на странице ответов, крупнее подписи анкеты и отсчёта, фокус поля по клику в превью на
+    компьютере. Формат приглашения не менялся.
+    Дальше по плану (решения пользователя): язык страницы гостя — организатор выбирает русский или кыргызский
+    (редактор остаётся на русском); личные ссылки гостям с обращением по имени и отметкой «открыл/ответил».
+24. Формат **1.1.0**: `photoFocus` у блоков с фото (минор, без миграции; фикстура `1.1.0-photo-focus.json`). Заодно:
+    прежние адреса приглашения работают после смены ссылки (таблица `SlugAlias`), QR-код ссылки для печати.

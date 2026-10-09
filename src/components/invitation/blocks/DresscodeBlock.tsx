@@ -7,7 +7,7 @@ export function DresscodeBlock({ block }: BlockProps<"dresscode">) {
   const { colors } = block;
   return (
     <Section block={block}>
-      <p className="mx-auto max-w-sm text-xl leading-relaxed" data-reveal="2" style={textStyle(block, "text")}>
+      <p className="mx-auto max-w-sm text-xl leading-relaxed" data-reveal="2" style={textStyle(block, "text")} data-field="text">
         {block.text}
       </p>
       {colors.length > 0 &&

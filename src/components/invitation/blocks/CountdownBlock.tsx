@@ -61,7 +61,7 @@ export function CountdownBlock({ block, ctx }: BlockProps<"countdown">) {
                   </svg>
                   <span className="absolute inset-0 flex items-center justify-center text-2xl font-light tabular-nums">{text(value)}</span>
                 </div>
-                <div className="inv-caps mt-2 text-[0.55rem] opacity-60">{label}</div>
+                <div className="inv-caps mt-2 text-[0.65rem] opacity-75">{label}</div>
               </div>
             );
           })}
@@ -76,7 +76,7 @@ export function CountdownBlock({ block, ctx }: BlockProps<"countdown">) {
                   {text(value)}
                 </span>
               </div>
-              <div className="inv-caps mt-2 text-[0.55rem] opacity-60">{label}</div>
+              <div className="inv-caps mt-2 text-[0.65rem] opacity-75">{label}</div>
             </div>
           ))}
         </div>
@@ -88,7 +88,7 @@ export function CountdownBlock({ block, ctx }: BlockProps<"countdown">) {
               {/* min-w, а не w: у трёхзначного числа дней колонка шире, иначе цифры налезают на часы. */}
               <div className="min-w-14">
                 <div className="text-[2.6rem] font-light leading-none tabular-nums">{text(value)}</div>
-                <div className="inv-caps mt-2 text-[0.6rem] opacity-60">{label}</div>
+                <div className="inv-caps mt-2 text-[0.65rem] opacity-75">{label}</div>
               </div>
             </div>
           ))}
