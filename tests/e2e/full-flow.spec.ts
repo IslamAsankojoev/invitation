@@ -68,7 +68,7 @@ test("создать → настроить → открыть → послуш�
 
   // 5. Декор «petals»
   // «Оформление» — свёрнутые разделы: раскрываем нужный.
-  await page.getByRole("tab", { name: "Оформление" }).click();
+  await page.getByRole("button", { name: "Панель «Оформление»" }).click(); // на телефоне разделы — в нижней панели
   await page.getByRole("button", { name: /^Падающий декор/ }).click();
   await page.getByRole("button", { name: "Декор Лепестки" }).click();
   await page.getByRole("button", { name: /^Шрифты/ }).click();
@@ -78,7 +78,7 @@ test("создать → настроить → открыть → послуш�
   await page.getByRole("button", { name: "Текстура Узор" }).click();
 
   // 6. Музыка — из встроенного списка (своя загрузка пока выключена)
-  await page.getByRole("tab", { name: "Музыка" }).click();
+  await page.getByRole("button", { name: "Панель «Музыка»" }).click();
   await expect(page.getByText(/Загрузить свою музыку пока нельзя/)).toBeVisible();
   await page.getByRole("button", { name: "Песня «A Thousand Years» — Christina Perri" }).click();
   await expect(page.getByRole("button", { name: "Песня «A Thousand Years» — Christina Perri" })).toHaveAttribute("aria-pressed", "true");
@@ -126,7 +126,8 @@ test("создать → настроить → открыть → послуш�
 
   // 10. Ответ виден на странице гостей
   await page.goto(`${editorUrl.pathname}/guests${editorUrl.search}`);
-  await expect(page.getByRole("cell", { name: "Ольга Иванова" })).toBeVisible();
+  // На телефоне ответы — карточками, таблица только на широком экране.
+  await expect(page.getByRole("list", { name: "Ответы" }).getByText("Ольга Иванова")).toBeVisible();
   await expect(page.getByTestId("stat-attending")).toHaveText("1");
   await expect(page.getByTestId("stat-not-attending")).toHaveText("0");
   await expect(page.getByTestId("stat-total-guests")).toHaveText("2");

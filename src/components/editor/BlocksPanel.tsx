@@ -240,7 +240,7 @@ function BlockItem({ block, name, summary, data, expanded, onExpand, onToggle, o
           {...attributes}
           {...listeners}
           aria-label={`Перетащить блок «${label}»`}
-          className="flex size-8 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 active:cursor-grabbing"
+          className="flex size-8 shrink-0 cursor-grab touch-none items-center pointer-coarse:size-10 justify-center rounded-md text-muted-foreground outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 active:cursor-grabbing"
         >
           <GripVertical className="size-4" />
         </button>
@@ -266,12 +266,12 @@ function BlockItem({ block, name, summary, data, expanded, onExpand, onToggle, o
           </span>
         </button>
         {onDuplicate && (
-          <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground" aria-label={`Дублировать блок «${label}»`} title="Дублировать" onClick={onDuplicate}>
+          <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground pointer-coarse:size-10" aria-label={`Дублировать блок «${label}»`} title="Дублировать" onClick={onDuplicate}>
             <Copy />
           </Button>
         )}
         {onRemove && (
-          <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-destructive" aria-label={`Удалить блок «${label}»`} title="Удалить" onClick={onRemove}>
+          <Button type="button" variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-destructive pointer-coarse:size-10" aria-label={`Удалить блок «${label}»`} title="Удалить" onClick={onRemove}>
             <Trash2 />
           </Button>
         )}
@@ -337,6 +337,7 @@ function Checklist({ items, onOpen }: { items: ChecklistItem[]; onOpen: (blockId
           type="button"
           variant="ghost"
           size="icon-xs"
+          className="pointer-coarse:size-9"
           aria-label="Скрыть список «Что осталось заполнить»"
           onClick={() => {
             setHidden(true);

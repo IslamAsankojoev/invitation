@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check, ChevronDown, CircleCheck, Crown, ExternalLink, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, RotateCw, Users, X } from "lucide-react";
+import { AlertCircle, Check, ChevronDown, CircleCheck, Crown, ExternalLink, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, RotateCw, Send, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { DecorLayer } from "@/components/invitation/DecorLayer";
@@ -105,6 +105,9 @@ function usePhoneScale(fit: React.RefObject<HTMLDivElement | null>, enabled: boo
   }, [fit, enabled]);
   return scale;
 }
+
+/** Кнопки «Открыть»/«Гости»: на телефоне в шторке только иконки (подпись остаётся для скринридеров). */
+const actionBtn = "max-lg:size-10 max-lg:px-0 max-lg:[&_svg]:size-5";
 
 const DESKTOP_QUERY = "(min-width: 1024px)";
 /** Компьютер (≥ 1024 px) или телефон. На сервере — компьютер; после гидратации — как на самом деле. */
@@ -241,6 +244,29 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
     if (pickTip) closePickTip();
   }
 
+  /** Шторка тянется вниз за ручку и закрывается, если протянули дальше порога (как системные sheet на телефоне). */
+  const [drag, setDrag] = useState(0);
+  const dragStart = useRef<number | null>(null);
+  const sheetHandle = {
+    onPointerDown(e: React.PointerEvent) {
+      dragStart.current = e.clientY;
+      (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    },
+    onPointerMove(e: React.PointerEvent) {
+      if (dragStart.current !== null) setDrag(Math.max(0, e.clientY - dragStart.current));
+    },
+    onPointerUp() {
+      if (dragStart.current === null) return;
+      dragStart.current = null;
+      if (drag > 80) setSheet(false);
+      setDrag(0);
+    },
+    onPointerCancel() {
+      dragStart.current = null;
+      setDrag(0);
+    },
+  };
+
   function toggleFollow(on: boolean) {
     setFollow(on);
     if (on && expanded) scrollPreview(expanded);
@@ -289,51 +315,58 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
         {sheet && <div aria-hidden="true" data-testid="sheet-backdrop" className="fixed inset-0 z-30 lg:hidden" onClick={() => setSheet(false)} />}
         <aside
           aria-label="Панель редактора"
+          style={drag > 0 ? { translate: `0 ${drag}px` } : undefined}
           className={cn(
-            "fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 flex h-[62svh] flex-col rounded-t-2xl border-t bg-background shadow-[0_-12px_40px_rgb(0_0_0/0.18)] transition-[translate,visibility] duration-300",
+            "fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 flex h-[62svh] flex-col rounded-t-2xl border-t bg-background shadow-[0_-12px_40px_rgb(0_0_0/0.18)] transition-[translate,visibility] duration-300 ease-out motion-reduce:transition-none",
+            drag > 0 && "transition-none",
             "lg:static lg:z-auto lg:h-svh lg:translate-y-0 lg:visible lg:rounded-none lg:border-t-0 lg:border-r lg:shadow-none",
             !sheet && "invisible translate-y-[calc(100%+4rem)]",
           )}
         >
-          <div className="relative flex justify-center py-2 lg:hidden">
-            <span className="h-1.5 w-10 rounded-full bg-muted-foreground/30" />
-            <Button type="button" variant="ghost" size="icon-xs" className="absolute top-1 right-2" aria-label="Свернуть панель" onClick={() => setSheet(false)}>
-              <ChevronDown />
-            </Button>
+          {/* Ручка: тянуть вниз — закрыть. Кнопка «Свернуть» — та же функция без жеста. */}
+          <div data-testid="sheet-handle" className="relative flex cursor-grab touch-none justify-center pt-2 pb-1 lg:hidden" {...sheetHandle}>
+            <span aria-hidden="true" className="h-1.5 w-10 rounded-full bg-muted-foreground/30" />
           </div>
-          <header className="sticky top-0 z-20 flex items-center gap-3 border-b bg-background/95 px-4 pb-3 backdrop-blur lg:pt-3">
+          <header className="sticky top-0 z-20 flex items-center gap-2 border-b bg-background/95 px-4 pb-3 backdrop-blur lg:gap-3 lg:pt-3">
             {/* <a href="/" aria-label="На главную" className="shrink-0">
               <img src="/logo.webp" alt="" width={44} height={32} className="h-8 w-auto" />
             </a> */}
             {/* В шторке на телефоне заголовок не нужен и сжимался бы рядом с кнопками — там он только для скринридеров. */}
             <div className="flex min-w-0 flex-1 flex-col gap-1">
               <h1 className="sr-only text-base leading-none font-semibold lg:not-sr-only">Редактор приглашения</h1>
+              {/* На телефоне вкладки — в нижней панели, а в шапке шторки — название открытого раздела. */}
+              <p aria-hidden="true" className="truncate text-base font-semibold lg:hidden">
+                {tab}
+              </p>
             </div>
-            <nav className="flex gap-2">
+            <nav aria-label="Действия" className="flex shrink-0 items-center gap-1.5 lg:gap-2">
               {gate ? (
                 <>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setGateFor("editor")}>
-                    <ExternalLink /> Открыть
+                  <Button type="button" variant="outline" size="sm" className={actionBtn} onClick={() => setGateFor("editor")}>
+                    <ExternalLink /> <span className="max-lg:sr-only">Открыть</span>
                   </Button>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setGateFor("guests")}>
-                    <Users /> Гости
+                  <Button type="button" variant="outline" size="sm" className={actionBtn} onClick={() => setGateFor("guests")}>
+                    <Users /> <span className="max-lg:sr-only">Гости</span>
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button asChild variant="outline" size="sm">
-                    <a href={`/i/${slug}`} target="_blank">
-                      <ExternalLink /> Открыть
+                  <Button asChild variant="outline" size="sm" className={actionBtn}>
+                    <a href={`/i/${slug}`} target="_blank" rel="noopener">
+                      <ExternalLink /> <span className="max-lg:sr-only">Открыть</span>
                     </a>
                   </Button>
-                  <Button asChild variant="outline" size="sm">
+                  <Button asChild variant="outline" size="sm" className={actionBtn}>
                     <a href={`/edit/${id}/guests?token=${token}`}>
-                      <Users /> Гости
+                      <Users /> <span className="max-lg:sr-only">Гости</span>
                     </a>
                   </Button>
                 </>
               )}
               {account && <AccountMenu user={account.user} />}
+              <Button type="button" variant="ghost" size="icon-sm" className="size-10 lg:hidden" aria-label="Свернуть панель" onClick={() => setSheet(false)}>
+                <ChevronDown />
+              </Button>
             </nav>
           </header>
 
@@ -345,7 +378,8 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
             }}
             className="flex min-h-0 flex-1 flex-col gap-0"
           >
-            <div className="border-b px-4 py-3">
+            {/* На телефоне те же разделы — в нижней панели; второй ряд вкладок там только мешал бы. */}
+            <div className="hidden border-b px-4 py-3 lg:block">
               <TabsList className="w-full">
                 {TABS.map((t) => (
                   <TabsTrigger key={t} value={t}>
@@ -420,7 +454,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
           className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-hidden pt-2 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:h-svh lg:gap-3 lg:p-8"
         >
           <div className="flex w-full max-w-[433px] flex-wrap items-center gap-2 px-3 lg:px-0">
-            <Button type="button" variant="outline" size="icon-sm" onClick={reloadPreview} aria-label="Перезагрузить" title="Перезагрузить превью">
+            <Button type="button" variant="outline" size="icon-sm" className="pointer-coarse:size-10" onClick={reloadPreview} aria-label="Перезагрузить" title="Перезагрузить превью">
               <RotateCw />
             </Button>
             <Badge role="status" data-testid="save-status" variant={statusInfo.variant}>
@@ -428,18 +462,30 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
               {statusInfo.text}
             </Badge>
             <label
-              className="ml-auto flex cursor-pointer items-center gap-2 text-sm"
+              className="ml-auto flex min-h-8 cursor-pointer pointer-coarse:min-h-10 items-center gap-2 text-sm"
               title="Прокручивать превью к блоку, который открыт в редакторе"
             >
               <Switch checked={follow} onCheckedChange={toggleFollow} aria-label="Следовать за редактируемым блоком" />
-              Следовать за контентом
+              Следовать
             </label>
+            {/* Главное действие редактора — отправить гостям ссылку: одна заметная кнопка, остальное — второстепенное. */}
+            <Button
+              type="button"
+              size="sm"
+              className="hidden lg:inline-flex"
+              onClick={() => {
+                setTab("Ссылка");
+                setIntro(false);
+              }}
+            >
+              <Send /> Поделиться
+            </Button>
           </div>
           {pickTip && (
             <p role="note" className="mx-3 flex w-[calc(100%-1.5rem)] max-w-[433px] items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm lg:mx-0 lg:w-full">
               <MousePointerClick className="size-4 shrink-0 text-primary" />
               <span className="flex-1">Нажмите на любой блок в превью, чтобы изменить его</span>
-              <Button type="button" variant="ghost" size="icon-xs" aria-label="Закрыть подсказку" onClick={closePickTip}>
+              <Button type="button" variant="ghost" size="icon-xs" className="pointer-coarse:size-9" aria-label="Закрыть подсказку" onClick={closePickTip}>
                 <X />
               </Button>
             </p>
@@ -474,9 +520,12 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
                   setTab(t);
                   setSheet(true);
                 }}
-                className="flex h-16 flex-col items-center justify-center gap-1 text-[11px] text-muted-foreground outline-none aria-pressed:text-foreground focus-visible:bg-muted"
+                className="group flex h-16 touch-manipulation flex-col items-center justify-center gap-0.5 text-xs text-muted-foreground outline-none aria-pressed:font-medium aria-pressed:text-foreground focus-visible:bg-muted"
               >
-                <Icon className="size-5" />
+                {/* Активный раздел — «таблетка» под иконкой, а не только цвет текста. */}
+                <span className="flex h-7 w-14 items-center justify-center rounded-full transition-colors group-active:bg-muted group-aria-pressed:bg-primary/12 motion-reduce:transition-none">
+                  <Icon aria-hidden="true" className="size-5" />
+                </span>
                 {t}
               </button>
             );

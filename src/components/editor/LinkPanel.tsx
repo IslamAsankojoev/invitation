@@ -1,7 +1,8 @@
 "use client";
 
-import { Check, Copy, KeyRound, Link2 } from "lucide-react";
+import { KeyRound, Link2, Share2 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
+import { CopyButton } from "@/components/CopyButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
@@ -15,31 +16,17 @@ import type { EditorAccount } from "./Editor";
 
 type Props = { id: string; token: string; slug: string; onSlugChange: (slug: string) => void; account?: EditorAccount };
 
-function CopyButton({ text, label }: { text: string; label: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      size="icon-sm"
-      aria-label={label}
-      onClick={async () => {
-        await navigator.clipboard?.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      }}
-    >
-      {copied ? <Check /> : <Copy />}
-    </Button>
-  );
-}
-
 export function LinkPanel({ id, token, slug, onSlugChange, account }: Props) {
   const [value, setValue] = useState(slug);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [origin, setOrigin] = useState("");
   const slugId = useId();
-  useEffect(() => setOrigin(window.location.origin), []);
+  /** Системное меню «Поделиться» (телефоны) — после гидратации, на сервере его нет. */
+  const [canShare, setCanShare] = useState(false);
+  useEffect(() => {
+    setOrigin(window.location.origin);
+    setCanShare(typeof navigator.share === "function");
+  }, []);
 
   const formatError = slugSchema.safeParse(value).error?.issues[0].message;
   const publicUrl = `${origin}/i/${slug}`;
@@ -99,13 +86,23 @@ export function LinkPanel({ id, token, slug, onSlugChange, account }: Props) {
         )}
       </Group>
 
+      {/* Главное действие вкладки — отправить ссылку гостям: крупные кнопки, а не только иконка. */}
       <Group title="Ссылка для гостей">
         <div className="flex items-center gap-2">
-          <Link2 className="size-4 shrink-0 text-muted-foreground" />
-          <a href={`/i/${slug}`} target="_blank" className="min-w-0 flex-1 truncate text-sm font-medium underline-offset-4 hover:underline">
+          <Link2 aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+          <a href={`/i/${slug}`} target="_blank" rel="noopener" className="min-w-0 flex-1 truncate text-sm font-medium underline-offset-4 hover:underline">
             {publicUrl}
           </a>
-          <CopyButton text={publicUrl} label="Скопировать ссылку для гостей" />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <CopyButton text={publicUrl} label="Скопировать ссылку для гостей" variant="default" className="flex-1 pointer-coarse:h-10">
+            Скопировать ссылку для гостей
+          </CopyButton>
+          {canShare && (
+            <Button type="button" variant="outline" size="sm" className="pointer-coarse:h-10" onClick={() => navigator.share({ url: publicUrl }).catch(() => {})}>
+              <Share2 /> Отправить
+            </Button>
+          )}
         </div>
       </Group>
 

@@ -1879,6 +1879,10 @@ body {
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+  /* Без задержки 300 мс и двойного касания-зума на кнопках и ссылках. */
+  a, button, [role="button"], label, summary, input, select, textarea {
+    touch-action: manipulation;
+  }
   html {
     @apply font-sans;
   }

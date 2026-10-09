@@ -1,6 +1,8 @@
-import { ArrowLeft, Download, Inbox, UserCheck, UserX, Users } from "lucide-react";
+import { ArrowLeft, Download, ExternalLink, Inbox, UserCheck, UserX, Users } from "lucide-react";
+import { headers } from "next/headers";
 import { forbidden, redirect } from "next/navigation";
 import { SignInButton } from "@/components/account/AccountMenu";
+import { CopyButton } from "@/components/CopyButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +38,9 @@ export default async function GuestsPage({ params, searchParams }: Props) {
   // BOM — чтобы Excel правильно открыл кириллицу.
   const csvHref = `data:text/csv;charset=utf-8,${encodeURIComponent("﻿" + rsvpsToCsv(rsvps))}`;
   const names = findBlock(inv.data, "hero")?.names ?? "Приглашение";
+  const host = (await headers()).get("host");
+  const guestUrl = host ? `${host.startsWith("localhost") ? "http" : "https"}://${host}/i/${inv.slug}` : `/i/${inv.slug}`;
+  const formatDate = (d: Date) => d.toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" });
 
   const statCards = [
     { label: "Придут", value: stats.attending, testId: "stat-attending", icon: UserCheck },
@@ -44,26 +49,33 @@ export default async function GuestsPage({ params, searchParams }: Props) {
   ];
 
   return (
-    <main className="min-h-svh bg-muted/60">
-      <div className="mx-auto flex max-w-4xl flex-col gap-6 p-4 sm:p-8">
+    <main className="min-h-dvh bg-muted/60">
+      <div className="mx-auto flex max-w-4xl flex-col gap-4 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:gap-6 sm:p-8">
         <div className="flex flex-col gap-2">
-          <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
-            <a href={`/edit/${inv.id}?token=${inv.editToken}`}>
-              <ArrowLeft /> К редактору
-            </a>
-          </Button>
+          <div className="flex items-center justify-between gap-2">
+            <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit pointer-coarse:h-10">
+              <a href={`/edit/${inv.id}?token=${inv.editToken}`}>
+                <ArrowLeft /> К редактору
+              </a>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="pointer-coarse:h-10">
+              <a href={`/i/${inv.slug}`} target="_blank" rel="noopener">
+                <ExternalLink /> Страница для гостей
+              </a>
+            </Button>
+          </div>
           <h1 className="text-2xl font-semibold tracking-tight">Ответы гостей</h1>
           <p className="text-muted-foreground">{names}</p>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {statCards.map(({ label, value, testId, icon: Icon }) => (
             <Card key={testId} size="sm">
               <CardHeader>
-                <CardDescription className="flex items-center gap-1.5">
-                  <Icon className="size-3.5" /> {label}
+                <CardDescription className="flex items-center gap-1.5 text-xs sm:text-sm">
+                  <Icon aria-hidden="true" className="size-3.5 shrink-0" /> {label}
                 </CardDescription>
-                <p data-testid={testId} className="text-3xl leading-none font-semibold tabular-nums">
+                <p data-testid={testId} className="text-2xl leading-none font-semibold tabular-nums sm:text-3xl">
                   {value}
                 </p>
               </CardHeader>
@@ -76,21 +88,41 @@ export default async function GuestsPage({ params, searchParams }: Props) {
             <CardTitle>Все ответы</CardTitle>
             <CardDescription>{rsvps.length === 0 ? "Пока никто не ответил" : `Ответов: ${rsvps.length}`}</CardDescription>
             <CardAction>
-              <Button asChild variant="outline" size="sm">
-                <a href={csvHref} download={`guests-${inv.slug}.csv`}>
-                  <Download /> Экспорт в CSV
-                </a>
-              </Button>
+              {/* Пустой CSV никому не нужен — кнопка появляется вместе с первым ответом. */}
+              {rsvps.length > 0 && (
+                <Button asChild variant="outline" size="sm" className="pointer-coarse:h-10">
+                  <a href={csvHref} download={`guests-${inv.slug}.csv`}>
+                    <Download /> <span className="max-sm:sr-only">Экспорт в</span> CSV
+                  </a>
+                </Button>
+              )}
             </CardAction>
           </CardHeader>
           <CardContent>
             {rsvps.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-10 text-center text-sm text-muted-foreground">
-                <Inbox className="size-8" />
-                Как только гости ответят, их ответы появятся здесь.
+              <div className="flex flex-col items-center gap-3 py-8 text-center text-sm text-muted-foreground sm:py-10">
+                <Inbox aria-hidden="true" className="size-8" />
+                <p className="max-w-xs">Как только гости ответят, их ответы появятся здесь. Начните с того, что отправите им ссылку.</p>
+                <CopyButton text={guestUrl} label="Скопировать ссылку для гостей" variant="default" className="pointer-coarse:h-10">
+                  Скопировать ссылку для гостей
+                </CopyButton>
               </div>
             ) : (
-              <Table>
+              <>
+              {/* Телефон: карточки — таблица из пяти колонок уехала бы вбок. */}
+              <ul className="flex flex-col divide-y md:hidden" aria-label="Ответы">
+                {rsvps.map((r) => (
+                  <li key={r.id} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="min-w-0 font-medium [overflow-wrap:anywhere]">{r.name}</span>
+                      {r.attending ? <Badge>Придёт · {r.guestsCount}</Badge> : <Badge variant="secondary">Не придёт</Badge>}
+                    </div>
+                    {r.comment && <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">{r.comment}</p>}
+                    <p className="text-xs text-muted-foreground tabular-nums">{formatDate(r.createdAt)}</p>
+                  </li>
+                ))}
+              </ul>
+              <Table className="max-md:hidden">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Имя</TableHead>
@@ -110,12 +142,13 @@ export default async function GuestsPage({ params, searchParams }: Props) {
                       <TableCell className="text-right tabular-nums">{r.attending ? r.guestsCount : "—"}</TableCell>
                       <TableCell className="max-w-64 whitespace-normal text-muted-foreground">{r.comment}</TableCell>
                       <TableCell className="text-right text-muted-foreground">
-                        {r.createdAt.toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" })}
+                        {formatDate(r.createdAt)}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              </>
             )}
           </CardContent>
         </Card>
@@ -127,7 +160,7 @@ export default async function GuestsPage({ params, searchParams }: Props) {
 /** Ответы гостей без входа не показываем. */
 function LoginRequired({ redirectTo }: { redirectTo: string }) {
   return (
-    <main className="flex min-h-svh items-center justify-center bg-muted/60 p-4">
+    <main className="flex min-h-dvh items-center justify-center bg-muted/60 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Войдите, чтобы увидеть ответы гостей</CardTitle>

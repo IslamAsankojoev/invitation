@@ -401,6 +401,32 @@ describe("Editor на телефоне: превью на весь экран, �
     expect(screen.queryByTestId("sheet-backdrop")).not.toBeInTheDocument();
   });
 
+  it("шторку можно смахнуть вниз за ручку; короткое движение её не закрывает", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(screen.getByRole("button", { name: "Панель «Музыка»" }));
+    // В шапке шторки — название раздела: второго ряда вкладок на телефоне нет, они в нижней панели.
+    expect(within(sheet()).getByText("Музыка", { selector: "p" })).toBeInTheDocument();
+    const handle = screen.getByTestId("sheet-handle");
+    fireEvent.pointerDown(handle, { clientY: 100 });
+    fireEvent.pointerMove(handle, { clientY: 130 });
+    fireEvent.pointerUp(handle);
+    expect(sheet()).not.toHaveClass("invisible");
+    fireEvent.pointerDown(handle, { clientY: 100 });
+    fireEvent.pointerMove(handle, { clientY: 260 });
+    expect(sheet().style.translate).toBe("0 160px"); // шторка идёт за пальцем
+    fireEvent.pointerUp(handle);
+    expect(sheet()).toHaveClass("invisible");
+  });
+
+  it("«Поделиться» открывает вкладку «Ссылка» с крупной кнопкой копирования", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(screen.getByRole("button", { name: "Поделиться" }));
+    expect(screen.getByRole("tab", { name: "Ссылка" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("button", { name: "Скопировать ссылку для гостей" })).toHaveTextContent("Скопировать ссылку для гостей");
+  });
+
   it("нажатие на блок в превью открывает шторку с этим блоком", async () => {
     const user = userEvent.setup();
     renderEditor();

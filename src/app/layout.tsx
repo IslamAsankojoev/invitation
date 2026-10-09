@@ -7,7 +7,8 @@ export const metadata: Metadata = {
   description: "Пригласительные сайты на свадьбу и день рождения",
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1 };
+// viewport-fit=cover — иначе env(safe-area-inset-*) на iPhone всегда 0 и нижняя панель редактора ложится под полоску «домой».
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
