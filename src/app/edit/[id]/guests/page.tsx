@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { findBlock } from "@/lib/blocks";
 import { canEdit, claimUrl, guestsPageAccess } from "@/lib/access";
 import { getInvitationById, listRsvps } from "@/lib/invitations";
-import { authEnabled, currentUser } from "@/lib/session";
+import { authRequired, currentUser } from "@/lib/session";
 import { computeRsvpStats, rsvpsToCsv } from "@/lib/rsvp";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ token?: string }> };
@@ -21,8 +21,8 @@ export default async function GuestsPage({ params, searchParams }: Props) {
   const [{ id }, { token }] = await Promise.all([params, searchParams]);
   const [inv, user] = await Promise.all([getInvitationById(id), currentUser()]);
   if (!inv) forbidden();
-  if (authEnabled()) {
-    // Ответы гостей — личные данные: при включённом входе их видит только владелец по аккаунту.
+  if (authRequired()) {
+    // Ответы гостей — личные данные: при обязательном входе их видит только владелец по аккаунту.
     const access = guestsPageAccess(inv, { token, userId: user?.id });
     if (access === "forbidden") forbidden();
     if (access === "claim") redirect(claimUrl(inv.id, inv.editToken, "guests"));
@@ -31,7 +31,7 @@ export default async function GuestsPage({ params, searchParams }: Props) {
       const back = !inv.userId && token === inv.editToken ? claimUrl(inv.id, inv.editToken, "guests") : `/edit/${inv.id}/guests`;
       return <LoginRequired redirectTo={back} />;
     }
-  } else if (!canEdit(inv, { token })) forbidden();
+  } else if (!canEdit(inv, { token, userId: user?.id })) forbidden();
 
   const rsvps = await listRsvps(inv.id);
   const stats = computeRsvpStats(rsvps);

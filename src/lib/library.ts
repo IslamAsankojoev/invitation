@@ -5,7 +5,7 @@ import type { Block, Surface, Texture } from "./schema";
  * Встроенная библиотека картинок (public/library). Чтобы добавить картинку — положите
  * прозрачный PNG/WebP в public/library и допишите строку сюда: она появится в выборе украшений/декора.
  */
-export type LibraryCategory = "flowers" | "botanical" | "leaves" | "wreaths" | "frames" | "dividers" | "watercolor" | "accents" | "particles";
+export type LibraryCategory = "flowers" | "botanical" | "leaves" | "wreaths" | "frames" | "dividers" | "watercolor" | "accents" | "particles" | "foliage";
 
 export type LibraryAsset = {
   id: string;
@@ -64,6 +64,18 @@ export const library: LibraryAsset[] = [
   vector("branch-eucalyptus", "Эвкалипт", "leaves"),
   vector("branch-olive", "Оливковая ветвь", "leaves", true),
   vector("branch-fern", "Золотой папоротник", "leaves"),
+  // Ветки из тех же листов от пользователя (CREDITS.md, «Падающие листья»).
+  asset("branch-ash", "Ветка ясеня", "leaves"),
+  asset("branch-vine", "Вьюнок", "leaves"),
+  asset("branch-green", "Зелёная ветка", "leaves"),
+  asset("sprig-three", "Три листа", "leaves"),
+  asset("sprig-two", "Два листа", "leaves"),
+  asset("sprig-autumn", "Осенняя веточка", "leaves"),
+  asset("branch-seeds", "Ветка с семенами", "leaves"),
+  asset("branch-seeds-2", "Ветка с семенами 2", "leaves"),
+  asset("branch-berries", "Ветка с ягодами", "leaves"),
+  asset("branch-berries-2", "Ветка с ягодами 2", "leaves"),
+  asset("branch-berries-yellow", "Ветка с жёлтыми ягодами", "leaves"),
   vector("wreath-laurel", "Лавровый венок", "wreaths"),
   vector("wreath-round", "Зелёный венок", "wreaths", true),
   vector("wreath-half", "Полувенок", "wreaths"),
@@ -113,6 +125,48 @@ export const library: LibraryAsset[] = [
   asset("petal-red", "Лепесток розы", "particles"),
   asset("petal-pink", "Розовый лепесток", "particles"),
   asset("leaf-particle", "Осенний лист", "particles"),
+  // Листья для падающего декора — вырезаны из двух листов от пользователя (CREDITS.md, «Падающие листья»).
+  asset("fall-maple-orange", "Клён оранжевый", "foliage"),
+  asset("fall-maple-red", "Клён красный", "foliage"),
+  asset("fall-oak-orange", "Дубовый лист", "foliage"),
+  asset("fall-oak-red", "Красный дубовый лист", "foliage"),
+  asset("fall-leaf-brown", "Бурый лист", "foliage"),
+  asset("fall-leaf-green", "Зелёный лист", "foliage"),
+  asset("fall-maple-japanese", "Японский клён", "foliage"),
+  asset("fall-maple-scarlet", "Алый клён", "foliage"),
+  asset("fall-ginkgo", "Гинкго", "foliage"),
+  asset("fall-leaf-crimson", "Багряный лист", "foliage"),
+  asset("fall-leaf-amber", "Янтарный лист", "foliage"),
+  asset("fall-leaf-glossy", "Глянцевый лист", "foliage"),
+  asset("fall-leaf-fresh", "Свежий лист", "foliage"),
+  asset("fall-leaf-lime", "Узкий салатовый лист", "foliage"),
+  asset("fall-leaf-serrated", "Зубчатый лист", "foliage"),
+  asset("fall-leaf-long", "Длинный лист", "foliage"),
+  asset("fall-leaf-veined", "Лист с прожилками", "foliage"),
+  asset("fall-leaf-dew", "Лист с росой", "foliage"),
+  asset("fall-leaf-drops", "Лист с каплями", "foliage"),
+  asset("fall-leaf-birch", "Берёзовый лист", "foliage"),
+  asset("fall-leaf-soft", "Мягкий зелёный лист", "foliage"),
+  asset("fall-leaf-dark", "Тёмный лист", "foliage"),
+  asset("fall-leaf-pale", "Светлый лист", "foliage"),
+  asset("fall-leaf-chestnut", "Каштановый лист", "foliage"),
+  asset("fall-leaf-motion", "Лист в полёте", "foliage"),
+  asset("fall-leaf-variegated", "Пёстрый лист", "foliage"),
+  asset("fall-maple-orange-2", "Клён оранжевый 2", "foliage"),
+  asset("fall-leaf-green-2", "Зелёный лист 2", "foliage"),
+  asset("fall-maple-red-2", "Клён красный 2", "foliage"),
+  asset("fall-oak-green", "Зелёный дубовый лист", "foliage"),
+  asset("fall-oak-orange-2", "Дубовый лист 2", "foliage"),
+  asset("fall-oak-red-2", "Красный дубовый лист 2", "foliage"),
+  asset("fall-leaf-brown-2", "Бурый лист 2", "foliage"),
+  asset("fall-leaf-brown-3", "Бурый лист 3", "foliage"),
+  asset("fall-maple-orange-3", "Клён оранжевый 3", "foliage"),
+  asset("fall-leaf-olive", "Оливковый лист", "foliage"),
+  asset("fall-oak-red-3", "Красный дубовый лист 3", "foliage"),
+  asset("fall-leaf-olive-2", "Оливковый лист 2", "foliage"),
+  asset("fall-oak-green-2", "Зелёный дубовый лист 2", "foliage"),
+  asset("fall-oak-brown", "Бурый дубовый лист", "foliage"),
+  asset("fall-leaf-orange", "Оранжевый лист", "foliage"),
 ];
 
 export const categoryLabels: Record<LibraryCategory, string> = {
@@ -125,6 +179,7 @@ export const categoryLabels: Record<LibraryCategory, string> = {
   watercolor: "Акварель",
   accents: "Акценты",
   particles: "Частицы",
+  foliage: "Листья",
 };
 
 export const libraryBy = (categories: LibraryCategory[]) => library.filter((a) => categories.includes(a.category));
@@ -197,7 +252,7 @@ export const surfaceGroups: { label: string; items: Surface[] }[] = [
 ];
 
 /** Все категории украшений (для окна выбора в «Оформлении блока»). */
-export const ORNAMENT_CATEGORIES: LibraryCategory[] = ["flowers", "botanical", "leaves", "wreaths", "frames", "dividers", "watercolor", "accents", "particles"];
+export const ORNAMENT_CATEGORIES: LibraryCategory[] = ["flowers", "botanical", "leaves", "wreaths", "frames", "dividers", "watercolor", "accents", "particles", "foliage"];
 
 const noise = (freq: string, alpha: number, size = 220) =>
   `url("data:image/svg+xml,${encodeURIComponent(

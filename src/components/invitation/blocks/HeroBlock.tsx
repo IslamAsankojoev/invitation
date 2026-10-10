@@ -45,11 +45,6 @@ export function HeroBlock(props: HeroProps) {
   }
 }
 
-/** Место для кнопки «Добавить в календарь». */
-function placeOf(ctx: BlockContext) {
-  const location = findBlock(ctx.data, "location");
-  return location ? [location.placeName, location.address].filter(Boolean).join(", ") : undefined;
-}
 
 /** Имена «от руки», одно за другим, между ними проявляется «&». */
 function HeroNames({
@@ -153,7 +148,7 @@ function HeroDetails({ block, ctx, light = false }: HeroProps & { light?: boolea
         </p>
       )}
       <div data-reveal="5" data-delay="4.3">
-        <CalendarButton title={block.names} start={block.date} location={placeOf(ctx)} light={light} />
+        <CalendarButton ctx={ctx} light={light} />
       </div>
     </>
   );
@@ -345,7 +340,7 @@ function HeroMinimal({ block, ctx }: HeroProps) {
         </p>
       )}
       <div data-reveal="5" data-delay="3">
-        <CalendarButton title={block.names} start={block.date} location={placeOf(ctx)} />
+        <CalendarButton ctx={ctx} />
       </div>
     </Section>
   );
@@ -408,7 +403,7 @@ function HeroCover({ block, ctx }: HeroProps) {
           </p>
         )}
         <div data-reveal="5" data-delay="2.2">
-          <CalendarButton title={block.names} start={block.date} location={placeOf(ctx)} />
+          <CalendarButton ctx={ctx} />
         </div>
       </div>
     </Section>
@@ -461,7 +456,7 @@ function HeroMonogram({ block, ctx }: HeroProps) {
         </p>
       )}
       <div data-reveal="4" data-delay="3.2">
-        <CalendarButton title={block.names} start={block.date} location={placeOf(ctx)} />
+        <CalendarButton ctx={ctx} />
       </div>
       {block.photo ? (
         // Фото — во всю ширину блока (выходит за поля) и проявляется из фона сверху.
@@ -567,7 +562,7 @@ function HeroTicket({ block, ctx }: HeroProps) {
         </div>
       </div>
       <div data-reveal="3" data-delay="0.9">
-        <CalendarButton title={block.names} start={block.date} location={placeOf(ctx)} />
+        <CalendarButton ctx={ctx} />
       </div>
     </Section>
   );

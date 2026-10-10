@@ -31,7 +31,8 @@ import { ThemePanel } from "./ThemePanel";
 import { useAutosave, type SaveStatus } from "./useAutosave";
 
 /** Аккаунт, если вход включён: кто вошёл и чьё это приглашение. Нет — вход выключен, всё по token. */
-export type EditorAccount = { user: SessionUser | null; ownership: Ownership };
+/** required — обязателен ли вход для ссылки, «Открыть» и «Гости» (authRequired); не задано — обязателен. */
+export type EditorAccount = { user: SessionUser | null; ownership: Ownership; required?: boolean };
 
 /** Чем закончилось «Сохранить в аккаунт» (параметр saved после возврата из входа). */
 export type SaveNotice = "1" | "taken" | "login";
@@ -170,6 +171,17 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
   const premium = useMemo(() => (SHOW_PREMIUM_ALERT ? premiumUsage(data) : []), [data]);
 
   const previewRef = useRef<HTMLDivElement>(null);
+  // Рамка и ярлычок выбранного блока видны, пока человек работает с превью; нажатие вне превью их прячет —
+  // чтобы правка в панели показывала приглашение как у гостя.
+  const [showPick, setShowPick] = useState(false);
+  useEffect(() => {
+    if (!showPick) return;
+    const hide = (e: PointerEvent) => {
+      if (!previewRef.current?.contains(e.target as Node)) setShowPick(false);
+    };
+    document.addEventListener("pointerdown", hide, true);
+    return () => document.removeEventListener("pointerdown", hide, true);
+  }, [showPick]);
   const phoneFitRef = useRef<HTMLDivElement>(null);
   const desktop = useIsDesktop();
   const phoneScale = usePhoneScale(phoneFitRef, desktop);
@@ -267,6 +279,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
     setSheet(true);
     setIntro(false);
     setExpanded(blockId);
+    setShowPick(true);
     panelScrollTo.current = blockId;
     if (pickTip) closePickTip();
   }
@@ -326,7 +339,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
     <div className="relative isolate h-full">
       {/* container-type: size — высота экрана превью для фона страницы (100cqh в PageBackground). */}
       <div ref={previewRef} className="editor-pick h-full overflow-y-auto [container-type:size]" data-testid="preview" onClickCapture={pickFromPreview}>
-        <InvitationView key={previewKey} data={data} slug={slug} preview selectedBlockId={expanded} />
+        <InvitationView key={previewKey} data={data} slug={slug} preview selectedBlockId={showPick ? expanded : undefined} />
       </div>
       <DecorLayer key={previewKey} decor={data.theme.decor} contained />
       {/* Музыка — как у гостя: включается печатью заставки или кнопкой-эквалайзером. */}

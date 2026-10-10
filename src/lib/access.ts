@@ -34,8 +34,11 @@ export function claimDecision(inv: Owned, token: string | null | undefined, user
  */
 export type AccountGate = "login" | "save" | "other" | null;
 
-export function accountGate(account: { user: { id: string } | null; ownership: Ownership } | undefined): AccountGate {
+export function accountGate(
+  account: { user: { id: string } | null; ownership: Ownership; required?: boolean } | undefined,
+): AccountGate {
   if (!account) return null; // вход выключен — всё по token, как раньше
+  if (account.required === false) return null; // вход есть, но не обязателен (AUTH_REQUIRED не задан)
   if (!account.user) return "login";
   return account.ownership === "mine" ? null : account.ownership === "none" ? "save" : "other";
 }

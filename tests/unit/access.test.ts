@@ -40,6 +40,9 @@ describe("доступ к приглашению", () => {
     expect(accountGate({ user: u, ownership: "none" })).toBe("save");
     expect(accountGate({ user: u, ownership: "other" })).toBe("other");
     expect(accountGate({ user: u, ownership: "mine" })).toBeNull();
+    // Вход не обязателен (AUTH_REQUIRED не задан) — ничего не закрыто.
+    expect(accountGate({ user: null, ownership: "none", required: false })).toBeNull();
+    expect(accountGate({ user: u, ownership: "other", required: false })).toBeNull();
   });
 
   it("ответы гостей при входе — только владельцу; ничьё с token забирается в аккаунт", () => {

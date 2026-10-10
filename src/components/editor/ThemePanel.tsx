@@ -232,7 +232,7 @@ export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
             <LibraryImageField
               label="Картинка частиц"
               value={theme.decor.image}
-              categories={["particles", "flowers", "leaves"]}
+              categories={["particles", "foliage", "flowers", "leaves"]}
               onChange={(image) => setDecor({ image })}
             />
           )}

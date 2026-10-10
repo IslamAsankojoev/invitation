@@ -517,10 +517,9 @@ describe("Editor: нажатие на блок в превью открывае�
     expect(location.closest("[data-pick]")).toHaveAttribute("data-selected");
     expect(preview.querySelectorAll("[data-selected]")).toHaveLength(1);
 
-    // Открыли другой блок в панели — подсветка переезжает.
+    // Открыли другой блок в панели: нажатие вне превью прячет рамку выбранного — видно приглашение как у гостя.
     await user.click(screen.getByRole("button", { name: "Программа" }));
-    expect(preview.querySelector('[data-block="program"]')!.closest("[data-pick]")).toHaveAttribute("data-selected");
-    expect(location.closest("[data-pick]")).not.toHaveAttribute("data-selected");
+    expect(preview.querySelectorAll("[data-selected]")).toHaveLength(0);
   });
 
   it("кнопки самого приглашения в превью не срабатывают — нажатие только выбирает блок", async () => {
@@ -528,16 +527,14 @@ describe("Editor: нажатие на блок в превью открывае�
     renderEditor();
     const preview = screen.getByTestId("preview");
     // Без перехвата кнопка скачала бы .ics через URL.createObjectURL (в jsdom его нет — подставляем на время теста).
-    const createUrl = vi.fn(() => "blob:x");
-    const original = URL.createObjectURL;
-    URL.createObjectURL = createUrl;
+    const openWindow = vi.spyOn(window, "open").mockImplementation(() => null);
     try {
-      const calendar = within(preview.querySelector<HTMLElement>('[data-block="hero"]')!).getByRole("button", { name: /календар/i });
+      const calendar = within(preview.querySelector<HTMLElement>('[data-block="hero"]')!).getByRole("link", { name: /календар/i });
       await user.click(calendar);
+      expect(openWindow).not.toHaveBeenCalled();
     } finally {
-      URL.createObjectURL = original;
+      openWindow.mockRestore();
     }
-    expect(createUrl).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Главный экран" })).toHaveAttribute("aria-expanded", "true");
   });
 
@@ -709,6 +706,17 @@ describe("Editor: добавление, копирование и удалени
       await user.keyboard("{Escape}");
       await user.click(screen.getByRole("button", { name: "Открыть" }));
       expect(screen.getByRole("dialog", { name: "Открыть приглашение" })).toBeInTheDocument();
+    });
+
+    it("вход не обязателен (AUTH_REQUIRED не задан): без входа ссылка, «Открыть» и «Гости» доступны", async () => {
+      const user = userEvent.setup();
+      renderWith({ user: null, ownership: "none", required: false });
+      expect(screen.getByRole("button", { name: "Войти" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Гости" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Открыть" })).toBeInTheDocument();
+      await user.click(screen.getByRole("tab", { name: "Ссылка" }));
+      expect(screen.queryByText("Войдите, чтобы продолжить")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Скопировать ссылку для гостей" })).toBeInTheDocument();
     });
 
     it("вошёл в другой аккаунт — ссылки и ответы закрыты, можно сменить аккаунт", async () => {

@@ -6,12 +6,17 @@ import { testAuth } from "./auth-mock";
 // Вход через Google в тестах не настоящий: сессию задаёт signInAs из tests/auth-mock.ts.
 vi.mock("@/lib/session", async () => {
   const { testAuth } = await import("./auth-mock");
-  return { authEnabled: () => testAuth.enabled, currentUser: async () => testAuth.user };
+  return {
+    authEnabled: () => testAuth.enabled,
+    authRequired: () => testAuth.enabled && testAuth.required,
+    currentUser: async () => testAuth.user,
+  };
 });
 
 afterEach(() => {
   if (typeof window !== "undefined") cleanup();
   testAuth.enabled = false;
+  testAuth.required = true;
   testAuth.user = null;
 });
 

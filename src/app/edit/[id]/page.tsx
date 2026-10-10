@@ -2,7 +2,7 @@ import { forbidden } from "next/navigation";
 import { Editor, type SaveNotice } from "@/components/editor/Editor";
 import { canEdit, ownershipOf } from "@/lib/access";
 import { getInvitationById } from "@/lib/invitations";
-import { authEnabled, currentUser } from "@/lib/session";
+import { authEnabled, authRequired, currentUser } from "@/lib/session";
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ token?: string; saved?: string }> };
 
@@ -22,7 +22,7 @@ export default async function EditPage({ params, searchParams }: Props) {
       token={inv.editToken}
       initialSlug={inv.slug}
       initialData={inv.data}
-      account={authEnabled() ? { user, ownership: ownershipOf(inv, user?.id) } : undefined}
+      account={authEnabled() ? { user, ownership: ownershipOf(inv, user?.id), required: authRequired() } : undefined}
       notice={NOTICES.find((n) => n === saved)}
     />
   );

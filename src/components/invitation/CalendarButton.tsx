@@ -1,28 +1,40 @@
 "use client";
 
-import { generateIcs } from "@/lib/ics";
+import type { MouseEvent } from "react";
+import { googleCalendarUrl, invitationEvent } from "@/lib/ics";
+import type { BlockContext } from "./blocks/types";
 
-type Props = { title: string; start: string; location?: string; light?: boolean };
+type Props = { ctx: BlockContext; light?: boolean };
 
-export function CalendarButton({ title, start, location, light = false }: Props) {
-  function download() {
-    const blob = new Blob([generateIcs({ title, start, location })], { type: "text/calendar;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "invitation.ics";
-    a.click();
-    URL.revokeObjectURL(url);
+/** iPhone, iPad (iPadOS выдаёт себя за Mac) и Mac открывают .ics по ссылке сразу в Календаре. */
+function isApple() {
+  return /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+}
+
+/**
+ * «Добавить в календарь»: на устройствах Apple — ссылка на `/i/<slug>/calendar.ics` (системное окно «Добавить»),
+ * на остальных — Google Календарь с заполненными полями (на Android открывается приложение).
+ */
+export function CalendarButton({ ctx, light = false }: Props) {
+  const href = `/i/${ctx.slug}/calendar.ics`;
+
+  function open(e: MouseEvent<HTMLAnchorElement>) {
+    if (ctx.preview) return e.preventDefault();
+    if (isApple()) return;
+    const event = invitationEvent(ctx.data, `${window.location.origin}/i/${ctx.slug}`);
+    if (!event) return;
+    e.preventDefault();
+    window.open(googleCalendarUrl(event), "_blank", "noopener");
   }
 
   return (
-    <button
-      type="button"
-      onClick={download}
+    <a
+      href={href}
+      onClick={open}
       className="inv-btn-outline mt-10"
       style={light ? { borderColor: "rgba(255,255,255,.6)", color: "#fff" } : undefined}
     >
       Добавить в календарь
-    </button>
+    </a>
   );
 }

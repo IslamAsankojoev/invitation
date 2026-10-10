@@ -1771,6 +1771,8 @@ body {
 /* ---------- Редактор: блок в превью выбирается нажатием (editor-ux.md, этап 5) ----------
    Выделение — лёгкая заливка цветом акцента шаблона (--accent палитры приглашения) слоем поверх блока (::after),
    без рамки. Только в превью редактора. */
+/* Выбор блока в превью редактора: без заливки — тонкая рамка цвета шаблона и ярлычок с названием блока
+   (как в Canva/Framer). Ярлычок нейтральный тёмный — читается на любой палитре, цвет шаблона — у рамки. Наведение — пунктир и «✎ Место», открытый блок — сплошная рамка и «✎ Место · редактируется». */
 .editor-pick [data-pick] {
   cursor: pointer;
 }
@@ -1780,17 +1782,57 @@ body {
   inset: 0;
   z-index: 40;
   pointer-events: none;
-  background: var(--accent);
+  outline: 1.5px dashed var(--accent);
+  outline-offset: -3px;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.15s;
+}
+.editor-pick [data-pick]::before {
+  content: attr(data-pick-label);
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 41;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px 4px 7px;
+  border-radius: 999px;
+  background: rgb(24 24 27 / 0.86) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21.17 6.81a2.83 2.83 0 0 0-4-4L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z'/%3E%3C/svg%3E") no-repeat 8px center / 11px;
+  padding-left: 24px;
+  color: #fff;
+  font: 600 11px/1.2 var(--font-inter), system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+  opacity: 0;
+  translate: 0 -4px;
+  transition: opacity 0.15s, translate 0.15s;
 }
 @media (hover: hover) {
-  .editor-pick [data-pick]:hover::after {
-    opacity: 0.06;
+  .editor-pick [data-pick]:hover::after,
+  .editor-pick [data-pick]:hover::before {
+    opacity: 1;
+    translate: 0 0;
   }
 }
 .editor-pick [data-pick][data-selected]::after {
-  opacity: 0.12;
+  opacity: 1;
+  outline-style: solid;
+  outline-width: 2px;
+}
+.editor-pick [data-pick][data-selected]::before {
+  content: attr(data-pick-label) " · редактируется";
+  opacity: 1;
+  translate: 0 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .editor-pick [data-pick]::after,
+  .editor-pick [data-pick]::before {
+    transition: none;
+  }
 }
 
 @theme inline {

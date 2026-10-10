@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { blockName } from "@/lib/blocks";
 import { isFullWidth } from "@/lib/library";
 import type { Block, InvitationData } from "@/lib/schema";
 import { headingsMode, palettes, themeStyle } from "@/lib/theme";
@@ -52,8 +53,9 @@ export function InvitationView({ data, slug, preview = false, motion: requested 
               return (
                 <div
                   key={block.id}
-                  // В превью редактора обёртка — цель выбора блока нажатием (рамка наведения и выбранного — editor-pick в globals.css).
+                  // В превью редактора обёртка — цель выбора блока нажатием (рамка и ярлычок с названием при наведении и у выбранного — editor-pick в globals.css).
                   data-pick={preview ? block.id : undefined}
+                  data-pick-label={preview ? blockName(data, block) : undefined}
                   data-selected={preview && selectedBlockId === block.id ? "" : undefined}
                   className={`${isFullWidth(block) ? "" : "mx-auto max-w-[430px]"} ${preview ? "relative" : ""}`}
                 >

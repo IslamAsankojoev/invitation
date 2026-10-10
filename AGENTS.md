@@ -304,7 +304,11 @@ InvitationData
   режется краями, высота по пропорциям снимка/экран/квадрат; frame; polaroid), Gallery (сетка `galleryColumns`,
   коллаж, лента со scroll-snap; лайтбокс — портал в body, стрелки/Escape; в превью редактора не открывается),
   Contacts (кнопки tel/WhatsApp/Telegram — `lib/contacts.ts`). Фото/галерея без фото: гостю не видны, в превью — подсказка.
-- Блоки: Hero (опц. фото с затемнением, рамка, кнопка .ics), Countdown (client, считает только на клиенте),
+- «Добавить в календарь» (`CalendarButton`, ссылка): iPhone/iPad/Mac — `GET /i/<slug>/calendar.ics` (`text/calendar`,
+  inline → системное окно «Добавить»; blob-скачивание уходило в «Загрузки», а во встроенных браузерах не работало),
+  остальные — `googleCalendarUrl` (Google Календарь с заполненными полями). Событие — `invitationEvent` в `lib/ics.ts`
+  (имена, дата, место, ссылка на приглашение, напоминание за день).
+- Блоки: Hero (опц. фото с затемнением, рамка, кнопка календаря), Countdown (client, считает только на клиенте),
   Calendar (месяц, день в сердечке), Story, Program (таймлайн), Location (фото, «Посмотреть на карте»),
   Dresscode (кружки цветов), Rsvp (форма, степпер гостей, honeypot `website`, в превью не отправляет).
 - `DecorLayer`: canvas `fixed` (в превью `absolute`), `pointer-events: none`, частицы из `decorDrawers`,
@@ -357,8 +361,10 @@ InvitationData
   каждое только если сейчас действует). Подвкладка и открытость тонкой настройки — общие для всех блоков
   (`blockView` в `Editor`). В тестах — помощник `openBlockView(user, "Место", { fine })` (`tests/components/editorHelpers.ts`).
   Нажатие на блок в превью (`pickFromPreview`, захват клика — кнопки приглашения в превью не срабатывают) переключает
-  на «Блоки», раскрывает блок и прокручивает панель к его карточке (`data-block-item`); открытый блок в превью залит
-  акцентом шаблона (`selectedBlockId` → `data-selected` на обёртке, `.editor-pick` в globals.css). Над превью —
+  на «Блоки», раскрывает блок и прокручивает панель к его карточке (`data-block-item`); без заливки: при наведении — пунктирная
+  рамка цвета шаблона и ярлычок «✎ Название блока», у открытого — сплошная рамка и «· редактируется» (`selectedBlockId` →
+  `data-selected`, название — `data-pick-label` = `blockName`, `.editor-pick` в globals.css). Рамка выбранного видна,
+  пока человек работает с превью: нажатие вне превью её прячет (`showPick` в `Editor`) — правки видны как у гостя. Над превью —
   одноразовая подсказка (localStorage `editor-pick-tip`). Вкладки панели — управляемые (`tab` в `Editor`).
   Под названием блока — сводка (`blockSummary`; в доступное имя кнопки не входит — это её описание). Над списком —
   «Что осталось заполнить» (`checklist(data)`: «не заполнено» = совпадает с примером `exampleBlocks` любого шаблона),
@@ -392,11 +398,13 @@ InvitationData
 - **Аккаунты** (Auth.js, Google, сессии в БД, `src/auth.ts`). Включаются ключами `AUTH_GOOGLE_ID/AUTH_GOOGLE_SECRET`
   (+ `AUTH_SECRET`; образец — `.env.example`); без них `authEnabled()` = false и всё работает только по token, как
   раньше (локально, тесты, E2E). Создать приглашение можно без входа (`userId = null`); вошедший при создании сразу
-  владелец. **При включённом входе ссылка для гостей, «Открыть» и «Гости» — только владельцу** (`accountGate`:
+  владелец. **При обязательном входе (`AUTH_REQUIRED=true` в env → `authRequired()`) ссылка для гостей, «Открыть» и
+  «Гости» — только владельцу**; без этой переменной вход доступен, но ничего не закрывает (`account.required = false`,
+  удобно тестировать на телефоне) (`accountGate`:
   login / save / other): во вкладке «Ссылка» и в окне по кнопкам «Открыть»/«Гости» — `AccountRequired` (войти,
   «Сохранить в аккаунт», «Войти другим аккаунтом»). Сохранение — `/edit/<id>/claim?token=…[&next=guests]` →
   `claimInvitation` (атомарно, только если владельца нет) → редактор с `?saved=1|taken|login` (Alert, вкладка
-  «Ссылка») или, с `next=guests`, ответы гостей. Страница ответов при входе — `guestsPageAccess`: без входа просит
+  «Ссылка») или, с `next=guests`, ответы гостей. Страница ответов при обязательном входе — `guestsPageAccess`: без входа просит
   войти (token уже не пускает), ничьё с token забирает в аккаунт, чужое — 403. Редактировать по token можно всегда;
   страница гостя `/i/<slug>` и анкета открыты всем — гостям вход не нужен.
   `/my` — список приглашений пользователя, ссылки без token (владелец проходит по сессии). Главная и `/my` —
@@ -424,7 +432,7 @@ InvitationData
 - `lib/theme.ts`: `titleFonts[font] = { label, css, pair, scale }` (`scale` выравнивает кегль рукописных),
   `bodyFonts`, `resolveBodyFont` (`auto` → `pair`), `themeStyle` выставляет переменные, в т.ч. `--field`,
   `--glow`, `--on-accent`, зависящие от `palettes[p].dark`.
-- `lib/library.ts`: `library` (id → `/library/<id>.webp`, категории flowers|botanical|leaves|wreaths|frames|dividers|watercolor|accents|particles),
+- `lib/library.ts`: `library` (id → `/library/<id>.webp`, категории flowers|botanical|leaves|wreaths|frames|dividers|watercolor|accents|particles|foliage — «Листья», одиночные листья для падающего декора),
   `surfaceImages` (бумага/рваный край), `textures` (CSS/SVG data-URI, бесшовные).
 
 ### 5.6 Анимации приглашения (по мотивам test.rainbow.kg)
