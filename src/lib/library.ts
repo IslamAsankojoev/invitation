@@ -64,6 +64,11 @@ export const library: LibraryAsset[] = [
   vector("branch-eucalyptus", "Эвкалипт", "leaves"),
   vector("branch-olive", "Оливковая ветвь", "leaves", true),
   vector("branch-fern", "Золотой папоротник", "leaves"),
+  // Присланы пользователем (CREDITS.md, «Украшения и переходы»): ветки, лоза, осенние углы.
+  asset("branches-green", "Зелёные ветки", "leaves"),
+  asset("vine-green", "Лоза с листьями", "leaves"),
+  asset("autumn-corner-top", "Осенний угол сверху", "leaves"),
+  asset("autumn-corner-bottom", "Осенний угол снизу", "leaves"),
   // Ветки из тех же листов от пользователя (CREDITS.md, «Падающие листья»).
   asset("branch-ash", "Ветка ясеня", "leaves"),
   asset("branch-vine", "Вьюнок", "leaves"),
@@ -124,6 +129,8 @@ export const library: LibraryAsset[] = [
   vector("wax-seal", "Сургучная печать", "accents"),
   asset("petal-red", "Лепесток розы", "particles"),
   asset("petal-pink", "Розовый лепесток", "particles"),
+  asset("roses-white-spray", "Белые розы", "flowers"),
+  asset("garland-dogrose", "Гирлянда шиповника", "flowers"),
   asset("leaf-particle", "Осенний лист", "particles"),
   // Листья для падающего декора — вырезаны из двух листов от пользователя (CREDITS.md, «Падающие листья»).
   asset("fall-maple-orange", "Клён оранжевый", "foliage"),

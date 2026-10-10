@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Crown, ImagePlus, Loader2, Plus, Upload, X } from "lucide-react";
+import { Ban, ChevronLeft, ChevronRight, Crown, ImagePlus, Loader2, Palette, Plus, Upload, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
@@ -370,5 +370,85 @@ export function FineTuning({ label = "Тонкая настройка", children
       </CollapsibleTrigger>
       <CollapsibleContent className="flex flex-col gap-4 pt-3">{children}</CollapsibleContent>
     </Collapsible>
+  );
+}
+
+/**
+ * Цвет образцами: «без цвета» (значение null — как задано по умолчанию), готовые образцы и свой цвет (системный
+ * выбор цвета). Подписи — из props: один компонент для цвета блока и цвета фона страницы.
+ */
+export function ColorSwatches({
+  label,
+  groupLabel,
+  itemLabel,
+  noneLabel,
+  customLabel,
+  value,
+  swatches,
+  customFallback,
+  hint,
+  onChange,
+}: {
+  label: string;
+  /** Доступное имя группы образцов. */
+  groupLabel: string;
+  /** Начало доступного имени образца: «<itemLabel> #rrggbb». */
+  itemLabel: string;
+  noneLabel: string;
+  customLabel: string;
+  value: string | null;
+  swatches: string[];
+  /** Начальный цвет системного выбора, когда свой цвет ещё не задан. */
+  customFallback: string;
+  hint?: string;
+  onChange: (color: string | null) => void;
+}) {
+  const custom = !!value && !swatches.includes(value);
+  const ring = "ring-offset-2 ring-offset-background aria-pressed:ring-2 aria-pressed:ring-primary";
+  return (
+    <div className="flex flex-col gap-2">
+      <FieldLabel>{label}</FieldLabel>
+      <div role="group" aria-label={groupLabel} className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          aria-pressed={!value}
+          aria-label={noneLabel}
+          title={noneLabel}
+          onClick={() => onChange(null)}
+          className={cn("flex size-8 items-center justify-center rounded-full border text-muted-foreground pointer-coarse:size-10", ring)}
+        >
+          <Ban className="size-4" />
+        </button>
+        {swatches.map((c) => (
+          <button
+            key={c}
+            type="button"
+            aria-pressed={value === c}
+            aria-label={`${itemLabel} ${c}`}
+            title={c}
+            onClick={() => onChange(c)}
+            className={cn("size-8 rounded-full border border-foreground/10 pointer-coarse:size-10", ring)}
+            style={{ background: c }}
+          />
+        ))}
+        <label
+          title={customLabel}
+          data-selected={custom || undefined}
+          className="relative flex size-8 cursor-pointer items-center justify-center rounded-full border text-muted-foreground ring-offset-2 ring-offset-background data-selected:ring-2 data-selected:ring-primary pointer-coarse:size-10"
+          style={custom ? { background: value! } : undefined}
+        >
+          {!custom && <Palette className="size-4" />}
+          <input
+            type="color"
+            aria-label={customLabel}
+            // size-full: у input[type=color] своя минимальная ширина — без неё он вылезал из кружка и сдвигал панель вбок.
+            className="absolute inset-0 size-full cursor-pointer opacity-0"
+            value={value ?? customFallback}
+            onChange={(e) => onChange(e.target.value)}
+          />
+        </label>
+      </div>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
   );
 }

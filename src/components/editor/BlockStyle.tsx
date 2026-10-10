@@ -16,7 +16,7 @@ import { blockEdges, blockHasFill, edgeLabels, edgeMaskStyle, edgesVisible, newE
 import { BLOCK_STYLES, blockStyleLabels, blockStylePatch, blockStyleSpec, matchBlockStyle, type BlockStyleId } from "@/lib/blockStyles";
 import { isDarkColor, mixHex } from "@/lib/color";
 import { FULL_WIDTH_SURFACES, isPanelSurface, ORNAMENT_CATEGORIES, surfaceGroups, surfaceLabels, surfaceLayer, surfaceThumb, takesBgColor } from "@/lib/library";
-import { ORNAMENT_SIZE_MAX, ORNAMENT_SIZE_MIN, POSITION_GRID, positionLabels, stepOrnamentSize } from "@/lib/ornaments";
+import { isSeamPosition, ORNAMENT_SIZE_MAX, ORNAMENT_SIZE_MIN, POSITION_GRID, positionLabels, stepOrnamentSize } from "@/lib/ornaments";
 import { premiumSurfaces } from "@/lib/premium";
 import {
   EDGES,
@@ -31,10 +31,10 @@ import {
   type Surface,
   type Theme,
 } from "@/lib/schema";
-import { palettes, themeStyle } from "@/lib/theme";
+import { palettes, themePalette, themeStyle } from "@/lib/theme";
 import { entranceLabels, photoHeightLabels } from "@/lib/variants";
 import { cn } from "@/lib/utils";
-import { AddFieldButton, checker, ImagePicker, ProBadge, Segmented, UploadField } from "./controls";
+import { AddFieldButton, checker, ColorSwatches, ImagePicker, ProBadge, Segmented, UploadField } from "./controls";
 import { TextStylePicker } from "./TextStylePicker";
 import { withTextStyle, type TextKey } from "@/lib/textStyle";
 import { OrnamentMotionFields } from "./OrnamentMotionFields";
@@ -364,7 +364,7 @@ function EdgePicker({ theme, block, onChange }: { theme: Theme; block: Block; on
 
 /** Цвет фона блока: без цвета, образцы из палитры (тон фона, светлые акценты, акцент, текст) и свой цвет. */
 function BgColorPicker({ theme, block, onChange }: { theme: Theme; block: Block; onChange: (bgColor: string | null) => void }) {
-  const p = palettes[theme.palette];
+  const p = themePalette(theme);
   const swatches = [
     ...new Set([
       mixHex(p.bg, p.text, 0.06),
@@ -375,55 +375,19 @@ function BgColorPicker({ theme, block, onChange }: { theme: Theme; block: Block;
       p.text,
     ]),
   ];
-  const value = block.bgColor;
-  const custom = !!value && !swatches.includes(value);
-  const ring = "ring-offset-2 ring-offset-background aria-pressed:ring-2 aria-pressed:ring-primary";
   return (
-    <div className="flex flex-col gap-2">
-      <FieldLabel>{block.surface === "plain" ? "Цвет фона" : "Цвет панели"}</FieldLabel>
-      <div role="group" aria-label="Цвет фона блока" className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          aria-pressed={!value}
-          aria-label="Без цвета"
-          title="Без цвета"
-          onClick={() => onChange(null)}
-          className={cn("flex size-8 items-center justify-center rounded-full border text-muted-foreground", ring)}
-        >
-          <Ban className="size-4" />
-        </button>
-        {swatches.map((c) => (
-          <button
-            key={c}
-            type="button"
-            aria-pressed={value === c}
-            aria-label={`Цвет фона ${c}`}
-            title={c}
-            onClick={() => onChange(c)}
-            className={cn("size-8 rounded-full border border-foreground/10", ring)}
-            style={{ background: c }}
-          />
-        ))}
-        <label
-          title="Свой цвет"
-          data-selected={custom || undefined}
-          className={cn(
-            "relative flex size-8 cursor-pointer items-center justify-center rounded-full border text-muted-foreground ring-offset-2 ring-offset-background data-selected:ring-2 data-selected:ring-primary",
-          )}
-          style={custom ? { background: value! } : undefined}
-        >
-          {!custom && <Palette className="size-4" />}
-          <input
-            type="color"
-            aria-label="Свой цвет фона"
-            className="absolute inset-0 cursor-pointer opacity-0"
-            value={value ?? p.bg}
-            onChange={(e) => onChange(e.target.value)}
-          />
-        </label>
-      </div>
-      <p className="text-xs text-muted-foreground">Текст и акцент на цветном фоне подстраиваются сами: на тёмном — светлые, на светлом — тёмные.</p>
-    </div>
+    <ColorSwatches
+      label={block.surface === "plain" ? "Цвет фона" : "Цвет панели"}
+      groupLabel="Цвет фона блока"
+      itemLabel="Цвет фона"
+      noneLabel="Без цвета"
+      customLabel="Свой цвет фона"
+      value={block.bgColor}
+      swatches={swatches}
+      customFallback={p.bg}
+      hint="Текст и акцент на цветном фоне подстраиваются сами: на тёмном — светлые, на светлом — тёмные."
+      onChange={onChange}
+    />
   );
 }
 
@@ -691,6 +655,7 @@ function OrnamentCard({
 }) {
   const n = index + 1;
   const flipId = useId();
+  const seamId = useId();
   const ownId = useId();
   const [fine, setFine] = useState(false);
   return (
@@ -745,8 +710,20 @@ function OrnamentCard({
             <Switch id={flipId} size="sm" checked={o.flip} onCheckedChange={(flip) => onChange({ flip })} />
             <FlipHorizontal2 className="size-3.5 text-muted-foreground" /> Отразить зеркально
           </label>
+          {/* Переход — только у украшений сверху и снизу: они ложатся на стык с соседним блоком. */}
+          {isSeamPosition(o.position) && (
+            <label htmlFor={seamId} className="flex items-center gap-2 text-sm">
+              <Switch id={seamId} size="sm" checked={!!o.seam} onCheckedChange={(seam) => onChange({ seam: seam || undefined })} />
+              Как переход между блоками
+            </label>
+          )}
         </div>
       </div>
+      {o.seam && isSeamPosition(o.position) && (
+        <p className="text-xs text-muted-foreground">
+          Украшение лежит на {o.position.startsWith("top") ? "стыке с блоком выше" : "стыке с блоком ниже"}, поверх обоих блоков.
+        </p>
+      )}
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="outline" size="sm" onClick={onReplace}>
           <ImageIcon /> Заменить картинку

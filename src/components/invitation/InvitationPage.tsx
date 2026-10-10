@@ -11,8 +11,8 @@ import { InvitationView } from "./InvitationView";
 import { prefersReducedMotion } from "./motion";
 import { MusicButton, useInvitationMusic } from "./music";
 
-/** Публичная страница: конверт, музыка, декор и само приглашение. */
-export function InvitationPage({ data, slug }: { data: InvitationData; slug: string }) {
+/** Публичная страница: конверт, музыка, декор и само приглашение. demo — показ шаблона (ответы не отправляются). */
+export function InvitationPage({ data, slug, demo = false }: { data: InvitationData; slug: string; demo?: boolean }) {
   /** Гость нажал «Открыть приглашение»: анимации сайта стартуют, заставка растворяется. */
   const [opened, setOpened] = useState(false);
   const [envelope, setEnvelope] = useState(true);
@@ -48,7 +48,7 @@ export function InvitationPage({ data, slug }: { data: InvitationData; slug: str
         />
       )}
 
-      <InvitationView data={data} slug={slug} motion={opened ? "on" : "paused"} />
+      <InvitationView data={data} slug={slug} demo={demo} motion={opened ? "on" : "paused"} />
       <DecorLayer decor={data.theme.decor} />
 
       {envelope && (

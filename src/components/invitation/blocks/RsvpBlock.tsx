@@ -51,6 +51,11 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
     };
     const parsed = rsvpInputSchema.safeParse(input);
     if (!parsed.success) return setStatus({ kind: "error", message: parsed.error.issues[0].message });
+    if (ctx.demo) {
+      // Показ шаблона: приглашения в базе нет — показываем, как гостя поблагодарят.
+      if (submitRef.current && !prefersReducedMotion()) heartBurst(submitRef.current);
+      return setStatus({ kind: "sent" });
+    }
 
     setStatus({ kind: "sending" });
     const res = await fetch(`/api/invitations/${ctx.slug}/rsvp`, {

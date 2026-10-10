@@ -127,6 +127,10 @@ pngwing.com сам ничего не лицензирует (пометка «No
 
 | Файл | Что | Автор | Лицензия | Источник |
 |---|---|---|---|---|
+| `emerald-hero-forest.webp` | Пара на ветке дерева в лесу | — | уточняется (фото пользователя: возможно, кадр из фильма) | загружено пользователем в редакторе |
+| `emerald-venue-garden.webp` | Беседка с фонарями у пруда | — | уточняется (фото пользователя: снимок заведения) | загружено пользователем в редакторе |
+| `emerald-hero.webp` | Пара силуэтом у арочного окна (было в шаблоне до 1.3.0, нужно фикстуре) | Alexander Mass | Unsplash License | https://unsplash.com/photos/sck3ldWXp7k |
+| `emerald-venue.webp` | Дом с огнями под луной | Steve DiMatteo | Unsplash License | https://unsplash.com/photos/tQO-9Xa2Bhk |
 | `boarding-couple.webp` | Пара с фатой у моря | Hisu lee | Unsplash License | [unsplash.com/photos/FTW8ADj5igs](https://unsplash.com/photos/grayscale-shot-of-bride-and-groom-FTW8ADj5igs) |
 | `boarding-villa.webp` | Вилла на озере | Raphael Lopes | Unsplash License | [unsplash.com/photos/rxKO1lxy1kI](https://unsplash.com/photos/a-statue-in-front-of-a-large-arch-over-water-rxKO1lxy1kI) |
 | `boarding-window.webp` | Самолёт в окне терминала | Arseny Togulev | Unsplash License | [unsplash.com/photos/ZwVQggGsjIY](https://unsplash.com/photos/a-large-jetliner-sitting-on-top-of-an-airport-tarmac-ZwVQggGsjIY) |
@@ -227,3 +231,16 @@ pngwing.com сам ничего не лицензирует (пометка «No
 | `branch-berries.webp` | Ветка с ягодами | лист осенних листьев (рисунок) | уточняется (купить у автора) | прислан пользователем | разрезан лист, обрезан по краю |
 | `branch-berries-2.webp` | Ветка с ягодами 2 | лист осенних листьев (рисунок) | уточняется (купить у автора) | прислан пользователем | разрезан лист, обрезан по краю |
 | `branch-berries-yellow.webp` | Ветка с жёлтыми ягодами | лист осенних листьев (рисунок) | уточняется (купить у автора) | прислан пользователем | разрезан лист, обрезан по краю |
+
+## Украшения и переходы — лицензии уточняются
+
+Присланы пользователем (источник, вероятно, pngwing.com — как `new-sources/`). WebP ≤ 1400 px.
+
+| Файл | Что | Исходник | Лицензия | Источник | Обработка |
+|---|---|---|---|---|---|
+| `branches-green.webp` | Зелёные ветки | две ветки (рисунок) | уточняется (купить у автора) | прислан пользователем | обрезан по краю |
+| `vine-green.webp` | Лоза с листьями | лоза (рисунок) | уточняется (купить у автора) | прислан пользователем | подрезана светлая кайма |
+| `autumn-corner-top.webp` | Осенний угол сверху | рамка из осенних листьев | уточняется (купить у автора) | прислан пользователем | верхний угол рамки |
+| `autumn-corner-bottom.webp` | Осенний угол снизу | рамка из осенних листьев | уточняется (купить у автора) | прислан пользователем | нижний угол рамки |
+| `roses-white-spray.webp` | Белые розы | композиция роз (фото) | уточняется (купить у автора) | прислан пользователем | обрезана по краю |
+| `garland-dogrose.webp` | Гирлянда шиповника | гирлянда (фото) | уточняется (купить у автора) | прислан пользователем | обрезана по краю |

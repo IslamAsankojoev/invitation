@@ -5,7 +5,7 @@ import { blockTitle } from "@/lib/blocks";
 import { blockEdges, edgeHeight, edgeMaskStyle, edgePad, edgesVisible, tornPaperStyle } from "@/lib/edges";
 import { isDarkColor } from "@/lib/color";
 import { darkSurfaces, isFullWidth, isPanelSurface, lightSurfaces, surfaceImages, surfaceLayer, surfaceObjects, takesBgColor, tintedPanel } from "@/lib/library";
-import { ornamentImageStyle, ornamentMotionProps, ornamentStyle } from "@/lib/ornaments";
+import { isSeam, ornamentImageStyle, ornamentMotionProps, ornamentStyle } from "@/lib/ornaments";
 import { textStyle } from "@/lib/textStyle";
 import type { Block, Ornament, OrnamentMotion } from "@/lib/schema";
 import { replayReveal, useMotion, useOrnamentMotion, useReveal } from "./motion";
@@ -181,8 +181,9 @@ export function Section({ block, children, bare = false, frame = false, fill, ba
           style={edged ? { top: 14 + edgeHeight(top), bottom: 14 + edgeHeight(bottom) } : undefined}
         />
       )}
+      {/* Переходы (seam) рисует SeamOrnaments снаружи секции — здесь их обрезал бы край блока. */}
       {block.ornaments.map((o, i) => (
-        <OrnamentItem key={i} ornament={o} index={i} common={ornamentMotion} />
+        !isSeam(o) && <OrnamentItem key={i} ornament={o} index={i} common={ornamentMotion} />
       ))}
       <div
         // Во всю ширину растягивается фон блока, а текст остаётся в колонке содержимого.
@@ -216,6 +217,25 @@ export function Section({ block, children, bare = false, frame = false, fill, ba
 
 /** Пауза после правки украшения, после которой оно проигрывает анимацию заново (ползунок тянут — не мигает). */
 const ORNAMENT_REPLAY_MS = 400;
+
+/**
+ * Украшения-переходы блока: слой без обрезки поверх соседних блоков (z-30), в обёртке блока из InvitationView.
+ * Появляются при прокрутке, как украшения внутри секции.
+ */
+export function SeamOrnaments({ block }: { block: Block }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useReveal(ref, block.entrance === "none");
+  const common = useOrnamentMotion();
+  const seams = block.ornaments.flatMap((o, i) => (isSeam(o) ? [{ o, i }] : []));
+  if (!seams.length) return null;
+  return (
+    <div ref={ref} aria-hidden="true" data-seams className="pointer-events-none absolute inset-0 z-30">
+      {seams.map(({ o, i }) => (
+        <OrnamentItem key={i} ornament={o} index={i} common={common} />
+      ))}
+    </div>
+  );
+}
 
 /**
  * Украшение: обёртка появляется (выезжает, проявляется…), картинка внутри потом движется (качается, парит…).

@@ -28,18 +28,34 @@ const origins: Record<OrnamentPosition, string> = {
   center: "50% 50%",
 };
 
+/** Места, где украшение может быть переходом: верхний и нижний ряд сетки. */
+export const isSeamPosition = (p: OrnamentPosition) => p.startsWith("top") || p.startsWith("bottom");
+/** Украшение — переход между блоками (лежит на стыке, рисуется отдельным слоем поверх соседа). */
+export const isSeam = (o: Pick<Ornament, "position" | "seam">) => !!o.seam && isSeamPosition(o.position);
+
+/** Переход: центр картинки — на краю блока (сверху или снизу), по горизонтали — как у обычного украшения. */
+function seamPlacement(p: OrnamentPosition): { css: CSSProperties; shift: string } {
+  const y = p.startsWith("top") ? { top: 0 } : { bottom: 0 };
+  const dy = p.startsWith("top") ? "-50%" : "50%";
+  if (p.endsWith("left")) return { css: { ...y, left: 0 }, shift: `translate(0, ${dy})` };
+  if (p.endsWith("right")) return { css: { ...y, right: 0 }, shift: `translate(0, ${dy})` };
+  return { css: { ...y, left: "50%" }, shift: `translate(-50%, ${dy})` };
+}
+
 /**
  * Обёртка украшения: место в блоке и ширина. Появление анимирует её, а постоянное движение — картинку внутри
  * (ornamentImageStyle): так вращение и покачивание идут вокруг центра картинки, а не точки привязки.
  */
-export function ornamentStyle(o: Pick<Ornament, "position" | "size">): CSSProperties {
-  const { css, shift } = anchors[o.position];
+export function ornamentStyle(o: Pick<Ornament, "position" | "size" | "seam">): CSSProperties {
+  const seam = isSeam(o);
+  const { css, shift } = seam ? seamPlacement(o.position) : anchors[o.position];
   return {
     ...css,
     position: "absolute",
     display: "block",
     width: o.size,
-    maxWidth: "70%",
+    // Переход — на всю ширину колонки (гирлянда), обычное украшение — не шире 70% блока.
+    maxWidth: seam ? "100%" : "70%",
     transform: shift,
     transformOrigin: origins[o.position],
     pointerEvents: "none",

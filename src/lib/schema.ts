@@ -14,7 +14,7 @@ const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Неверный фо
 /** URL картинки: файл из библиотеки (/library/…) или загруженный (/uploads/…, позже — S3). */
 const imageUrl = z.string().min(1).max(500);
 
-export const PALETTES = ["cream", "blush", "emerald", "ivory", "autumn", "night", "lavender", "noir", "navy", "mocha", "pearl", "sand"] as const;
+export const PALETTES = ["cream", "blush", "emerald", "ivory", "autumn", "night", "lavender", "noir", "navy", "mocha", "pearl", "sand", "forest"] as const;
 /** Шрифт имён и акцентных надписей. Первые три — исходные ключи, их значения не меняются. */
 export const FONTS = [
   "script",
@@ -239,6 +239,11 @@ export const ornamentSchema = z.object({
   opacity: z.number().min(0.1, "Прозрачность от 0.1 до 1").max(1, "Прозрачность от 0.1 до 1"),
   /** Своя анимация; нет — как у всех украшений (theme.ornamentMotion). */
   motion: ornamentMotionSchema.optional(),
+  /**
+   * Переход между блоками: украшение сверху (top-left/top/top-right) ложится центром на верхний край блока,
+   * снизу — на нижний, поверх соседнего блока и без обрезки краем. У остальных мест не действует.
+   */
+  seam: z.boolean().optional(),
 });
 
 export const themeSchema = z.object({
@@ -249,6 +254,8 @@ export const themeSchema = z.object({
   backgroundMode: z.enum(BACKGROUND_MODES).default("stretch"),
   /** Приглушение фонового фото цветом фона палитры: 0 — фото как есть, 0.9 — почти не видно. */
   backgroundDim: z.number().min(0, "Приглушение фона от 0 до 0.9").max(0.9, "Приглушение фона от 0 до 0.9").default(0.7),
+  /** Свой цвет фона страницы вместо цвета палитры (null — как в палитре). Текст подстраивается под его яркость. */
+  backgroundColor: hexColor.nullable().default(null),
   texture: z.enum(TEXTURES).default("none"),
   decor: z.object({
     type: z.enum(DECOR_TYPES),

@@ -13,6 +13,7 @@
     "db:up": "docker compose up -d",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma migrate deploy && tsx prisma/seed.ts",
+    "video": "node scripts/template-video.mjs",
     "db:deploy:prod": "sh -c 'set -a && . ./.env.supabase && set +a && prisma migrate deploy'",
     "storage:setup": "sh -c 'set -a && . ./.env.supabase && set +a && node scripts/supabase-bucket.mjs'",
     "schema:snapshot": "tsx scripts/schema-snapshot.ts",

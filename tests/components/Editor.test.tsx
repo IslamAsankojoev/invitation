@@ -192,6 +192,17 @@ describe("Editor", () => {
     expect(location().querySelector("img[data-ornament]")).toHaveAttribute("data-idle", "sway");
     expect(location().querySelector("[data-decor]")).not.toHaveAttribute("data-decor-own");
 
+    // «Как переход между блоками»: украшение уходит из секции в слой на стыке (поверх соседних блоков).
+    await user.click(within(screen.getByRole("radiogroup", { name: "Положение украшения 1" })).getByRole("radio", { name: "Сверху по центру" }));
+    await user.click(screen.getByRole("switch", { name: "Как переход между блоками" }));
+    expect(location().querySelector("img[data-ornament]")).toBeNull();
+    expect(location().parentElement!.querySelector("[data-seams] img")).toHaveAttribute("src", "/library/red-roses.webp");
+    expect(screen.getByText(/на стыке с блоком выше/)).toBeInTheDocument();
+    // У украшения сбоку перехода не бывает — переключателя нет.
+    await user.click(within(screen.getByRole("radiogroup", { name: "Положение украшения 1" })).getByRole("radio", { name: "Слева" }));
+    expect(screen.queryByRole("switch", { name: "Как переход между блоками" })).not.toBeInTheDocument();
+    expect(location().querySelector("img[data-ornament]")).toHaveAttribute("src", "/library/red-roses.webp");
+
     await user.click(screen.getByRole("button", { name: "Удалить украшение 1" }));
     expect(location().querySelector("img[data-ornament]")).toBeNull();
   });
@@ -239,6 +250,14 @@ describe("Editor", () => {
     await user.click(screen.getByRole("button", { name: "Текстура Сердечки" }));
     expect(within(invitation()).getByTestId("texture")).toHaveAttribute("data-texture", "hearts");
     expect(screen.getByRole("button", { name: "Текстура Сердечки" })).toHaveAttribute("aria-pressed", "true");
+
+    // Свой цвет фона страницы: тёмный на светлой палитре — текст становится светлым; «Как в палитре» — обратно.
+    const before = invitation().style.getPropertyValue("--bg");
+    await user.click(screen.getByRole("button", { name: "Цвет фона страницы #151515" }));
+    expect(invitation().style.getPropertyValue("--bg")).toBe("#151515");
+    expect(invitation().style.getPropertyValue("--text")).toBe(before);
+    await user.click(screen.getByRole("button", { name: "Как в палитре" }));
+    expect(invitation().style.getPropertyValue("--bg")).toBe(before);
   });
 
   it("общая анимация украшений задаётся в «Оформлении» и применяется ко всем украшениям", async () => {

@@ -10,7 +10,7 @@
  *
  * Версия — формата приглашений, а не сайта: package.json тут ни при чём.
  */
-export const SCHEMA_VERSION = "1.1.0";
+export const SCHEMA_VERSION = "2.0.0";
 
 /** Приглашения, сохранённые до появления версии, — это формат 1.0.0. */
 export const INITIAL_SCHEMA_VERSION = "1.0.0";
@@ -50,7 +50,44 @@ type Json = Record<string, unknown>;
  */
 export type Migration = { to: string; why: string; up: (data: Json) => Json };
 
-export const migrations: Migration[] = [];
+/** Ширина колонки приглашения, px: размер старого перехода (% колонки) → ширина украшения в px. */
+const COLUMN_PX = 430;
+
+/**
+ * 2.0.0: блок «Переход» (divider) убран — переход стал украшением блока с флагом seam. Каждый видимый переход с
+ * картинкой становится украшением следующего блока сверху (последний на странице — предыдущего снизу); сдвиг от
+ * стыка и режим «своей полосой» не переносятся. Если у блока уже 6 украшений — переход теряется.
+ */
+function dividersToSeamOrnaments(data: Json): Json {
+  if (!Array.isArray(data.blocks)) return data;
+  const blocks = (data.blocks as Json[]).map((b) => (b && typeof b === "object" ? { ...b } : b));
+  const isDivider = (b: Json) => b && typeof b === "object" && b.type === "divider";
+  blocks.forEach((b, i) => {
+    if (!isDivider(b) || b.visible === false || typeof b.image !== "string") return;
+    const next = blocks.slice(i + 1).find((x) => !isDivider(x));
+    const prev = [...blocks.slice(0, i)].reverse().find((x) => !isDivider(x));
+    const target = next ?? prev;
+    if (!target) return;
+    const ornaments = Array.isArray(target.ornaments) ? [...(target.ornaments as Json[])] : [];
+    if (ornaments.length >= 6) return;
+    const size = typeof b.size === "number" ? b.size : 100;
+    ornaments.push({
+      src: b.image,
+      position: next ? "top" : "bottom",
+      size: Math.min(400, Math.max(40, Math.round((size / 100) * COLUMN_PX))),
+      rotate: 0,
+      flip: b.flip === true,
+      opacity: 1,
+      seam: true,
+    });
+    target.ornaments = ornaments;
+  });
+  return { ...data, blocks: blocks.filter((b) => !isDivider(b)) };
+}
+
+export const migrations: Migration[] = [
+  { to: "2.0.0", why: "блок «Переход» стал украшением блока «как переход между блоками» (ornament.seam)", up: dividersToSeamOrnaments },
+];
 
 /**
  * Приводит сохранённый JSON к текущему формату: выполняет по порядку миграции новее его версии и ставит

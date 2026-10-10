@@ -25,11 +25,12 @@ import {
   type Theme,
 } from "@/lib/schema";
 import { premiumEnvelopeStyles, premiumFonts, premiumMotionStyles } from "@/lib/premium";
-import { bodyFonts, isScriptFont, palettes, titleFonts } from "@/lib/theme";
+import { mixHex } from "@/lib/color";
+import { bodyFonts, isScriptFont, palettes, themePalette, titleFonts } from "@/lib/theme";
 import { backgroundModeLabels, envelopeStyleLabels, headingsLabels, motionStyleLabels } from "@/lib/variants";
 import { cn } from "@/lib/utils";
 import { LabeledSlider } from "./BlockStyle";
-import { FineTuning, LibraryImageField, ProBadge, Segmented, UploadField } from "./controls";
+import { ColorSwatches, FineTuning, LibraryImageField, ProBadge, Segmented, UploadField } from "./controls";
 import { OrnamentMotionFields } from "./OrnamentMotionFields";
 import { FontSelect } from "./FontSelect";
 import { TemplatePicker } from "./TemplatePicker";
@@ -86,6 +87,20 @@ export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
   const setMotion = (patch: Partial<Theme["motion"]>) => set({ motion: { ...theme.motion, ...patch } });
   const setOrnamentMotion = (patch: Partial<Theme["ornamentMotion"]>) => set({ ornamentMotion: { ...theme.ornamentMotion, ...patch } });
   const palette = palettes[theme.palette];
+  // Фактические цвета (со своим цветом фона) — для плиток узора.
+  const colors = themePalette(theme);
+  // Образцы фона от палитры: светлее и темнее её фона, светлый акцент, тёмный из цвета текста, белый и почти чёрный.
+  const bgSwatches = [
+    ...new Set([
+      mixHex(palette.bg, "#ffffff", 0.55),
+      mixHex(palette.bg, palette.text, 0.08),
+      mixHex(palette.accent, "#ffffff", 0.82),
+      mixHex(palette.accent, palette.text, 0.6),
+      mixHex(palette.text, palette.bg, 0.12),
+      "#ffffff",
+      "#151515",
+    ]),
+  ].filter((c) => c !== palette.bg);
   // Образец для шрифтов — первое имя из приглашения.
   const sampleName = splitNames(findBlock(data, "hero")?.names ?? "Анна")[0].split(" ")[0] || "Анна";
   const colorId = useId();
@@ -303,9 +318,21 @@ export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
       <AccordionItem value="background">
         <SectionTrigger
           title="Фон страницы"
-          summary={`${theme.texture === "none" ? "Без узора" : textureLabels[theme.texture]}${theme.background ? ` · фото, ${backgroundModeLabels[theme.backgroundMode].toLowerCase()}` : ""}`}
+          summary={`${theme.backgroundColor ? "Свой цвет · " : ""}${theme.texture === "none" ? "Без узора" : textureLabels[theme.texture]}${theme.background ? ` · фото, ${backgroundModeLabels[theme.backgroundMode].toLowerCase()}` : ""}`}
         />
         <AccordionContent className="flex flex-col gap-4">
+          <ColorSwatches
+            label="Цвет фона"
+            groupLabel="Цвет фона страницы"
+            itemLabel="Цвет фона страницы"
+            noneLabel="Как в палитре"
+            customLabel="Свой цвет фона страницы"
+            value={theme.backgroundColor}
+            swatches={bgSwatches}
+            customFallback={palette.bg}
+            hint="Текст подстраивается сам: на тёмном фоне — светлый, на светлом — тёмный."
+            onChange={(backgroundColor) => set({ backgroundColor })}
+          />
           <div className="flex flex-col gap-2">
             <FieldLabel>Узор фона</FieldLabel>
             <div className="grid grid-cols-4 gap-2" role="group" aria-label="Текстура">
@@ -318,8 +345,8 @@ export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
                   onClick={() => set({ texture: t })}
                   className={cn(tile, "overflow-hidden text-[10px] text-muted-foreground")}
                 >
-                  <span className="relative block h-12" style={{ background: palette.bg, ["--accent" as string]: palette.accent }}>
-                    <TextureLayer texture={t} dark={palette.dark} />
+                  <span className="relative block h-12" style={{ background: colors.bg, ["--accent" as string]: colors.accent }}>
+                    <TextureLayer texture={t} dark={colors.dark} />
                   </span>
                   <span className="block truncate px-1 py-1">{textureLabels[t]}</span>
                 </button>

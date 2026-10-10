@@ -47,8 +47,8 @@ export type Template = {
   name: string;
   description: string;
   /** Тема; заголовки по умолчанию — капителью. */
-  theme: Omit<Theme, "headings" | "ornamentMotion" | "backgroundMode" | "backgroundDim"> &
-    Partial<Pick<Theme, "headings" | "ornamentMotion" | "backgroundMode" | "backgroundDim">>;
+  theme: Omit<Theme, "headings" | "ornamentMotion" | "backgroundMode" | "backgroundDim" | "backgroundColor"> &
+    Partial<Pick<Theme, "headings" | "ornamentMotion" | "backgroundMode" | "backgroundDim" | "backgroundColor">>;
   /** Оформление по типам блоков; незаданное сбрасывается к «классика, без фона, без украшений». */
   blocks: { [K in BlockType]?: Partial<BlockDesign<K>> };
   /** Цвета дресс-кода, подобранные под палитру шаблона. */
@@ -85,6 +85,8 @@ const TICKET = "#f3ede2";
 const SAND_STRIP = "#e7dccb";
 const CHOCOLATE = "#3b2b21";
 const LATTE = "#e9dfd3";
+/** «Изумрудная ночь»: светлая бумага с рваными краями между тёмными блоками. */
+const PAPER = "#e6dccb";
 
 const plainDesign: BlockDesign = {
   variant: "classic",
@@ -831,6 +833,132 @@ export const templates: Template[] = [
       },
     ],
   },
+  {
+    id: "emerald-night",
+    name: "Изумрудная ночь",
+    description: "Тёмный изумруд и золото, фото пары у арочного окна, гирлянды белых цветов на стыках, светлая бумага с рваными краями.",
+    theme: {
+      palette: "forest",
+      font: "serif",
+      bodyFont: "manrope",
+      headings: "names",
+      background: null,
+      texture: "halftone",
+      backgroundColor: "#061e10",
+      decor: { type: "none", image: null, color: "#f3eee4", density: 0, size: 1, speed: 1 },
+      envelope: { ornament: lib("roses-white-spray"), style: "seal" },
+      motion: { style: "elegant", speed: 1 },
+    },
+    blocks: {},
+    dresscodeColors: ["#1c3a30", "#2f6b58", "#e3d3b0", "#c9a862", "#f3eee4"],
+    layout: [
+      {
+        type: "hero",
+        names: "Руслан & Айдана",
+        date: "2027-08-28T17:00",
+        label: "Бишкек · Изумрудная роща",
+        subtitle: undefined,
+        photo: photo("emerald-hero-forest"),
+      },
+      {
+        type: "text",
+        title: "Дорогие родные и близкие!",
+        icon: undefined,
+        width: "full",
+        // Переходы между блоками — украшения с seam: гирлянда ложится на стык с фото обложки.
+        ornaments: [orn("garland-dogrose", "top", { size: 400, opacity: 1, flip: true, seam: true })],
+        textStyles: { title: { font: "yeseva" }, text: { font: "alegreya" } },
+        text: "В нашей жизни наступает особенный день — мы создаём семью. Разделить эту радость мы хотим с самыми дорогими людьми, которые всегда рядом.",
+      },
+      { type: "calendar", title: "", width: "full" },
+      {
+        type: "text",
+        title: "",
+        scriptLine: "Мы будем рады видеть Вас в кругу наших гостей",
+        icon: undefined,
+        width: "full",
+        textStyles: { text: { font: "literata" } },
+        ornaments: [orn("branch-fern", "bottom-right", { size: 90, rotate: 150, opacity: 0.55 })],
+        text: "С любовью, родители\nРустам и Гульнара Асановы\nМарат и Бермет Токтогуловы",
+      },
+      {
+        type: "program",
+        title: "Timing",
+        scriptLine: "Программа торжества",
+        bgColor: PAPER,
+        width: "full",
+        edgeTop: "torn",
+        edgeTopSeed: 77140,
+        edgeBottom: "torn",
+        edgeBottomSeed: 903311,
+        textStyles: { time: { font: "forum" }, itemTitle: { font: "yeseva" }, itemDescription: { font: "serif" } },
+        items: [
+          { time: "16:00", title: "Сбор гостей", description: "Встреча у входа в усадьбу, приветственные напитки и лёгкие закуски." },
+          { time: "17:00", title: "Церемония", description: "Торжественная церемония бракосочетания в саду." },
+          { time: "17:45", title: "Фотосъёмка", description: "Общие фотографии с молодожёнами на территории усадьбы." },
+          { time: "18:30", title: "Начало банкета", description: "Приветственные слова, первый тост и праздничный ужин." },
+          { time: "20:00", title: "Первый танец", description: "Свадебный танец и вечерняя программа с музыкой." },
+          { time: "23:00", title: "Завершение вечера", description: "Прощальный салют и тёплые слова на дорогу." },
+        ],
+      },
+      // Белые розы на стыке бумаги и тёмного блока.
+      {
+        type: "dresscode",
+        title: "Dress code",
+        scriptLine: "Внешний вид",
+        ornaments: [orn("roses-white-spray", "top", { size: 267, opacity: 1, seam: true })],
+        textStyles: { text: { font: "serif" } },
+        text: "Будем признательны, если в своих нарядах вы поддержите цветовую гамму нашего вечера: тёмные изумрудные, тёплые бежевые и золотые оттенки. Просим воздержаться от ярко-белых нарядов — этот цвет оставим невесте.",
+        colors: [],
+      },
+      {
+        type: "location",
+        title: "Location",
+        scriptLine: "Место проведения",
+        textStyles: { placeName: { font: "kurale" }, address: { font: "alegreya" } },
+        placeName: "Усадьба «Изумрудная роща»",
+        address: "Чуйская область, с. Ново-Павловка, ул. Садовая, 12 · 25 минут от Бишкека",
+        mapUrl: "https://2gis.kg/bishkek",
+        photo: photo("emerald-venue-garden"),
+        ornaments: [orn("branch-fern", "bottom-left", { size: 90, rotate: -150, opacity: 0.5 })],
+      },
+      {
+        type: "text",
+        title: "Details",
+        scriptLine: "Наши пожелания",
+        icon: undefined,
+        bgColor: PAPER,
+        width: "full",
+        edgeTop: "torn",
+        edgeTopSeed: 615027,
+        edgeBottom: "torn",
+        edgeBottomSeed: 230558,
+        textStyles: { text: { font: "eb-garamond" } },
+        text: "Ваше присутствие в этот день — самый ценный подарок для нас. Если вы хотите порадовать нас ещё и материально, будем благодарны за вклад в наше свадебное путешествие.\n\nВместо цветов с радостью примем бутылку хорошего вина — откроем её вместе в наш первый юбилей.",
+      },
+      {
+        type: "rsvp",
+        title: "Questionnaire",
+        scriptLine: "Анкета гостя",
+        ornaments: [orn("roses-white-spray", "top", { size: 387, opacity: 1, flip: true, seam: true })],
+        deadline: "2027-08-01",
+      },
+      {
+        type: "countdown",
+        title: "Ждём Вас!",
+        scriptLine: "Руслан & Айдана",
+        bgColor: PAPER,
+        width: "full",
+        edgeTop: "torn",
+        edgeTopSeed: 351904,
+        ornaments: [
+          orn("roses-white-spray", "bottom-left", { size: 150, rotate: 8 }),
+          orn("roses-white-spray", "bottom-right", { size: 150, rotate: -8, flip: true }),
+          orn("garland-dogrose", "bottom", { size: 400, opacity: 1, seam: true }),
+        ],
+      },
+    ],
+  },
 ];
 
 export const findTemplate = (id: string) => templates.find((t) => t.id === id);
@@ -860,6 +988,8 @@ const themeOf = (template: Template): Theme => ({
   headings: "caps",
   backgroundMode: "stretch",
   backgroundDim: 0.7,
+  // Свой цвет фона — оформление: шаблон ставит цвет своей палитры (applyTemplate его сбрасывает).
+  backgroundColor: null,
   ornamentMotion: { ...DEFAULT_ORNAMENT_MOTION },
   ...structuredClone(template.theme),
 });

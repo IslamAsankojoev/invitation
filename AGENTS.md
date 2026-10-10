@@ -150,13 +150,15 @@ tests/fixtures/invitations/ замороженные приглашения пр
 ```
 InvitationData
 ├─ theme
-│  ├─ palette: cream | blush | emerald | ivory | autumn | night | lavender | noir | navy | mocha | pearl | sand
+│  ├─ palette: cream | blush | emerald | ivory | autumn | night | lavender | noir | navy | mocha | pearl | sand | forest
 │  ├─ font: 17 шрифтов имён (script=Great Vibes, serif=Cormorant, sans=Inter, marck, bad-script, caveat, lobster,
 │  │        pacifico, amatic, playfair, prata, forum, yeseva, cormorant-sc, oranienbaum, poiret, comfortaa)
 │  ├─ bodyFont: auto | cormorant | lora | eb-garamond | playfair | old-standard | pt-serif | montserrat | raleway | manrope | inter
 │  ├─ background: url | null            фоновое фото страницы
 │  ├─ backgroundMode: stretch | fixed | parallax   как ведёт себя фон (по умолчанию stretch — как до 1.1.0)
 │  ├─ backgroundDim 0–0.9               приглушение фона цветом --bg (по умолчанию 0.7)
+│  ├─ backgroundColor: #hex | null      свой цвет фона страницы (null — палитра); другая яркость «переворачивает» тему —
+│  │                                    `themePalette(theme)` в lib/theme.ts: текст = фон палитры, акцент к контрасту
 │  ├─ texture: none | halftone | speckle | grain | linen | grid | diagonal | hearts | diamonds | flourish | stars | watercolor
 │  ├─ decor: { type: none|image|petals|sakura|confetti|snow, image: url|null, color: #hex, density 0–60, size 0.5–3,
 │  │           speed 0.3–3, pop?: boolean (мини-игра; не задано = включено) }
@@ -177,7 +179,9 @@ InvitationData
                             textStyles: { [поле]: { color?: #hex, font?: шрифт имён или основного } }
    variant — вид блока, свой список у каждого типа (BLOCK_VARIANTS в schema.ts), по умолчанию «classic»
    Ornament: { src, position: top-left|top|top-right|left|right|bottom-left|bottom|bottom-right|center, size 40–400,
-               rotate −180..180, flip, opacity 0.1–1, motion?: OrnamentMotion (нет — общая theme.ornamentMotion) }
+               rotate −180..180, flip, opacity 0.1–1, motion?: OrnamentMotion (нет — общая theme.ornamentMotion),
+               seam?: boolean — «Как переход между блоками»: у мест сверху/снизу центр на краю блока, рисуется
+               слоем SeamOrnaments (Section.tsx) в обёртке блока поверх соседей (z-30), без обрезки и до 100% ширины }
    OrnamentMotion { enter: auto|side|fade|rise|drop|zoom|grow|spin|blur|none, enterSpeed 0.25–3,
                     idle: auto|sway|swing|float|breathe|flutter|shimmer|spin|none, idleSpeed 0.25–3, idleAmplitude 0.2–3 }
    hero      { names, date "YYYY-MM-DDTHH:mm", label?, subtitle?, photo }
@@ -248,7 +252,7 @@ InvitationData
 ## 5. Функционал и реализация
 
 ### 5.1 Шаблоны (`lib/templates.ts`, `components/templates/*`, `editor/TemplatePicker.tsx`)
-- 12 шаблонов. Первые четыре — только тема и украшения: `cream-classic` (Кремовая классика), `rose-garden` (Розовый сад), `golden-autumn` (Золотая осень),
+- 13 шаблонов. Первые четыре — только тема и украшения: `cream-classic` (Кремовая классика), `rose-garden` (Розовый сад), `golden-autumn` (Золотая осень),
   `starry-night` (Звёздная ночь). Вторые четыре собраны на новых возможностях (виды блоков, заставки, векторные
   ассеты, CSS-фоны, PRO-шрифты): `eucalyptus` (Эвкалипт), `art-deco` (Великий Гэтсби, палитра `noir`),
   `lavender-provence` (Лавандовый Прованс, палитра `lavender`), `marble-olive` (Мрамор и олива). Шаблон = полная
@@ -259,7 +263,9 @@ InvitationData
   кремовые «билеты» = карточка + `bgColor` + край `perforated`, ч/б фото), `lago` (Итальянское озеро: `sand`,
   рукописные заголовки `headings: names`, полосы `bgColor` с рваными краями, фото с рваными краями), `mocha` (Шоколад
   и сургуч: обложка `monogram`, шоколадные/латте полосы, цитата на шёлке, галерея, сургуч), `seaside` (Морской берег:
-  `pearl`, обложка `cover`, ракушка, жемчуг, розы). Фото-примеры — `photo(id)` → `/templates/<id>.webp`.
+  `pearl`, обложка `cover`, ракушка, жемчуг, розы), `emerald-night` (Изумрудная ночь, 1.2.0: палитра `forest` + свой фон `#061e10`, узор «Точки»,
+  фото пары в лесу и беседки у пруда — от пользователя, лицензия уточняется; украшения-переходы (`seam`) — гирлянды шиповника и белые розы на стыках, светлая бумага `PAPER` с рваными краями среди
+  тёмных блоков; по мотивам промо-ролика, свои фото и тексты). Фото-примеры — `photo(id)` → `/templates/<id>.webp`.
   Проверено на практике: золотая акварель `wc-gold` и шторки `curtains` на тёмной палитре выглядят грязно;
   украшения `top` у блока с заголовком налезают на него — лучше углы/бока/`bottom`.
 - У шаблонов без своей структуры — `heroPhoto` (фото обложки, `public/templates/<id>-hero.webp`, взяты с toichakyru.com —
@@ -324,6 +330,18 @@ InvitationData
 - Стили приглашения — классы `inv-*` в `globals.css` (`.inv-btn`, `.inv-input`, `.inv-field`, `.inv-choice`,
   `.inv-heading`, `.inv-caps`, `.inv-script`, `.inv-divider`) на переменных `--bg --text --accent --font-title
   --font-body --font-heading --title-scale --field --glow --on-accent`. **shadcn внутри приглашения не используется.**
+
+### 5.2.1 Скрытый показ шаблонов и видео
+- `/showcase/<ключ>` — список шаблонов, `/showcase/<ключ>/<шаблон>` — приглашение целиком (`createFromTemplate`, без
+  базы), как у гостя. Ключ — `SHOWCASE_KEY` в env (≥ 16 символов, `lib/showcase.ts`, сравнение за постоянное время);
+  нет ключа или неверный — 404, страницы `noindex`. Режим `demo` (`InvitationPage demo` → `BlockContext.demo`):
+  анкета не отправляется, а сразу благодарит; календарь — Google (у показа нет .ics).
+- `npm run video -- <шаблон…|all> [--base http://localhost:3000] [--bg #hex] [--fullscreen]` (`scripts/template-video.mjs`),
+  всё по замерам эталонного ролика: телефон в рамке на тёмном фоне, экран 513×1133 в кадре 1080×1920 (`SCREEN`, вёрстка
+  390×862); конверт → след касания → печать → свайпы 0,83 с с путём 1−(1−t)^2,5 (резкий старт, плавный докат) до начала
+  следующего блока, не дальше ~1,05 экрана, пауза ~2,6 с (`T`, `STEP`); анкета заполняется (имя по буквам, «Приду», +2,
+  «Подтвердить»). Кадры — CDP screencast (~60 к/с) → ffmpeg (скругление экрана маской, рамка и фон — SVG через sharp),
+  30 к/с H.264 в `videos/` (в .gitignore). `--fullscreen` — на весь кадр. Без звука: музыку добавлять в Instagram.
 
 ### 5.3 Редактор (`components/editor/*`, всё на shadcn)
 - `Editor`: слева панель (шапка с Badge статуса сохранения, «Открыть», «Гости»; Tabs: Блоки / Оформление /
@@ -749,6 +767,13 @@ Vercel (Postgres + migrate уже сделаны), rate limit в Redis, чист
     Этап 5: нажатие на блок в превью открывает его, открытый блок подсвечен заливкой цвета шаблона.
     Этап 6: сводки под названиями блоков и «Что осталось заполнить». Этап 7 (на пробу): телефонный режим — превью
     на весь экран и панель-шторка. Коммит `ux-v1` (ветка `ux-v1`) — состояние до переделки.
+27. Формат 2.0.0: блок «Переход» убран — переход стал украшением блока (`ornament.seam`, переключатель «Как переход
+    между блоками» в карточке украшения). Миграция переносит каждый переход в украшение следующего блока сверху
+    (последний — предыдущего снизу), размер % → px колонки 430; сдвиг и «своей полосой» не переносятся.
+26. Формат 1.3.0: свой цвет фона страницы (`theme.backgroundColor`, «Оформление» → «Фон страницы» → «Цвет фона»;
+    общий выбор цвета образцами — `ColorSwatches` в controls.tsx, им же цвет блока).
+25. Формат 1.2.0: блок «Переход» (`divider`) и палитра `forest`; шаблон «Изумрудная ночь»; украшения от пользователя
+    (ветки, лоза, осенние углы, белые розы, гирлянда шиповника); скрытый показ `/showcase` и видео шаблонов.
 24. Формат 1.1.0: фон страницы — `theme.backgroundMode` (параллакс / неподвижный / на всю высоту) и
     `theme.backgroundDim`. «Кремовая классика» — шёлк на всю страницу с параллаксом, блоки без бумажных фонов (по приглашению владельца).
 23. Аудит по правилам ui-ux-pro-max (ветка `ui-ux-pro-max-skill`): главная — два столбца карточек на телефоне, вся

@@ -20,8 +20,9 @@ export function CalendarButton({ ctx, light = false }: Props) {
 
   function open(e: MouseEvent<HTMLAnchorElement>) {
     if (ctx.preview) return e.preventDefault();
-    if (isApple()) return;
-    const event = invitationEvent(ctx.data, `${window.location.origin}/i/${ctx.slug}`);
+    // У показа шаблона нет приглашения в базе, а значит и .ics — всем Google Календарь.
+    if (isApple() && !ctx.demo) return;
+    const event = invitationEvent(ctx.data, ctx.demo ? undefined : `${window.location.origin}/i/${ctx.slug}`);
     if (!event) return;
     e.preventDefault();
     window.open(googleCalendarUrl(event), "_blank", "noopener");

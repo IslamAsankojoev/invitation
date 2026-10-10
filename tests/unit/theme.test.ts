@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { textureLabels, textures } from "@/lib/library";
 import { BODY_FONTS, FONTS, TEXTURES } from "@/lib/schema";
-import { bodyFonts, headingsMode, isScriptFont, palettes, resolveBodyFont, themeStyle, titleFonts } from "@/lib/theme";
+import { bodyFonts, headingsMode, isScriptFont, palettes, resolveBodyFont, themePalette, themeStyle, titleFonts } from "@/lib/theme";
 import { createDefaultInvitation } from "@/lib/defaults";
 
 describe("шрифты темы", () => {
@@ -64,5 +64,32 @@ describe("заголовки и заливки блоков", () => {
     expect(cream["--ink-light"]).toBe(palettes.cream.text);
     expect(cream["--ink-dark"]).toBe(palettes.cream.bg);
     expect(cream["--accent-on-light"]).toBe(palettes.cream.accent);
+  });
+});
+
+describe("свой цвет фона страницы", () => {
+  it("нет цвета — палитра как есть", () => {
+    const { bg, text, accent } = palettes.cream;
+    expect(themePalette({ palette: "cream", backgroundColor: null })).toEqual({ bg, text, accent, dark: false });
+  });
+
+  it("цвет той же яркости меняет только фон", () => {
+    const p = themePalette({ palette: "cream", backgroundColor: "#f4ece6" });
+    expect(p).toMatchObject({ bg: "#f4ece6", text: palettes.cream.text, accent: palettes.cream.accent, dark: false });
+  });
+
+  it("тёмный фон у светлой палитры и светлый у тёмной «переворачивают» тему: текст — фон палитры", () => {
+    const dark = themePalette({ palette: "cream", backgroundColor: "#151515" });
+    expect(dark).toMatchObject({ bg: "#151515", text: palettes.cream.bg, dark: true });
+    expect(dark.accent).not.toBe(palettes.cream.accent);
+    const light = themePalette({ palette: "forest", backgroundColor: "#f6f1ea" });
+    expect(light).toMatchObject({ bg: "#f6f1ea", text: palettes.forest.bg, dark: false });
+  });
+
+  it("themeStyle берёт цвета с учётом своего фона (и производные: кнопки, поля)", () => {
+    const theme = { ...createDefaultInvitation().theme, palette: "cream" as const, backgroundColor: "#151515" };
+    const style = themeStyle(theme) as Record<string, string>;
+    expect(style["--bg"]).toBe("#151515");
+    expect(style["--on-accent"]).toBe("#151515");
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bumpOf, compareSemver, migrateInvitation, type Migration, SCHEMA_VERSION } from "@/lib/migrations";
+import { bumpOf, compareSemver, migrateInvitation, migrations, type Migration, SCHEMA_VERSION } from "@/lib/migrations";
 import { invitationDataSchema } from "@/lib/schema";
 import { diffSchemas, requiredBump } from "@/lib/schemaDiff";
 
@@ -55,6 +55,43 @@ describe("миграции приглашения", () => {
     };
     expect(invitationDataSchema.parse(old).schemaVersion).toBe(SCHEMA_VERSION);
     expect(invitationDataSchema.safeParse({ ...old, schemaVersion: "v2" }).success).toBe(true); // кривая версия → 1.0.0
+  });
+});
+
+describe("2.0.0: «Переход» стал украшением блока", () => {
+  const up = migrations.find((m) => m.to === "2.0.0")!.up;
+  const divider = (extra: object = {}) => ({ type: "divider", id: "d", visible: true, image: "/library/garland-dogrose.webp", size: 100, flip: true, shift: -10, overlap: true, ...extra });
+  const text = (id: string, ornaments: object[] = []) => ({ type: "text", id, visible: true, text: "", ornaments });
+
+  it("переход — украшение следующего блока сверху на стыке; блок перехода удалён; вход не мутирует", () => {
+    const data = { blocks: [text("a"), divider({ size: 62 }), text("b")] };
+    const copy = structuredClone(data);
+    const out = up(data) as { blocks: { id: string; ornaments: object[] }[] };
+    expect(data).toEqual(copy);
+    expect(out.blocks.map((b) => b.id)).toEqual(["a", "b"]);
+    expect(out.blocks[1].ornaments).toEqual([
+      { src: "/library/garland-dogrose.webp", position: "top", size: 267, rotate: 0, flip: true, opacity: 1, seam: true },
+    ]);
+    expect(out.blocks[0].ornaments).toEqual([]);
+  });
+
+  it("последний на странице — украшение предыдущего блока снизу; скрытый, пустой и седьмой — пропадают", () => {
+    const six = Array.from({ length: 6 }, () => ({ src: "/x.webp", position: "center" }));
+    const out = up({ blocks: [text("a"), divider(), divider({ visible: false }), divider({ image: null }), text("full", six), divider()] }) as {
+      blocks: { id: string; ornaments: { position: string; seam?: boolean }[] }[];
+    };
+    expect(out.blocks.map((b) => b.id)).toEqual(["a", "full"]);
+    // Первый переход достался «full» сверху, но там уже 6 украшений — пропал; последний ушёл в «full» тоже нельзя.
+    expect(out.blocks[1].ornaments).toHaveLength(6);
+    const viaPrev = up({ blocks: [text("a"), divider()] }) as { blocks: { ornaments: { position: string }[] }[] };
+    expect(viaPrev.blocks[0].ornaments[0]).toMatchObject({ position: "bottom", seam: true });
+  });
+
+  it("приглашение 1.2.0 с переходами читается схемой текущей версии", () => {
+    const old = { schemaVersion: "1.2.0", blocks: [text("a"), divider(), text("b")] };
+    const migrated = migrateInvitation(old) as { schemaVersion: string; blocks: { type: string }[] };
+    expect(migrated.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(migrated.blocks.map((b) => b.type)).toEqual(["text", "text"]);
   });
 });
 

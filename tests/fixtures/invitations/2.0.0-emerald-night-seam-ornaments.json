@@ -1,0 +1,416 @@
+{
+  "schemaVersion": "2.0.0",
+  "theme": {
+    "headings": "names",
+    "backgroundMode": "stretch",
+    "backgroundDim": 0.7,
+    "backgroundColor": "#061e10",
+    "ornamentMotion": {
+      "enter": "auto",
+      "enterSpeed": 1,
+      "idle": "auto",
+      "idleSpeed": 1,
+      "idleAmplitude": 1
+    },
+    "palette": "forest",
+    "font": "serif",
+    "bodyFont": "manrope",
+    "background": null,
+    "texture": "halftone",
+    "decor": {
+      "type": "none",
+      "image": null,
+      "color": "#f3eee4",
+      "density": 0,
+      "size": 1,
+      "speed": 1
+    },
+    "envelope": {
+      "ornament": "/library/roses-white-spray.webp",
+      "style": "seal"
+    },
+    "motion": {
+      "style": "elegant",
+      "speed": 1
+    }
+  },
+  "music": {
+    "url": "/music/die-with-a-smile.mp3",
+    "loop": true
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "id": "b-hero",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "names": "Руслан & Айдана",
+      "date": "2027-08-28T17:00",
+      "label": "Бишкек · Изумрудная роща",
+      "photo": "/templates/emerald-hero-forest.webp"
+    },
+    {
+      "type": "text",
+      "id": "b-text",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/garland-dogrose.webp",
+          "position": "top",
+          "size": 400,
+          "rotate": 0,
+          "flip": true,
+          "opacity": 1,
+          "seam": true
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "full",
+      "bgColor": null,
+      "textStyles": {
+        "title": {
+          "font": "yeseva"
+        },
+        "text": {
+          "font": "alegreya"
+        }
+      },
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Дорогие родные и близкие!",
+      "text": "В нашей жизни наступает особенный день — мы создаём семью. Разделить эту радость мы хотим с самыми дорогими людьми, которые всегда рядом."
+    },
+    {
+      "type": "calendar",
+      "id": "b-calendar",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "full",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": ""
+    },
+    {
+      "type": "text",
+      "id": "b-text-2",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/branch-fern.svg",
+          "position": "bottom-right",
+          "size": 90,
+          "rotate": 150,
+          "flip": false,
+          "opacity": 0.55
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "full",
+      "bgColor": null,
+      "textStyles": {
+        "text": {
+          "font": "literata"
+        }
+      },
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "",
+      "text": "С любовью, родители\nРустам и Гульнара Асановы\nМарат и Бермет Токтогуловы",
+      "scriptLine": "Мы будем рады видеть Вас в кругу наших гостей"
+    },
+    {
+      "type": "program",
+      "id": "b-program",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "torn",
+      "edgeBottom": "torn",
+      "width": "full",
+      "bgColor": "#e6dccb",
+      "textStyles": {
+        "time": {
+          "font": "forum"
+        },
+        "itemTitle": {
+          "font": "yeseva"
+        },
+        "itemDescription": {
+          "font": "serif"
+        }
+      },
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "items": [
+        {
+          "time": "16:00",
+          "title": "Сбор гостей",
+          "description": "Встреча у входа в усадьбу, приветственные напитки и лёгкие закуски."
+        },
+        {
+          "time": "17:00",
+          "title": "Церемония",
+          "description": "Торжественная церемония бракосочетания в саду."
+        },
+        {
+          "time": "17:45",
+          "title": "Фотосъёмка",
+          "description": "Общие фотографии с молодожёнами на территории усадьбы."
+        },
+        {
+          "time": "18:30",
+          "title": "Начало банкета",
+          "description": "Приветственные слова, первый тост и праздничный ужин."
+        },
+        {
+          "time": "20:00",
+          "title": "Первый танец",
+          "description": "Свадебный танец и вечерняя программа с музыкой."
+        },
+        {
+          "time": "23:00",
+          "title": "Завершение вечера",
+          "description": "Прощальный салют и тёплые слова на дорогу."
+        }
+      ],
+      "title": "Timing",
+      "scriptLine": "Программа торжества",
+      "edgeTopSeed": 77140,
+      "edgeBottomSeed": 903311
+    },
+    {
+      "type": "dresscode",
+      "id": "b-dresscode",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/roses-white-spray.webp",
+          "position": "top",
+          "size": 267,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1,
+          "seam": true
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {
+        "text": {
+          "font": "serif"
+        }
+      },
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "text": "Будем признательны, если в своих нарядах вы поддержите цветовую гамму нашего вечера: тёмные изумрудные, тёплые бежевые и золотые оттенки. Просим воздержаться от ярко-белых нарядов — этот цвет оставим невесте.",
+      "colors": [
+        "#1c3a30",
+        "#2f6b58",
+        "#e3d3b0",
+        "#c9a862",
+        "#f3eee4"
+      ],
+      "title": "Dress code",
+      "scriptLine": "Внешний вид"
+    },
+    {
+      "type": "location",
+      "id": "b-location",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/branch-fern.svg",
+          "position": "bottom-left",
+          "size": 90,
+          "rotate": -150,
+          "flip": false,
+          "opacity": 0.5
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {
+        "placeName": {
+          "font": "kurale"
+        },
+        "address": {
+          "font": "alegreya"
+        }
+      },
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "placeName": "Усадьба «Изумрудная роща»",
+      "address": "Чуйская область, с. Ново-Павловка, ул. Садовая, 12 · 25 минут от Бишкека",
+      "photo": "/templates/emerald-venue-garden.webp",
+      "title": "Location",
+      "scriptLine": "Место проведения",
+      "mapUrl": "https://2gis.kg/bishkek"
+    },
+    {
+      "type": "text",
+      "id": "b-text-3",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "torn",
+      "edgeBottom": "torn",
+      "width": "full",
+      "bgColor": "#e6dccb",
+      "textStyles": {
+        "text": {
+          "font": "eb-garamond"
+        }
+      },
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Details",
+      "text": "Ваше присутствие в этот день — самый ценный подарок для нас. Если вы хотите порадовать нас ещё и материально, будем благодарны за вклад в наше свадебное путешествие.\n\nВместо цветов с радостью примем бутылку хорошего вина — откроем её вместе в наш первый юбилей.",
+      "scriptLine": "Наши пожелания",
+      "edgeTopSeed": 615027,
+      "edgeBottomSeed": 230558
+    },
+    {
+      "type": "rsvp",
+      "id": "b-rsvp",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/roses-white-spray.webp",
+          "position": "top",
+          "size": 387,
+          "rotate": 0,
+          "flip": true,
+          "opacity": 1,
+          "seam": true
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Questionnaire",
+      "scriptLine": "Анкета гостя",
+      "deadline": "2027-08-01"
+    },
+    {
+      "type": "countdown",
+      "id": "b-countdown",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/roses-white-spray.webp",
+          "position": "bottom-left",
+          "size": 150,
+          "rotate": 8,
+          "flip": false,
+          "opacity": 1
+        },
+        {
+          "src": "/library/roses-white-spray.webp",
+          "position": "bottom-right",
+          "size": 150,
+          "rotate": -8,
+          "flip": true,
+          "opacity": 1
+        },
+        {
+          "src": "/library/garland-dogrose.webp",
+          "position": "bottom",
+          "size": 400,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1,
+          "seam": true
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "torn",
+      "edgeBottom": "none",
+      "width": "full",
+      "bgColor": "#e6dccb",
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Ждём Вас!",
+      "scriptLine": "Руслан & Айдана",
+      "edgeTopSeed": 351904
+    }
+  ]
+}

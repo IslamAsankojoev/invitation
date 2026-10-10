@@ -21,9 +21,9 @@ function imageUrls(data: InvitationData): string[] {
 }
 
 describe("шаблоны", () => {
-  it("их двенадцать, id уникальны", () => {
-    expect(templates).toHaveLength(12);
-    expect(new Set(templates.map((t) => t.id)).size).toBe(12);
+  it("их тринадцать, id уникальны", () => {
+    expect(templates).toHaveLength(13);
+    expect(new Set(templates.map((t) => t.id)).size).toBe(13);
   });
 
   it.each(templates.map((t) => [t.name, t] as const))("«%s» проходит схему и ссылается только на существующие картинки", (_, t) => {

@@ -27,6 +27,23 @@ describe("Новые блоки", () => {
     expect(within(c2.querySelector<HTMLElement>('[data-block="text"]')!).queryByRole("link")).toBeNull();
   });
 
+  it("украшение-переход: рисуется слоем на стыке (вне секции, без обрезки), обычное — внутри секции", () => {
+    const { data, id } = withBlock("text", {
+      ornaments: [
+        { src: "/library/garland-dogrose.webp", position: "top", size: 400, rotate: 0, flip: false, opacity: 1, seam: true },
+        { src: "/library/roses-white-spray.webp", position: "bottom-right", size: 120, rotate: 0, flip: false, opacity: 1 },
+      ],
+    } as Partial<Block>);
+    const { container } = render(<InvitationView data={data} slug="demo" />);
+    const section = container.querySelector<HTMLElement>(`[data-block-id="${id}"]`)!;
+    const seams = section.parentElement!.querySelector<HTMLElement>("[data-seams]")!;
+    expect(seams.querySelector("img")).toHaveAttribute("src", "/library/garland-dogrose.webp");
+    expect(seams.querySelector("span")!.style.transform).toBe("translate(-50%, -50%)");
+    expect(seams.querySelector("span")!.style.maxWidth).toBe("100%");
+    // Внутри секции — только обычное украшение.
+    expect([...section.querySelectorAll("img[data-ornament]")].map((i) => i.getAttribute("src"))).toEqual(["/library/roses-white-spray.webp"]);
+  });
+
   it("«Фото» и «Галерея» без фото: гость их не видит, в превью — подсказка", () => {
     let { data } = withBlock("photo");
     data = insertBlock(data, createBlock(data, "gallery"));

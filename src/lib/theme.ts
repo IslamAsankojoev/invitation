@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { isDarkColor, mixHex } from "./color";
 import type { BodyFont, Font, Palette, Theme } from "./schema";
 
 /** Тема меняет только CSS-переменные — шаблон приглашения один. */
@@ -15,6 +16,7 @@ export const palettes: Record<Palette, { label: string; bg: string; text: string
   mocha: { label: "Мокко", bg: "#f6f1eb", text: "#3a2a20", accent: "#9b7b5d" },
   pearl: { label: "Жемчужная", bg: "#f7f0ea", text: "#4a3832", accent: "#c0877f" },
   sand: { label: "Песочная", bg: "#f2eadd", text: "#4a3c2f", accent: "#a2835c" },
+  forest: { label: "Изумрудная ночь", bg: "#141c19", text: "#ece5d8", accent: "#c9a862", dark: true },
 };
 
 const stack = (variable: string, fallback: string) => `var(${variable}), ${fallback}`;
@@ -89,8 +91,29 @@ export const headingsMode = (theme: Pick<Theme, "headings" | "font">) =>
 export const resolveBodyFont = (theme: Pick<Theme, "font" | "bodyFont">): BodyKey =>
   theme.bodyFont === "auto" ? titleFonts[theme.font].pair : theme.bodyFont;
 
-export function themeStyle(theme: Theme): CSSProperties {
+type PaletteColors = { bg: string; text: string; accent: string; dark: boolean };
+
+/**
+ * Цвета темы с учётом своего цвета фона (theme.backgroundColor). Фон другой яркости, чем у палитры, «переворачивает»
+ * её: текст берёт светлый/тёмный цвет палитры (её фон), акцент сдвигается к контрасту — как у заливки блока.
+ */
+export function themePalette(theme: Pick<Theme, "palette"> & { backgroundColor?: string | null }): PaletteColors {
   const p = palettes[theme.palette];
+  const base = { bg: p.bg, text: p.text, accent: p.accent, dark: !!p.dark };
+  const bg = theme.backgroundColor;
+  if (!bg) return base;
+  const dark = isDarkColor(bg);
+  if (dark === base.dark) return { ...base, bg };
+  return {
+    bg,
+    text: p.bg,
+    accent: dark ? mixHex(p.accent, "#ffffff", 0.42) : mixHex(p.accent, "#000000", 0.28),
+    dark,
+  };
+}
+
+export function themeStyle(theme: Theme): CSSProperties {
+  const p = themePalette(theme);
   const title = titleFonts[theme.font];
   return {
     "--bg": p.bg,

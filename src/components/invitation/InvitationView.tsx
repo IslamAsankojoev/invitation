@@ -2,17 +2,20 @@ import type { ComponentType } from "react";
 import { blockName } from "@/lib/blocks";
 import { isFullWidth } from "@/lib/library";
 import type { Block, InvitationData } from "@/lib/schema";
-import { headingsMode, palettes, themeStyle } from "@/lib/theme";
+import { headingsMode, themePalette, themeStyle } from "@/lib/theme";
 import { blockComponents } from "./blocks/registry";
 import type { BlockContext } from "./blocks/types";
 import { MotionContext, OrnamentMotionContext, type Motion } from "./motion";
 import { PageBackground } from "./PageBackground";
+import { SeamOrnaments } from "./Section";
 import { TextureLayer } from "./TextureLayer";
 
 type Props = {
   data: InvitationData;
   slug: string;
   preview?: boolean;
+  /** Показ шаблона: ответы анкеты не отправляются (см. BlockContext.demo). */
+  demo?: boolean;
   /** Анимации: гостю — «paused» до открытия конверта, мини-превью шаблонов — «off». */
   motion?: Motion;
   /** Превью редактора: блок, открытый в панели, — его обёртка помечена data-selected (рамку рисует CSS редактора). */
@@ -20,8 +23,8 @@ type Props = {
 };
 
 /** Общий шаблон приглашения — его видят гости и превью в редакторе. */
-export function InvitationView({ data, slug, preview = false, motion: requested = "on", selectedBlockId }: Props) {
-  const ctx: BlockContext = { data, slug, preview };
+export function InvitationView({ data, slug, preview = false, demo = false, motion: requested = "on", selectedBlockId }: Props) {
+  const ctx: BlockContext = { data, slug, preview, demo };
   const { style, speed } = data.theme.motion;
   // Стиль «Без анимаций» — то же, что статичный режим: всё видно сразу.
   const motion: Motion = style === "none" ? "off" : requested;
@@ -43,7 +46,7 @@ export function InvitationView({ data, slug, preview = false, motion: requested 
       <MotionContext.Provider value={motion}>
       <OrnamentMotionContext.Provider value={data.theme.ornamentMotion}>
         <PageBackground theme={data.theme} />
-        <TextureLayer texture={data.theme.texture} dark={palettes[data.theme.palette].dark} />
+        <TextureLayer texture={data.theme.texture} dark={themePalette(data.theme).dark} />
         {/* Колонка содержимого — 430 px; блок «во всю ширину» выходит на всю ширину экрана (его текст — в колонке). */}
         <main className="relative pb-24">
           {data.blocks
@@ -57,9 +60,11 @@ export function InvitationView({ data, slug, preview = false, motion: requested 
                   data-pick={preview ? block.id : undefined}
                   data-pick-label={preview ? blockName(data, block) : undefined}
                   data-selected={preview && selectedBlockId === block.id ? "" : undefined}
-                  className={`${isFullWidth(block) ? "" : "mx-auto max-w-[430px]"} ${preview ? "relative" : ""}`}
+                  // relative — опора для слоя переходов (SeamOrnaments): они ложатся на стык с соседним блоком.
+                  className={`relative ${isFullWidth(block) ? "" : "mx-auto max-w-[430px]"}`}
                 >
                   <Component block={block} ctx={ctx} />
+                  <SeamOrnaments block={block} />
                 </div>
               );
             })}
