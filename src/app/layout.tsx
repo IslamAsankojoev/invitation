@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { fontVariables } from "./fonts";
 import "./globals.css";
 
@@ -13,8 +14,11 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={fontVariables}>
-      <body>{children}</body>
+    // suppressHydrationWarning: класс темы (`dark`) на <html> ставит скрипт next-themes до гидратации.
+    <html lang="ru" className={fontVariables} suppressHydrationWarning>
+      <body>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

@@ -1,6 +1,8 @@
 import { ArrowLeft, CalendarHeart, ExternalLink, FolderHeart, Pencil, Plus, Users } from "lucide-react";
 import { notFound } from "next/navigation";
 import { AccountMenu, SignInButton } from "@/components/account/AccountMenu";
+import { DeleteInvitationButton } from "@/components/account/DeleteInvitationButton";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { findBlock } from "@/lib/blocks";
@@ -27,7 +29,10 @@ export default async function MyInvitationsPage() {
             <img src="/logo.webp" alt="" width={40} height={29} className="h-7 w-auto" />
             <ArrowLeft aria-hidden="true" className="size-4" /> Шаблоны
           </a>
-          <AccountMenu user={user} />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <AccountMenu user={user} />
+          </div>
         </header>
         <div className="flex items-center justify-between gap-3">
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
@@ -99,6 +104,7 @@ export default async function MyInvitationsPage() {
                             <ExternalLink />
                           </a>
                         </Button>
+                        <DeleteInvitationButton id={inv.id} name={hero?.names || "Без имён"} />
                       </CardAction>
                     </CardHeader>
                   </Card>

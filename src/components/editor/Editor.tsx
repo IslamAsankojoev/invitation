@@ -1,8 +1,9 @@
 "use client";
 
-import { AlertCircle, Check, ChevronDown, Redo2, Undo2, CircleCheck, Crown, ExternalLink, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, RotateCw, Send, Users, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Check, ChevronDown, Redo2, Undo2, CircleCheck, Crown, ExternalLink, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, RotateCw, Send, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import { AccountMenu } from "@/components/account/AccountMenu";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { DecorLayer } from "@/components/invitation/DecorLayer";
 import { InvitationView } from "@/components/invitation/InvitationView";
 import { prefersReducedMotion } from "@/components/invitation/motion";
@@ -46,6 +47,11 @@ type Props = {
   notice?: SaveNotice;
   /** Только в разработке: адрес сервера в Wi-Fi сети (lib/lan.ts) — для ссылки, которую откроют с телефона. */
   lanOrigin?: string | null;
+  /**
+   * Правка шаблона из админки (/admin): в шапке вместо «Открыть / Гости / Поделиться» — возврат в админку и свои
+   * действия (`actions` получает текущие данные и setData — «Сохранить в шаблон» подставляет новые адреса фото).
+   */
+  templateMode?: { name: string; backHref: string; actions: (data: InvitationData, setData: (next: InvitationData) => void) => ReactNode };
 };
 
 const noticeText: Record<SaveNotice, { ok: boolean; text: string }> = {
@@ -141,7 +147,123 @@ const PICK_TIP_KEY = "editor-pick-tip";
 /** Плашка «PRO-оформление» над вкладками. Пока тарифов нет — скрыта; значки PRO на плитках остаются. */
 const SHOW_PREMIUM_ALERT = false;
 
-export function Editor({ id, token, initialSlug, initialData, account, notice, lanOrigin }: Props) {
+/** Жест «закрыть шторку»: сдвиг вниз больше порога или быстрый смах. */
+const SWIPE_CLOSE_PX = 100;
+const SWIPE_CLOSE_SPEED = 0.45; // px/мс у отпускания — как у системных sheet
+/**
+ * Порог намерения: пока палец сдвинулся меньше — это нажатие, жест не вмешивается. iOS Safari отменяет нажатие,
+ * если во время касания вызвать preventDefault на touchmove, а палец при обычном нажатии «дрожит» на 5–10 px.
+ */
+const SWIPE_SLOP = 12;
+/** Под пальцем то, что само обрабатывает перетаскивание: ползунки, волна, ручки dnd-kit (touch-none), поля ввода. */
+const OWN_DRAG = '.touch-none, [role="slider"], input, textarea, select, [contenteditable="true"]';
+
+/** Ближайший к цели вертикально прокручиваемый предок внутри шторки (список, панель). */
+function scrollableIn(target: EventTarget | null, root: HTMLElement): HTMLElement | null {
+  for (let el = target instanceof Element ? target : null; el && el !== root; el = el.parentElement) {
+    if (!(el instanceof HTMLElement)) continue;
+    const oy = getComputedStyle(el).overflowY;
+    if ((oy === "auto" || oy === "scroll") && el.scrollHeight > el.clientHeight + 1) return el;
+  }
+  return null;
+}
+
+/**
+ * Шторку можно тянуть вниз с любой точки, как системные sheet в iOS: если под пальцем прокручиваемый список и он
+ * не в самом верху — сначала прокручивается он; как только дошёл до верха, дальше вниз едет уже шторка (с этой
+ * точки). Отпустили после порога или смахнули — закрыть, иначе вернуть. Горизонтальные жесты и элементы со своим
+ * перетаскиванием (OWN_DRAG) не перехватываются. Только касания: мышью тянут за ручку.
+ */
+function useSheetSwipe(ref: React.RefObject<HTMLElement | null>, enabled: boolean, setDrag: (px: number) => void, close: () => void) {
+  const closeRef = useRef(close);
+  closeRef.current = close;
+  useEffect(() => {
+    const root = ref.current;
+    if (!root || !enabled) return;
+    /** Жест: старт, ось, точка, с которой едет шторка (null — ещё прокручивается список), сдвиг и скорость у отпускания. */
+    let g: {
+      x: number;
+      y: number;
+      scroller: HTMLElement | null;
+      axis: "x" | "y" | null;
+      origin: number | null;
+      dy: number;
+      lastY: number;
+      lastT: number;
+      vy: number;
+    } | null = null;
+
+    const start = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return (g = null);
+      const target = e.target as Element | null;
+      if (target?.closest?.(OWN_DRAG) || target?.closest?.('[data-testid="sheet-handle"]')) return (g = null);
+      const t = e.touches[0];
+      g = { x: t.clientX, y: t.clientY, scroller: scrollableIn(e.target, root), axis: null, origin: null, dy: 0, lastY: t.clientY, lastT: performance.now(), vy: 0 };
+    };
+    const move = (e: TouchEvent) => {
+      if (!g) return;
+      const t = e.touches[0];
+      const dx = t.clientX - g.x;
+      const dy = t.clientY - g.y;
+      // Скорость пальца у отпускания (сглаженная): быстрый короткий смах тоже закрывает.
+      const now = performance.now();
+      const v = (t.clientY - g.lastY) / Math.max(1, now - g.lastT);
+      g.vy = g.vy * 0.4 + v * 0.6;
+      g.lastY = t.clientY;
+      g.lastT = now;
+      if (!g.axis) {
+        if (Math.abs(dx) < SWIPE_SLOP && Math.abs(dy) < SWIPE_SLOP) return;
+        g.axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      }
+      if (g.axis === "x") return;
+      // Список ещё не наверху — пусть прокручивается он; шторку начнём тянуть с момента, когда он дойдёт до верха.
+      if (g.origin === null) {
+        if (dy <= 0 || (g.scroller && g.scroller.scrollTop > 0)) return;
+        g.origin = t.clientY;
+      }
+      const pull = t.clientY - g.origin;
+      if (pull < 0) {
+        g.origin = null; // повели обратно вверх — снова прокрутка списка
+        setDrag(0);
+        return;
+      }
+      if (pull === 0) return; // точка старта шторки — ещё не тянем и ничего не отменяем
+      e.preventDefault(); // иначе браузер прокрутит/оттянет страницу вместо шторки
+      g.dy = pull;
+      setDrag(pull);
+    };
+    // Шторку потянули и отпустили над кнопкой — эта кнопка не должна сработать.
+    let swallowClick = false;
+    const click = (e: MouseEvent) => {
+      if (!swallowClick) return;
+      swallowClick = false;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    const end = () => {
+      if (!g || g.origin === null || g.dy === 0) return (g = null);
+      swallowClick = true;
+      setTimeout(() => (swallowClick = false), 400);
+      setDrag(0);
+      if (g.dy > SWIPE_CLOSE_PX || (g.dy > 30 && g.vy > SWIPE_CLOSE_SPEED)) closeRef.current();
+      g = null;
+    };
+    root.addEventListener("touchstart", start, { passive: true });
+    root.addEventListener("touchmove", move, { passive: false });
+    root.addEventListener("touchend", end);
+    root.addEventListener("touchcancel", end);
+    root.addEventListener("click", click, true);
+    return () => {
+      root.removeEventListener("click", click, true);
+      root.removeEventListener("touchstart", start);
+      root.removeEventListener("touchmove", move);
+      root.removeEventListener("touchend", end);
+      root.removeEventListener("touchcancel", end);
+    };
+  }, [ref, enabled, setDrag]);
+}
+
+export function Editor({ id, token, initialSlug, initialData, account, notice, lanOrigin, templateMode }: Props) {
   /** Данные + история правок для «Отменить / Повторить» (lib/history.ts). Все правки идут через setData. */
   const [history, setHistory] = useState(() => createHistory(initialData));
   const data = history.present;
@@ -188,13 +310,9 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
   const desktop = useIsDesktop();
   const phoneScale = usePhoneScale(phoneFitRef, desktop);
   /** Телефон: панель — шторка снизу, открыта или нет. На компьютере не используется (панель всегда слева). */
+  // Шторка либо открыта на весь экран, либо закрыта — без промежуточной половины (так попросили).
   const [sheet, setSheetOpen] = useState(!!notice);
-  /** Высота шторки, как у системных sheet: половина экрана (видно превью) или почти весь экран. */
-  const [sheetFull, setSheetFull] = useState(false);
-  const setSheet = useCallback((open: boolean) => {
-    setSheetOpen(open);
-    if (!open) setSheetFull(false);
-  }, []);
+  const setSheet = useCallback((open: boolean) => setSheetOpen(open), []);
   // Раскрытый блок — по id; сначала все свёрнуты, чтобы сразу был виден весь список блоков.
   const [expanded, setExpanded] = useState<string | null>(null);
   /** Подвкладка раскрытого блока и «Тонкая настройка» — одни на все блоки, на время сессии. */
@@ -286,11 +404,10 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
     if (pickTip) closePickTip();
   }
 
-  /**
-   * Ручка шторки: тянуть вниз — уменьшить (из полной) или закрыть, вверх — развернуть, касание — переключить высоту.
-   * Шторка идёт за пальцем вниз; вверх просто меняется высота после отпускания.
-   */
+  /** Ручка шторки: тянуть вниз — закрыть (шторка идёт за пальцем), касание — закрыть. */
   const [drag, setDrag] = useState(0);
+  const asideRef = useRef<HTMLElement>(null);
+  useSheetSwipe(asideRef, sheet && !desktop, setDrag, () => setSheet(false));
   const dragStart = useRef<number | null>(null);
   const dragDelta = useRef(0);
   const sheetHandle = {
@@ -309,18 +426,15 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
       dragStart.current = null;
       const dy = dragDelta.current;
       setDrag(0);
-      if (dy > 80) {
-        if (sheetFull) setSheetFull(false);
-        else setSheet(false);
-      } else if (dy < -40) setSheetFull(true);
+      if (dy > 80) setSheet(false);
     },
     onPointerCancel() {
       dragStart.current = null;
       setDrag(0);
     },
-    // Касание без движения (и Enter/пробел с клавиатуры) — click: переключить высоту.
+    // Касание без движения (и Enter/пробел с клавиатуры) — click: закрыть шторку.
     onClick() {
-      if (Math.abs(dragDelta.current) < 6) setSheetFull((f) => !f);
+      if (Math.abs(dragDelta.current) < 6) setSheet(false);
       dragDelta.current = 0;
     },
   };
@@ -373,22 +487,22 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
         {/* Невидимая подложка под шторкой: нажатие вне шторки закрывает её, как у обычного drawer. */}
         {sheet && <div aria-hidden="true" data-testid="sheet-backdrop" className="fixed inset-0 z-30 lg:hidden" onClick={() => setSheet(false)} />}
         <aside
+          ref={asideRef}
           aria-label="Панель редактора"
           style={drag > 0 ? { translate: `0 ${drag}px` } : undefined}
           className={cn(
             "fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 flex flex-col rounded-t-2xl border-t bg-background shadow-[0_-12px_40px_rgb(0_0_0/0.18)] transition-[translate,visibility,height,bottom] duration-300 ease-out motion-reduce:transition-none",
-            sheetFull ? "h-[calc(100svh-4rem-env(safe-area-inset-bottom)-0.75rem)]" : "h-[50svh]",
+            "h-[calc(100svh-4rem-env(safe-area-inset-bottom)-0.75rem)]",
             drag > 0 && "transition-none",
             "lg:static lg:z-auto lg:h-svh lg:translate-y-0 lg:visible lg:rounded-none lg:border-t-0 lg:border-r lg:shadow-none",
             !sheet && "invisible translate-y-[calc(100%+4rem)]",
           )}
         >
-          {/* Ручка — кнопка: касание переключает высоту, жест вниз/вверх — уменьшить/закрыть/развернуть. */}
+          {/* Ручка — кнопка: касание или жест вниз закрывают шторку. */}
           <button
             type="button"
             data-testid="sheet-handle"
-            aria-label={sheetFull ? "Уменьшить панель" : "Развернуть панель"}
-            aria-expanded={sheetFull}
+            aria-label="Закрыть панель"
             className="relative flex h-6 w-full shrink-0 cursor-grab touch-none items-start justify-center pt-2 outline-none focus-visible:bg-muted lg:hidden"
             {...sheetHandle}
           >
@@ -399,15 +513,28 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
               <img src="/logo.webp" alt="" width={44} height={32} className="h-8 w-auto" />
             </a> */}
             {/* В шторке на телефоне заголовок не нужен и сжимался бы рядом с кнопками — там он только для скринридеров. */}
-            <h1 className="sr-only">Редактор приглашения</h1>
+            <h1 className="sr-only">{templateMode ? `Редактор шаблона «${templateMode.name}»` : "Редактор приглашения"}</h1>
             <div className="flex min-w-0 flex-1 flex-col gap-1 lg:hidden">
               {/* На телефоне вкладки — в нижней панели, а в шапке шторки — название открытого раздела. */}
               <p aria-hidden="true" className="truncate text-base font-semibold lg:hidden">
                 {tab}
               </p>
             </div>
-            <nav aria-label="Действия" className="flex shrink-0 items-center gap-1.5 lg:flex-1 lg:gap-2">
-              {gate ? (
+            {/* min-w-0: без него длинное название шаблона (без переноса) не даёт шапке сжаться — кнопки вылезали за панель. */}
+            <nav aria-label="Действия" className="flex shrink-0 items-center gap-1.5 lg:min-w-0 lg:flex-1 lg:gap-2">
+              {templateMode ? (
+                <>
+                  <Button asChild variant="outline" size="sm" className={actionBtn}>
+                    <a href={templateMode.backHref}>
+                      <ArrowLeft /> <span className="max-lg:sr-only">Админка</span>
+                    </a>
+                  </Button>
+                  <span className="hidden min-w-0 flex-1 truncate text-sm font-medium lg:block" title={`Шаблон «${templateMode.name}»`}>
+                    {templateMode.name}
+                  </span>
+                  <div className="flex shrink-0 items-center gap-1.5">{templateMode.actions(data, setData)}</div>
+                </>
+              ) : gate ? (
                 <>
                   <Button type="button" variant="outline" size="sm" className={actionBtn} onClick={() => setGateFor("editor")}>
                     <ExternalLink /> <span className="max-lg:sr-only">Открыть</span>
@@ -431,7 +558,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
                 </>
               )}
             {/* Главное действие редактора — отправить гостям ссылку: одна заметная кнопка, остальное — второстепенное. */}
-            <Button
+            {!templateMode && <Button
               type="button"
               size="sm"
               className="hidden lg:ml-auto lg:inline-flex"
@@ -441,8 +568,9 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
               }}
             >
               <Send /> Поделиться
-            </Button>
-              {account && <AccountMenu user={account.user} />}
+            </Button>}
+              <ThemeToggle />
+              {account && <AccountMenu user={account.user} compact />}
               <Button type="button" variant="ghost" size="icon-sm" className="size-10 lg:hidden" aria-label="Свернуть панель" onClick={() => setSheet(false)}>
                 <ChevronDown />
               </Button>

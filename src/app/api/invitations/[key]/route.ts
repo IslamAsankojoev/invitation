@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { canDelete } from "@/lib/access";
 import {
+  deleteInvitation,
   getInvitationById,
   hasValidToken,
   isSlugTaken,
@@ -8,6 +10,8 @@ import {
   updateInvitation,
 } from "@/lib/invitations";
 import { formatZodErrors, invitationDataSchema } from "@/lib/schema";
+import { currentUser } from "@/lib/session";
+import { storage } from "@/lib/storage";
 import { slugSchema } from "@/lib/slug";
 
 // Сегмент называется [key], потому что Next.js не допускает разные имена параметров на одном уровне:
@@ -44,4 +48,18 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
   const updated = await updateInvitation(id, parsed.data);
   return NextResponse.json(toPublic(updated));
+}
+
+/** Удаление: владелец по аккаунту или (у ничьего приглашения) token. Загруженные фото удаляются из хранилища. */
+export async function DELETE(req: Request, { params }: Ctx) {
+  const id = (await params).key;
+  const [inv, user] = await Promise.all([getInvitationById(id), currentUser()]);
+  if (!inv) return NextResponse.json({ error: "Приглашение не найдено" }, { status: 404 });
+  if (!canDelete(inv, { token: new URL(req.url).searchParams.get("token"), userId: user?.id })) {
+    return NextResponse.json({ error: "Нет доступа" }, { status: 403 });
+  }
+  await deleteInvitation(id);
+  // Файлы — после записи в базе: сбой хранилища не должен оставить приглашение без фото.
+  await storage.removeFolder(`inv/${id}`).catch((error) => console.error("Не удалось удалить файлы приглашения", id, error));
+  return new NextResponse(null, { status: 204 });
 }

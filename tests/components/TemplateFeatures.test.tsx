@@ -43,6 +43,27 @@ describe("Шаблоны с новыми возможностями", () => {
     expect(container.querySelector('[data-testid="invitation"]')).toHaveAttribute("data-headings", "caps");
   });
 
+  it("«Без рамки» — как классика, но без рамки и кнопки календаря", () => {
+    const data = createDefaultInvitation();
+    const { container, rerender } = render(<InvitationView data={data} slug="demo" />);
+    let hero = section(container, "hero");
+    expect(within(hero).getByTestId("hero-names")).toBeInTheDocument();
+    expect(hero.querySelector(".inv-frame")).toBeNull();
+    expect(within(hero).queryByRole("link", { name: /календар/i })).toBeNull();
+    rerender(<InvitationView data={updateBlock(data, "hero", { variant: "classic" })} slug="demo" />);
+    hero = section(container, "hero");
+    expect(hero.querySelector(".inv-frame")).not.toBeNull();
+    expect(within(hero).getByRole("link", { name: /календар/i })).toBeInTheDocument();
+  });
+
+  it("монограмма: нижний край режет фото обложки", () => {
+    const data = updateBlock(createFromTemplate(findTemplate("mocha")!), "hero", { edgeBottom: "torn" });
+    const { container } = render(<InvitationView data={data} slug="demo" />);
+    const edges = within(section(container, "hero")).getByTestId("edges");
+    expect(edges).toHaveAttribute("data-edge-bottom", "torn");
+    expect(within(edges).getByTestId("hero-photo")).toBeInTheDocument();
+  });
+
   it("посадочный талон: имена, дата, время и место из блока «Место»", () => {
     const data = createFromTemplate(findTemplate("boarding-pass")!);
     const { container } = render(<InvitationView data={data} slug="demo" />);

@@ -12,7 +12,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { blockLabels, createOrnament, defaultTitles, MAX_ORNAMENTS } from "@/lib/blocks";
-import { blockEdges, blockHasFill, edgeLabels, edgeMaskStyle, edgesVisible, newEdgeSeed, tornPaperStyle, type EdgeSide } from "@/lib/edges";
+import { blockEdges, edgeLabels, edgeMaskStyle, edgesVisible, newEdgeSeed, tornPaperStyle, type EdgeSide } from "@/lib/edges";
 import { BLOCK_STYLES, blockStyleLabels, blockStylePatch, blockStyleSpec, matchBlockStyle, type BlockStyleId } from "@/lib/blockStyles";
 import { isDarkColor, mixHex } from "@/lib/color";
 import { FULL_WIDTH_SURFACES, isPanelSurface, ORNAMENT_CATEGORIES, surfaceGroups, surfaceLabels, surfaceLayer, surfaceThumb, takesBgColor } from "@/lib/library";
@@ -279,7 +279,7 @@ function BlockStylePicker({ block, theme, onChange }: { block: Block; theme: The
  * Рваная бумага при каждом выборе, повторном нажатии и по кнопке «Другой обрыв» получает новое зерно — обрыв новый.
  */
 function EdgePicker({ theme, block, onChange }: { theme: Theme; block: Block; onChange: (patch: Partial<Block>) => void }) {
-  const visible = edgesVisible(block.surface, blockHasFill(block));
+  const visible = edgesVisible(block.surface);
   const edges = blockEdges(block);
   const sides: { side: EdgeSide; label: string; value: Edge; seed: number; set: (e: Edge, seed?: number) => Partial<Block> }[] = [
     {
@@ -297,7 +297,7 @@ function EdgePicker({ theme, block, onChange }: { theme: Theme; block: Block; on
       set: (edgeBottom, edgeBottomSeed) => (edgeBottomSeed === undefined ? { edgeBottom } : { edgeBottom, edgeBottomSeed }),
     },
   ];
-  // Края режут только панели и заливку — у остальных фонов настройка ничего бы не меняла, поэтому её нет.
+  // У бумаги-картинки и предметов свой силуэт — края у них ничего бы не меняли, поэтому настройки нет.
   if (!visible) return null;
   return (
     <div className="flex flex-col gap-2">

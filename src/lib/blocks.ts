@@ -32,7 +32,8 @@ export function moveBlock(data: InvitationData, from: number, to: number): Invit
 
 export function updateBlock<T extends BlockType>(data: InvitationData, type: T, patch: Partial<Omit<BlockOf<T>, "type">>): InvitationData;
 export function updateBlock(data: InvitationData, id: string, patch: Partial<Block>): InvitationData;
-export function updateBlock(data: InvitationData, key: BlockKey, patch: Partial<Block>): InvitationData {
+// object, а не Partial<Block>: на большом объединении блоков TS не может сверить с ним перегрузку по типу.
+export function updateBlock(data: InvitationData, key: BlockKey, patch: object): InvitationData {
   const hit = matches(data, key);
   return {
     ...data,

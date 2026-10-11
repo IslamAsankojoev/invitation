@@ -204,7 +204,10 @@ body {
 
 /* ---------- Цвет фона блока (bgColor): палитра «переворачивается» под яркость заливки ----------
    --ink-light/--ink-dark и --accent-on-* задаёт themeStyle (lib/theme.ts), --fill — Section. */
+/* Блок со своей заливкой: «фон» внутри него — цвет заливки, а не страницы. Иначе всё, что смешивается с --bg
+   (карточки программы, точки таймлайна, поля), на светлой бумаге в тёмной палитре выходило бы тёмно-серым. */
 .inv-fill-light {
+  --bg: var(--fill);
   --text: var(--ink-light);
   --accent: var(--accent-on-light);
   --on-accent: #fff;
@@ -212,6 +215,7 @@ body {
   color: var(--text);
 }
 .inv-fill-dark {
+  --bg: var(--fill);
   --text: var(--ink-dark);
   --accent: var(--accent-on-dark);
   --on-accent: var(--fill);
@@ -1521,9 +1525,52 @@ body {
 .inv-flip-card::after {
   content: "";
   position: absolute;
+  z-index: 3;
   inset: 50% 0 auto;
   height: 1px;
   background: rgba(0, 0, 0, 0.15);
+}
+/* Перекидные карточки: число режется на половинки; текст в половинке — во всю высоту карточки, чтобы цифра
+   складывалась целой. Листающиеся пластины (leaf) — только при анимациях (раздел «Анимации приглашения»). */
+.inv-flip-card {
+  perspective: 260px;
+}
+.inv-flip-half {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  background: var(--accent);
+  backface-visibility: hidden;
+}
+.inv-flip-half > span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 200%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.inv-flip-top {
+  top: 0;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+.inv-flip-top > span {
+  top: 0;
+}
+.inv-flip-bottom {
+  bottom: 0;
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+.inv-flip-bottom > span {
+  bottom: 0;
+}
+.inv-flip-leaf-top,
+.inv-flip-leaf-bottom {
+  display: none;
+  z-index: 2;
 }
 /* Календарь «Крупная дата»: линии над и под днём недели расходятся от центра. */
 .inv-date-tag-center::before,
@@ -1566,8 +1613,10 @@ body {
   color: var(--accent);
 }
 /* Программа «Карточки». */
+/* Фон карточки — «поле» темы: на светлой палитре светлее фона, на тёмной — чуть светлее тёмного (а не серая смесь
+   с белым), в блоке с заливкой — от цвета заливки (inv-fill-*). */
 .inv-program-card {
-  background: color-mix(in srgb, var(--bg) 50%, white);
+  background: var(--field);
   border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
   box-shadow: 0 12px 24px -20px color-mix(in srgb, var(--text) 60%, transparent);
 }
@@ -1609,10 +1658,16 @@ body {
   box-shadow: 0 8px 16px -10px rgba(40, 30, 20, 0.45);
 }
 
-@keyframes inv-flip-in {
+@keyframes inv-flip-top {
+  to {
+    transform: rotateX(-90deg);
+    filter: brightness(0.7);
+  }
+}
+@keyframes inv-flip-bottom {
   from {
-    transform: perspective(200px) rotateX(-90deg);
-    opacity: 0;
+    transform: rotateX(90deg);
+    filter: brightness(0.75);
   }
 }
 @keyframes inv-stripe-in {
@@ -1622,8 +1677,16 @@ body {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .inv-motion .inv-flip-digit {
-    animation: inv-flip-in calc(0.45s * var(--k, 1)) var(--ease-out) both;
+  /* Перекидные часы: верхняя пластина падает вниз, за ней раскрывается нижняя (CountdownBlock → FlipCard). */
+  .inv-motion .inv-flip-leaf-top {
+    display: block;
+    transform-origin: 50% 100%;
+    animation: inv-flip-top 0.3s cubic-bezier(0.55, 0, 0.9, 0.45) both;
+  }
+  .inv-motion .inv-flip-leaf-bottom {
+    display: block;
+    transform-origin: 50% 0;
+    animation: inv-flip-bottom 0.3s cubic-bezier(0.1, 0.55, 0.45, 1) 0.28s both;
   }
   .inv-motion .inv-ring-progress {
     transition: stroke-dashoffset 0.6s ease;
@@ -1877,38 +1940,41 @@ body {
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Тёмная тема сайта (редактор, главная, гости) — нейтральный графит без подтона, акцент — яркий лайм (как у Higgsfield).
+   Приглашения не затрагивает: у них свои переменные палитры. */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
+  color-scheme: dark;
+  --background: oklch(0.155 0 0);
+  --foreground: oklch(0.96 0 0);
+  --card: oklch(0.195 0 0);
+  --card-foreground: oklch(0.96 0 0);
   --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --popover-foreground: oklch(0.96 0 0);
+  --primary: oklch(0.9 0.2 125);
+  --primary-foreground: oklch(0.18 0.02 125);
+  --secondary: oklch(0.25 0 0);
+  --secondary-foreground: oklch(0.96 0 0);
+  --muted: oklch(0.235 0 0);
+  --muted-foreground: oklch(0.7 0 0);
+  --accent: oklch(0.26 0 0);
+  --accent-foreground: oklch(0.96 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.9 0.2 125 / 70%);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar: oklch(0.195 0 0);
+  --sidebar-foreground: oklch(0.96 0 0);
+  --sidebar-primary: oklch(0.9 0.2 125);
+  --sidebar-primary-foreground: oklch(0.18 0.02 125);
+  --sidebar-accent: oklch(0.26 0 0);
+  --sidebar-accent-foreground: oklch(0.96 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: oklch(0.9 0.2 125 / 70%);
 }
 
 @layer base {
@@ -1928,4 +1994,38 @@ body {
   html {
     @apply font-sans;
   }
+}
+/*
+ * Волна темы (ThemeToggle → switchThemeWithWave): как на max-green-api-client.onrender.com. Старая страница — снимок
+ * под живой новой; новая проявляется кругом от кнопки с мягким краем 90 px, радиус растёт до самого дальнего угла
+ * экрана (--theme-wave-radius) за 0,9 с. Только во время смены темы (класс theme-wave) — другие переходы не задеваем.
+ */
+@property --theme-wave-r {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+html.theme-wave::view-transition-old(root),
+html.theme-wave::view-transition-new(root) {
+  mix-blend-mode: normal;
+  animation: none;
+}
+html.theme-wave::view-transition-new(root) {
+  --theme-wave-feather: 90px;
+  -webkit-mask-image: radial-gradient(circle at var(--theme-wave-x) var(--theme-wave-y), #000 calc(var(--theme-wave-r) - var(--theme-wave-feather)), transparent var(--theme-wave-r));
+  mask-image: radial-gradient(circle at var(--theme-wave-x) var(--theme-wave-y), #000 calc(var(--theme-wave-r) - var(--theme-wave-feather)), transparent var(--theme-wave-r));
+  animation: 0.9s cubic-bezier(0.4, 0, 0.2, 1) both theme-wave;
+}
+@keyframes theme-wave {
+  0% {
+    --theme-wave-r: 0px;
+  }
+  to {
+    --theme-wave-r: calc(var(--theme-wave-radius) + var(--theme-wave-feather));
+  }
+}
+html.theme-wave-swap *,
+html.theme-wave-swap *::before,
+html.theme-wave-swap *::after {
+  transition: none !important;
 }

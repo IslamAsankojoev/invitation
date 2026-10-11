@@ -3,7 +3,8 @@ import { library } from "./library";
 import type { Block, BlockOf, BlockType, BlockWidth, Edge, Entrance, Headings, InvitationData, Ornament, OrnamentPosition, Surface, TextIcon, Theme } from "./schema";
 import { SCHEMA_VERSION } from "./migrations";
 import { DEFAULT_MUSIC_URL } from "./music";
-import { DEFAULT_ORNAMENT_MOTION } from "./schema";
+import { DEFAULT_ORNAMENT_MOTION, invitationDataSchema } from "./schema";
+import overrides from "./template-overrides.json";
 import type { VariantOf } from "./variants";
 
 /**
@@ -39,8 +40,12 @@ const DESIGN_KEYS = [
   "textStyles",
 ] as const satisfies readonly (keyof BlockDesign)[];
 
-/** Блок в структуре шаблона: тип, пример содержимого и оформление (всё, кроме типа, — по желанию). */
-export type LayoutBlock = { [K in BlockType]: { type: K } & Partial<Omit<BlockOf<K>, "type" | "id">> }[BlockType];
+/**
+ * Блок в структуре шаблона: тип, пример содержимого и оформление (всё, кроме типа, — по желанию). Недостающие поля
+ * берутся из примера блока (`sampleBlock`), кроме блоков с `exact` — сохранённых из приглашения в админке: в JSON
+ * пустое поле (нет подзаголовка, значка) просто пропадает, и пример вернул бы удалённый текст.
+ */
+export type LayoutBlock = { [K in BlockType]: { type: K } & Partial<Omit<BlockOf<K>, "type" | "id">> }[BlockType] & { exact?: true };
 
 export type Template = {
   id: string;
@@ -85,8 +90,8 @@ const photo = (id: string) => `/templates/${id}.webp`;
 /** Цвета заливок блоков в шаблонах. */
 const TICKET = "#f3ede2";
 const SAND_STRIP = "#e7dccb";
-const CHOCOLATE = "#3b2b21";
-const LATTE = "#e9dfd3";
+/** «Шоколад и сургуч»: кремовые полосы на шоколадном фоне страницы. */
+const CREAM = "#ffeddb";
 /** «Изумрудная ночь»: светлая бумага с рваными краями между тёмными блоками. */
 const PAPER = "#e6dccb";
 /** Анимация украшения «появляется как обычно, но не качается» — для переходов между блоками. */
@@ -105,7 +110,8 @@ const plainDesign: BlockDesign = {
   textStyles: {},
 };
 
-export const templates: Template[] = [
+/** Шаблоны из кода. Правки из админки лежат в template-overrides.json и подменяют их (см. `templates`). */
+export const baseTemplates: Template[] = [
   {
     id: "cream-classic",
     address: "г. Алматы, пр. Абая, 1",
@@ -121,12 +127,13 @@ export const templates: Template[] = [
       backgroundMode: "parallax",
       backgroundDim: 0.2,
       texture: "none",
-      decor: { type: "image", image: lib("petal-red"), color: "#c0392b", density: 14, size: 1, speed: 1 },
+      decor: { type: "confetti", image: lib("petal-red"), color: "#854714", density: 13, size: 1.4, speed: 0.8, pop: false },
       envelope: { ornament: lib("dried-botanical"), style: "seal" },
       motion: { style: "elegant", speed: 1 },
     },
     blocks: {
       hero: {
+        variant: "clean",
         ornaments: [
           orn("dried-botanical", "top-right", { size: 200 }),
           orn("dried-botanical", "bottom-left", { size: 180, rotate: 180 }),
@@ -163,6 +170,7 @@ export const templates: Template[] = [
     },
     blocks: {
       hero: {
+        variant: "clean",
         ornaments: [
           orn("pink-roses", "top-right", { size: 165 }),
           orn("peach-rose", "bottom-left", { size: 170, flip: true }),
@@ -201,6 +209,7 @@ export const templates: Template[] = [
     },
     blocks: {
       hero: {
+        variant: "clean",
         ornaments: [
           orn("nasturtium", "top-left", { size: 130 }),
           orn("maple-leaf", "bottom-right", { size: 150, rotate: -30 }),
@@ -241,6 +250,7 @@ export const templates: Template[] = [
     },
     blocks: {
       hero: {
+        variant: "clean",
         ornaments: [
           orn("white-roses", "top-right", { size: 190 }),
           orn("gold-swirl", "left", { size: 130, opacity: 0.8 }),
@@ -414,49 +424,6 @@ export const templates: Template[] = [
     dresscodeColors: ["#f3eef7", "#dccfea", "#b6a3cf", "#8e7aa8", "#a3b18a"],
   },
   {
-    id: "marble-olive",
-    heroPhoto: photo("marble-olive-hero"),
-    heroNames: "Бегимай & Улан",
-    name: "Мрамор и олива",
-    description: "Античная классика: фарфор, золочёная рама, оливковые ветви, золотые вензели и гардении.",
-    theme: {
-      palette: "ivory",
-      font: "forum",
-      bodyFont: "eb-garamond",
-      background: null,
-      texture: "grain",
-      decor: { type: "petals", image: null, color: "#e3d6bb", density: 8, size: 1, speed: 0.7 },
-      envelope: { ornament: lib("branch-olive"), style: "seal" },
-      motion: { style: "elegant", speed: 1 },
-    },
-    blocks: {
-      hero: {
-        ornaments: [
-          orn("branch-olive", "top-left", { size: 160, rotate: -35 }),
-          orn("gardenia", "top-right", { size: 140, opacity: 0.95 }),
-          orn("branch-olive", "bottom-right", { size: 150, rotate: 145, flip: true }),
-        ],
-      },
-      countdown: { surface: "plate" },
-      calendar: { variant: "week", ornaments: [orn("divider-leaf", "bottom", { size: 200, opacity: 0.85 })] },
-      story: {
-        surface: "paper",
-        ornaments: [orn("branch-olive", "bottom-right", { size: 130, rotate: 150, opacity: 0.9 })],
-      },
-      program: { surface: "card", surfaceOpacity: 0.85, ornaments: [orn("divider-swirl", "bottom", { size: 200, opacity: 0.8 })] },
-      dresscode: { ornaments: [orn("gardenia", "bottom-right", { size: 110, opacity: 0.9 })] },
-      location: { variant: "postcard", ornaments: [orn("branch-olive", "top-right", { size: 110, rotate: 30 })] },
-      rsvp: {
-        surface: "frame",
-        ornaments: [
-          orn("branch-olive", "top-right", { size: 120, rotate: 35 }),
-          orn("gardenia", "bottom-left", { size: 120, opacity: 0.9 }),
-        ],
-      },
-    },
-    dresscodeColors: ["#fbf8f1", "#ebe3d3", "#cdb98f", "#8a9468", "#55533f"],
-  },
-  {
     id: "boarding-pass",
     name: "Посадочный талон",
     description: "Свадьба-путешествие: тёмно-синий, кремовые билеты с перфорацией, штемпель, ч/б фото и маршрут самолёта.",
@@ -566,6 +533,7 @@ export const templates: Template[] = [
     layout: [
       {
         type: "hero",
+        variant: "clean",
         names: "Камила & Нурсултан",
         date: "2027-06-12T15:00",
         label: "Вместе в самое красивое завтра",
@@ -644,14 +612,15 @@ export const templates: Template[] = [
   {
     id: "mocha",
     name: "Шоколад и сургуч",
-    description: "Кремовые и шоколадные полосы, монограмма, сухоцветы, шёлк, галерея и золотая сургучная печать.",
+    description: "Шоколадный фон, кремовые полосы с рваными краями, монограмма, сухоцветы, шёлк, галерея и золотая сургучная печать.",
     theme: {
       palette: "mocha",
       font: "marck",
       bodyFont: "cormorant",
       headings: "caps",
       background: null,
-      texture: "grain",
+      backgroundColor: "#2b1f18",
+      texture: "plaster",
       decor: { type: "none", image: null, color: "#d8c7ae", density: 0, size: 1, speed: 1 },
       envelope: { ornament: lib("dried-botanical"), style: "seal" },
       motion: { style: "elegant", speed: 1 },
@@ -659,13 +628,23 @@ export const templates: Template[] = [
     blocks: {},
     dresscodeColors: ["#f5f1ea", "#dccbb3", "#a88f73", "#6b5241", "#7f7a4c"],
     layout: [
-      { type: "hero", variant: "monogram", names: "Санжар & Мадина", date: "2027-08-21T16:00", label: undefined, subtitle: "Бишкек", photo: photo("mocha-dried") },
+      {
+        type: "hero",
+        variant: "monogram",
+        names: "Санжар & Мадина",
+        date: "2027-08-21T16:00",
+        label: undefined,
+        subtitle: "Бишкек",
+        photo: photo("mocha-dried"),
+        bgColor: CREAM,
+        edgeBottom: "torn",
+        edgeBottomSeed: 599629648,
+      },
       {
         type: "text",
         title: "",
         scriptLine: "Добро пожаловать!",
         icon: undefined,
-        bgColor: LATTE,
         width: "full",
         text: "Мы будем счастливы разделить с вами один из самых важных дней в нашей жизни. Приглашаем вас на нашу свадьбу!",
       },
@@ -679,10 +658,14 @@ export const templates: Template[] = [
       },
       {
         type: "program",
-        variant: "icons",
+        variant: "cards",
         title: "Программа дня",
-        bgColor: CHOCOLATE,
+        bgColor: CREAM,
         width: "full",
+        edgeTop: "torn",
+        edgeTopSeed: 1884421244,
+        edgeBottom: "torn",
+        edgeBottomSeed: 624395101,
         items: [
           { time: "16:00", title: "Церемония", icon: "rings" },
           { time: "17:00", title: "Фотосессия", icon: "camera" },
@@ -694,23 +677,41 @@ export const templates: Template[] = [
         type: "location",
         variant: "minimal",
         title: "Место",
-        bgColor: CHOCOLATE,
         width: "full",
         placeName: "Усадьба «Вдохновение»",
         address: "Чуйская обл., Аламединский район",
         mapUrl: "https://yandex.ru/maps/?text=Истра",
         photo: null,
       },
-      { type: "photo", photo: photo("mocha-seal"), height: "square" },
+      {
+        type: "photo",
+        photo: photo("mocha-seal"),
+        height: "square",
+        edgeTop: "torn",
+        edgeTopSeed: 1977074179,
+        edgeBottom: "torn",
+        edgeBottomSeed: 2115800448,
+      },
       {
         type: "dresscode",
         title: "Дресс-код",
-        bgColor: LATTE,
         width: "full",
         text: "Мы будем рады, если вы поддержите цветовую палитру нашей свадьбы своими нарядами.",
         colors: [],
       },
-      { type: "text", variant: "card", title: "", icon: undefined, bgImage: photo("mocha-silk"), bgDim: 0.1, text: "Любовь — это когда чьё-то счастье важнее своего." },
+      {
+        type: "text",
+        variant: "card",
+        title: "",
+        icon: undefined,
+        bgImage: photo("mocha-silk"),
+        bgDim: 0.1,
+        edgeTop: "torn",
+        edgeTopSeed: 2004102492,
+        edgeBottom: "torn",
+        edgeBottomSeed: 570322576,
+        text: "Любовь — это когда чьё-то счастье важнее своего.",
+      },
       {
         type: "text",
         title: "Подарки",
@@ -733,13 +734,17 @@ export const templates: Template[] = [
         type: "rsvp",
         title: "Анкета",
         scriptLine: "подтвердите присутствие",
-        bgColor: CHOCOLATE,
+        bgColor: CREAM,
         width: "full",
+        edgeTop: "torn",
+        edgeTopSeed: 34024365,
+        edgeBottom: "torn",
+        edgeBottomSeed: 1118887877,
         deadline: "2027-07-01",
         ornaments: [orn("wax-seal", "top-right", { size: 96, rotate: -14 })],
       },
       { type: "text", title: "", scriptLine: "Мы ждём вас!", icon: undefined, text: "С любовью,\nСанжар и Мадина" },
-      { type: "photo", photo: photo("mocha-tuscany"), height: "square" },
+      { type: "photo", photo: photo("mocha-tuscany"), height: "square", edgeTop: "torn", edgeTopSeed: 1538669748 },
     ],
   },
   {
@@ -850,7 +855,7 @@ export const templates: Template[] = [
       texture: "paper",
       backgroundColor: "#04110a",
       decor: { type: "none", image: null, color: "#f3eee4", density: 0, size: 1, speed: 1 },
-      envelope: { ornament: lib("roses-white-spray"), style: "seal" },
+      envelope: { ornament: lib("roses-white-spray"), style: "veil" },
       motion: { style: "elegant", speed: 1 },
     },
     blocks: {},
@@ -859,6 +864,7 @@ export const templates: Template[] = [
     layout: [
       {
         type: "hero",
+        variant: "clean",
         names: "Руслан & Айдана",
         date: "2027-08-28T17:00",
         label: "Бишкек · Изумрудная роща",
@@ -966,7 +972,34 @@ export const templates: Template[] = [
   },
 ];
 
-export const findTemplate = (id: string) => templates.find((t) => t.id === id);
+/**
+ * Правки шаблонов из скрытой админки (/admin, только локально): `edited` — шаблон из кода целиком заменён своей
+ * версией, `added` — новые шаблоны (копии). Файл пишет lib/adminFiles.ts, руками не править.
+ */
+export type TemplateOverrides = { edited: Record<string, Template>; added: Template[] };
+
+/** Шаблон из файла правок годится, если из него собирается приглашение, проходящее схему. */
+const usable = (t: Template) => {
+  try {
+    return invitationDataSchema.safeParse(createFromTemplate(t)).success;
+  } catch {
+    return false;
+  }
+};
+
+/** Шаблоны с правками из админки; битую правку пропускаем (остаётся шаблон из кода), а не роняем сайт. */
+export function mergeTemplates(base: Template[], overrides: TemplateOverrides): Template[] {
+  const checked = (t: Template | undefined) => {
+    if (t && !usable(t)) console.error(`template-overrides.json: шаблон «${t.id}» не проходит схему — пропущен`);
+    return t && usable(t) ? t : undefined;
+  };
+  const ids = new Set(base.map((t) => t.id));
+  return [
+    ...base.map((t) => checked(overrides.edited[t.id]) ?? t),
+    ...overrides.added.filter((t) => !ids.has(t.id) && checked(t)),
+  ];
+}
+
 
 /** Оформление «без шаблона»: фото по умолчанию во всю ширину, остальное — по колонке. */
 const plainDesignFor = (type: BlockType): BlockDesign => (type === "photo" ? { ...plainDesign, width: "full" } : plainDesign);
@@ -1034,6 +1067,9 @@ export const TEXT_PRESETS: { id: string; title: string; icon: TextIcon; text: st
   },
 ];
 
+/** id скрытого описания шаблона — им карточка шаблона подписывает свою кнопку или ссылку (aria-describedby). */
+export const templateDescriptionId = (template: Template) => `tpl-${template.id}-desc`;
+
 /** Пример содержимого блока каждого типа: им заполняются новое приглашение и новый блок в редакторе. */
 function sampleBlock(type: BlockType, id: string): Block {
   const base = {
@@ -1052,6 +1088,7 @@ function sampleBlock(type: BlockType, id: string): Block {
       return {
         type,
         ...base,
+        variant: "clean",
         names: "Айгерим & Нурлан",
         date: "2027-06-19T16:00",
         label: "Приглашение на свадьбу",
@@ -1108,9 +1145,11 @@ function sampleBlock(type: BlockType, id: string): Block {
 function sampleBlocks(template: Template): Block[] {
   const layout: LayoutBlock[] = template.layout ?? (["hero", "countdown", "calendar", "story", "program", "dresscode", "location", "rsvp"] as const).map((type) => ({ type }));
   const count: Partial<Record<BlockType, number>> = {};
-  return layout.map((item) => {
+  return layout.map(({ exact, ...item }) => {
     const n = (count[item.type] = (count[item.type] ?? 0) + 1);
-    const block = { ...sampleBlock(item.type, n === 1 ? `b-${item.type}` : `b-${item.type}-${n}`), ...structuredClone(item) } as Block;
+    const id = n === 1 ? `b-${item.type}` : `b-${item.type}-${n}`;
+    // Целый блок (из админки) — как есть; остальные дополняются примером содержимого.
+    const block = (exact ? { id, ...structuredClone(item) } : { ...sampleBlock(item.type, id), ...structuredClone(item) }) as Block;
     if (block.type === "location" && template.address && !("address" in item)) return { ...block, address: template.address };
     if (block.type !== "hero") return block;
     // Свои имена и фото обложки шаблона — если структура их не задаёт.
@@ -1188,3 +1227,8 @@ export function applyTemplate(data: InvitationData, template: Template): Invitat
     }),
   };
 }
+
+// В конце файла: проверка правок собирает приглашения функциями выше (const-функции до объявления ещё не готовы).
+export const templates: Template[] = mergeTemplates(baseTemplates, overrides as unknown as TemplateOverrides);
+
+export const findTemplate = (id: string) => templates.find((t) => t.id === id);

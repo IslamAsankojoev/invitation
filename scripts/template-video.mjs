@@ -5,6 +5,10 @@
 // «Подтвердить»). Звука нет (музыку добавлять в Instagram — права на песни из public/music не оформлены).
 //
 //   npm run video -- <шаблон…|all> [--base http://localhost:3000] [--out videos] [--fps 30] [--bg "#1b2b27"] [--fullscreen]
+//                    [--name <файл.mp4>]   — имя ролика (только для одного шаблона; по умолчанию <шаблон>.mp4)
+//
+// Для админки (/admin) скрипт печатает в stdout служебные строки: «@stage open|record|encode», «@progress 0.42»
+// (доля пролистанной страницы) и «@file <путь>» в конце ролика.
 //
 // По умолчанию — как в эталоне: телефон в рамке на тёмном фоне, экран 513×1133 в кадре 1080×1920 (вёрстка
 // 390×862 CSS px). --fullscreen — приглашение на весь кадр (экран 405×720 CSS px).
@@ -30,6 +34,10 @@ const opt = (name, def) => {
 };
 const base = opt("base", "http://localhost:3000");
 const outDir = opt("out", "videos");
+const fileName = opt("name", null);
+if (fileName && !/^[\w.-]+\.mp4$/.test(fileName)) throw new Error(`--name: нужно имя файла вида ролик.mp4, а не «${fileName}»`);
+/** Служебная строка для админки: этап и прогресс записи. */
+const report = (...parts) => console.log(`@${parts.join(" ")}`);
 const fps = Number(opt("fps", "30"));
 const bgColor = opt("bg", "#1b2b27");
 if (!/^#[0-9a-f]{6}$/i.test(bgColor)) throw new Error(`--bg: нужен цвет вида #1a1a1a, а не «${bgColor}»`);
@@ -100,6 +108,7 @@ async function record(browser, id) {
     everyNthFrame: 2, // ~30 к/с — столько и в итоговом видео; каждый кадр Chrome вдвое тяжелее для ноутбука
   });
 
+  report("stage", "record");
   // Конверт: даём рассмотреть, «касание» пальцем по печати, приглашение открывается.
   await page.waitForTimeout(T.envelope);
   await tap(page, page.getByRole("button", { name: "Открыть приглашение" }));
@@ -119,6 +128,7 @@ async function record(browser, id) {
         rsvpTop: rsvp ? top(rsvp) : null,
       };
     });
+    if (maxScroll > 0) report("progress", Math.min(1, y / maxScroll).toFixed(3));
     if (y >= maxScroll - 2) break;
     const vh = VIEW.height;
     const next = tops.find((t) => t > y + vh * STEP.min);
@@ -340,19 +350,24 @@ if (args.includes("--selftest")) {
 }
 
 const wanted = args.length === 0 || args.includes("all") ? await templateIds() : args;
+if (fileName && wanted.length !== 1) throw new Error("--name — только для одного шаблона");
 mkdirSync(outDir, { recursive: true });
 const browser = await chromium.launch();
 try {
   for (const id of wanted) {
     const started = Date.now();
+    report("stage", "open", id);
     // Предохранитель: один ролик — около минуты; дольше 3 минут — значит, что-то зависло, не греем ноутбук зря.
     const frames = await Promise.race([
       record(browser, id),
       new Promise((_, fail) => setTimeout(() => fail(new Error(`${id}: съёмка дольше 3 минут — остановлено`)), 180_000)),
     ]);
     const seconds = frames.at(-1).t - frames[0].t;
-    const file = path.join(outDir, `${id}.mp4`);
+    const file = path.join(outDir, fileName ?? `${id}.mp4`);
+    report("progress", "1");
+    report("stage", "encode");
     await encode(frames, file);
+    report("file", file);
     console.log(`${file}  ${seconds.toFixed(1)} с, ${frames.length} кадров (~${(frames.length / seconds).toFixed(0)} к/с снято), ${((Date.now() - started) / 1000).toFixed(0)} с работы`);
   }
 } finally {

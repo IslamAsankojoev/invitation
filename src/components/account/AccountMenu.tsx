@@ -23,10 +23,16 @@ export function SignInButton({
   redirectTo,
   label = "Войти через Google",
   chooseAccount = false,
+  labelClassName,
   ...props
-}: { redirectTo?: string; label?: string; /** Показать выбор аккаунта Google, даже если вход уже был. */ chooseAccount?: boolean } & React.ComponentProps<
-  typeof Button
->) {
+}: {
+  redirectTo?: string;
+  label?: string;
+  /** Показать выбор аккаунта Google, даже если вход уже был. */
+  chooseAccount?: boolean;
+  /** Класс подписи — например, спрятать её на телефоне (значок остаётся, имя — для скринридера). */
+  labelClassName?: string;
+} & React.ComponentProps<typeof Button>) {
   return (
     <Button
       type="button"
@@ -35,14 +41,15 @@ export function SignInButton({
         signIn("google", { redirectTo: redirectTo ?? window.location.href }, chooseAccount ? { prompt: "select_account" } : undefined)
       }
     >
-      <GoogleIcon /> {label}
+      <GoogleIcon /> <span className={labelClassName}>{label}</span>
     </Button>
   );
 }
 
 /** Аккаунт в шапке: «Войти» или кружок с аватаром → почта, «Мои приглашения», «Выйти». */
-export function AccountMenu({ user }: { user: SessionUser | null }) {
-  if (!user) return <SignInButton variant="outline" size="sm" label="Войти" />;
+export function AccountMenu({ user, compact = false }: { user: SessionUser | null; /** На узком экране «Войти» — только значок. */ compact?: boolean }) {
+  if (!user)
+    return <SignInButton variant="outline" size="sm" label="Войти" labelClassName={compact ? "max-lg:sr-only" : undefined} className={compact ? "max-lg:size-10" : undefined} />;
   const initial = (user.name || user.email || "?").trim()[0]?.toUpperCase();
   return (
     <Popover>

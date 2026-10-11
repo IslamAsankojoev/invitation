@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { findBlock } from "@/lib/blocks";
 import { EVENT_PASSED_TEXT, getCountdown } from "@/lib/countdown";
+import { prefersReducedMotion, useMotion } from "../motion";
 import { Section } from "../Section";
 import type { BlockProps } from "./types";
 
@@ -70,12 +71,7 @@ export function CountdownBlock({ block, ctx }: BlockProps<"countdown">) {
         <div className="mx-auto flex max-w-xs justify-center gap-2.5">
           {units.map(({ value, label }, i) => (
             <div key={label} className="flex flex-col items-center" data-reveal={i + 2}>
-              <div className="inv-flip-card relative flex h-16 w-[62px] items-center justify-center overflow-hidden rounded-xl text-3xl tabular-nums">
-                {/* Ключ по значению: новая цифра «перелистывается» сверху. */}
-                <span key={text(value)} className="inv-flip-digit relative">
-                  {text(value)}
-                </span>
-              </div>
+              <FlipCard value={text(value)} />
               <div className="inv-caps mt-2 text-[0.55rem] opacity-60">{label}</div>
             </div>
           ))}
@@ -95,5 +91,48 @@ export function CountdownBlock({ block, ctx }: BlockProps<"countdown">) {
         </div>
       )}
     </Section>
+  );
+}
+
+/**
+ * Карточка перекидных часов. Новое значение: верхняя половинка со старым числом откидывается вниз
+ * (inv-flip-leaf-top), за ней раскрывается нижняя с новым (inv-flip-leaf-bottom); пока листается, неподвижная
+ * нижняя половинка ещё показывает старое число. Без анимаций (заставка не открыта, «Уменьшить движение»,
+ * миниатюры) — просто число.
+ */
+function FlipCard({ value }: { value: string }) {
+  const motion = useMotion();
+  const [shown, setShown] = useState({ cur: value, prev: value, flip: 0 });
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => {
+    if (value === shown.cur) return;
+    setShown((s) => ({ cur: value, prev: s.cur, flip: s.flip + 1 }));
+    // Перелистывание длится ~0.6 с; после него неподвижная нижняя половинка тоже показывает новое число.
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setShown((s) => ({ ...s, prev: s.cur })), 650);
+  }, [value, shown.cur]);
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const animate = motion === "on" && !prefersReducedMotion();
+  const flipping = animate && shown.prev !== shown.cur;
+  return (
+    <div className="inv-flip-card relative h-16 w-[62px] rounded-xl text-3xl tabular-nums" aria-label={shown.cur} role="img">
+      <span aria-hidden="true" className="inv-flip-half inv-flip-top">
+        <span>{shown.cur}</span>
+      </span>
+      <span aria-hidden="true" className="inv-flip-half inv-flip-bottom">
+        <span>{flipping ? shown.prev : shown.cur}</span>
+      </span>
+      {flipping && (
+        <span key={shown.flip} aria-hidden="true">
+          <span className="inv-flip-half inv-flip-top inv-flip-leaf-top">
+            <span>{shown.prev}</span>
+          </span>
+          <span className="inv-flip-half inv-flip-bottom inv-flip-leaf-bottom">
+            <span>{shown.cur}</span>
+          </span>
+        </span>
+      )}
+    </div>
   );
 }

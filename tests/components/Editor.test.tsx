@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor, type EditorAccount } from "@/components/editor/Editor";
+import { updateBlock } from "@/lib/blocks";
 import { createDefaultInvitation } from "@/lib/defaults";
 import { openBlockView, openThemeSection } from "./editorHelpers";
 
@@ -24,8 +25,8 @@ async function menuItems(user: ReturnType<typeof userEvent.setup>, block: string
   return items;
 }
 
-const renderEditor = () =>
-  render(<Editor id="inv1" token="secret" initialSlug="demo" initialData={createDefaultInvitation()} />);
+const renderEditor = (data = createDefaultInvitation()) =>
+  render(<Editor id="inv1" token="secret" initialSlug="demo" initialData={data} />);
 
 describe("Editor", () => {
   it("вид блока выбирается плиткой с миниатюрой; внутри плиток нет вложенных кнопок", async () => {
@@ -401,15 +402,23 @@ describe("Editor: раскрытый блок — сначала текст, о�
     expect(screen.getByText(/Сейчас свой фон: Тетрадный лист/)).toBeInTheDocument();
   });
 
-  it("недействующие настройки скрыты: края — только у блока с заливкой или панелью", async () => {
+  it("края можно выбрать и у блока без фона и цвета — режут слой цвета фона страницы; у предметов краёв нет", async () => {
     const user = userEvent.setup();
     renderEditor();
+    const countdown = () => screen.getByTestId("preview").querySelector<HTMLElement>('[data-block="countdown"]')!;
     await openBlockView(user, "Обратный отсчёт", { fine: true });
-    // Без фона и без цвета края нечего резать — настройки нет (раньше была с объяснением «почему не работает»).
-    expect(screen.queryByRole("radiogroup", { name: "Верхний край" })).not.toBeInTheDocument();
-    const swatches = within(screen.getByRole("group", { name: "Цвет фона блока" })).getAllByRole("button");
-    await user.click(swatches[1]);
-    expect(screen.getByRole("radiogroup", { name: "Верхний край" })).toBeInTheDocument();
+    await user.click(within(screen.getByRole("radiogroup", { name: "Нижний край" })).getByRole("radio", { name: "Рваная бумага" }));
+    expect(within(countdown()).getByTestId("edges")).toHaveAttribute("data-edge-bottom", "torn");
+    expect(within(countdown()).getByTestId("edge-fill")).toBeInTheDocument();
+    // Своя заливка — край режет её, слой цвета страницы не нужен.
+    await user.click(within(screen.getByRole("group", { name: "Цвет фона блока" })).getAllByRole("button")[1]);
+    expect(within(countdown()).queryByTestId("edge-fill")).not.toBeInTheDocument();
+    // Тетрадный лист — предмет со своим силуэтом: настройки краёв нет.
+    await user.click(screen.getByRole("button", { name: "Все фоны…" }));
+    const dialog = screen.getByRole("dialog", { name: "Фон блока" });
+    await user.click(within(dialog).getByRole("radio", { name: "Листы и свитки" }));
+    await user.click(within(dialog).getByRole("button", { name: "Тетрадный лист" }));
+    expect(screen.queryByRole("radiogroup", { name: "Нижний край" })).not.toBeInTheDocument();
   });
 });
 
@@ -440,30 +449,29 @@ describe("Editor на телефоне: превью на весь экран, �
     expect(screen.queryByTestId("sheet-backdrop")).not.toBeInTheDocument();
   });
 
-  it("шторка: касание ручки разворачивает, жест вниз уменьшает, ещё раз — закрывает", async () => {
+  it("шторка: открывается сразу на весь экран; жест вниз или касание ручки закрывают", async () => {
     const user = userEvent.setup();
     renderEditor();
     await user.click(screen.getByRole("button", { name: "Панель «Музыка»" }));
     // В шапке шторки — название раздела: второго ряда вкладок на телефоне нет, они в нижней панели.
     expect(within(sheet()).getByText("Музыка", { selector: "p" })).toBeInTheDocument();
-    expect(sheet()).toHaveClass("h-[50svh]");
-    await user.click(screen.getByRole("button", { name: "Развернуть панель" }));
-    expect(screen.getByRole("button", { name: "Уменьшить панель" })).toHaveAttribute("aria-expanded", "true");
+    // Промежуточной половины нет — только на весь экран.
+    expect(sheet().className).toContain("h-[calc(100svh");
+    expect(sheet().className).not.toContain("50svh");
     const handle = screen.getByTestId("sheet-handle");
-    const swipe = (to: number) => {
-      fireEvent.pointerDown(handle, { clientY: 100 });
-      fireEvent.pointerMove(handle, { clientY: to });
-      fireEvent.pointerUp(handle);
-    };
-    swipe(130); // короткое движение — ничего
-    expect(sheet()).not.toHaveClass("h-[50svh]");
-    swipe(260); // вниз из полной — половина
-    expect(sheet()).toHaveClass("h-[50svh]");
+    fireEvent.pointerDown(handle, { clientY: 100 });
+    fireEvent.pointerMove(handle, { clientY: 130 });
+    fireEvent.pointerUp(handle); // короткое движение — ничего
     expect(sheet()).not.toHaveClass("invisible");
     fireEvent.pointerDown(handle, { clientY: 100 });
     fireEvent.pointerMove(handle, { clientY: 260 });
     expect(sheet().style.translate).toBe("0 160px"); // шторка идёт за пальцем
     fireEvent.pointerUp(handle);
+    expect(sheet()).toHaveClass("invisible");
+
+    await user.click(screen.getByRole("button", { name: "Панель «Музыка»" }));
+    expect(sheet()).not.toHaveClass("invisible");
+    await user.click(screen.getByRole("button", { name: "Закрыть панель" }));
     expect(sheet()).toHaveClass("invisible");
   });
 
@@ -549,7 +557,8 @@ describe("Editor: нажатие на блок в превью открывае�
 
   it("кнопки самого приглашения в превью не срабатывают — нажатие только выбирает блок", async () => {
     const user = userEvent.setup();
-    renderEditor();
+    // У вида по умолчанию («Без рамки») кнопки календаря нет — берём «Классику».
+    renderEditor(updateBlock(createDefaultInvitation(), "hero", { variant: "classic" }));
     const preview = screen.getByTestId("preview");
     // Без перехвата кнопка скачала бы .ics через URL.createObjectURL (в jsdom его нет — подставляем на время теста).
     const openWindow = vi.spyOn(window, "open").mockImplementation(() => null);
@@ -944,7 +953,8 @@ describe("Editor: добавление, копирование и удалени
   it("мини-игра с декором включена по умолчанию и выключается переключателем", async () => {
     const user = userEvent.setup();
     const data = createDefaultInvitation();
-    data.theme.decor = { ...data.theme.decor, type: "petals", density: 10 };
+    // Мини-игра не задана (у «Кремовой классики» она выключена) — значит включена.
+    data.theme.decor = { ...data.theme.decor, type: "petals", density: 10, pop: undefined };
     render(<Editor id="inv1" token="secret" initialSlug="demo" initialData={data} />);
     const layer = () => screen.getByTestId("decor-layer");
     expect(layer()).toHaveAttribute("data-pop", "true");

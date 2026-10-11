@@ -170,7 +170,6 @@ pngwing.com сам ничего не лицензирует (пометка «No
 | `eucalyptus-hero.webp` | Пара в цветущем саду | toichakyru.com | Собственность проекта | toichakyru.com/images/templates/beshik-nur/hero-wedding.webp |
 | `art-deco-hero.webp` | Бокалы шампанского | toichakyru.com | Собственность проекта | toichakyru.com/images/anniversary/celebration.webp |
 | `lavender-provence-hero.webp` | Руки и вуаль | toichakyru.com | уточняется (pinterest-references) | toichakyru.com/images/pinterest-references/hands-clean.png |
-| `marble-olive-hero.webp` | Пара в мраморном зале | toichakyru.com | Собственность проекта | toichakyru.com/images/templates/balalyk/hero-nike.webp |
 
 ## Падающие листья — лицензии уточняются
 

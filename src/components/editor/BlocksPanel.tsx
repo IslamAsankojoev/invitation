@@ -390,7 +390,7 @@ function Checklist({ items, onOpen }: { items: ChecklistItem[]; onOpen: (blockId
               className={cn("bg-background", item.done && "text-muted-foreground line-through decoration-muted-foreground/40")}
               onClick={() => onOpen(item.blockId)}
             >
-              {item.done ? <Check className="text-emerald-600" /> : <Circle className="text-muted-foreground" />}
+              {item.done ? <Check className="text-emerald-600 dark:text-emerald-400" /> : <Circle className="text-muted-foreground" />}
               {item.label}
             </Button>
           </li>

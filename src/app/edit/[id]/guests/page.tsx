@@ -2,6 +2,7 @@ import { ArrowLeft, Download, ExternalLink, Inbox, UserCheck, UserX, Users } fro
 import { headers } from "next/headers";
 import { forbidden, redirect } from "next/navigation";
 import { SignInButton } from "@/components/account/AccountMenu";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { CopyButton } from "@/components/CopyButton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,11 +59,14 @@ export default async function GuestsPage({ params, searchParams }: Props) {
                 <ArrowLeft /> К редактору
               </a>
             </Button>
-            <Button asChild variant="ghost" size="sm" className="pointer-coarse:h-10">
-              <a href={`/i/${inv.slug}`} target="_blank" rel="noopener">
-                <ExternalLink /> Страница для гостей
-              </a>
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button asChild variant="ghost" size="sm" className="pointer-coarse:h-10">
+                <a href={`/i/${inv.slug}`} target="_blank" rel="noopener">
+                  <ExternalLink /> Страница для гостей
+                </a>
+              </Button>
+              <ThemeToggle />
+            </div>
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">Ответы гостей</h1>
           <p className="text-muted-foreground">{names}</p>

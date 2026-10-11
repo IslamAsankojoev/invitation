@@ -156,7 +156,7 @@ export const LEGACY_SURFACES: Record<string, (typeof SURFACES)[number]> = {
 
 /** Виды (вёрстка) каждого блока. Первый — «classic», его получают приглашения, созданные до появления видов. */
 export const BLOCK_VARIANTS = {
-  hero: ["classic", "arch", "polaroid", "minimal", "cover", "monogram", "ticket"],
+  hero: ["classic", "arch", "polaroid", "minimal", "cover", "monogram", "ticket", "clean"],
   countdown: ["classic", "circles", "cards"],
   calendar: ["classic", "date", "week", "tearoff"],
   story: ["classic", "photo", "letter"],

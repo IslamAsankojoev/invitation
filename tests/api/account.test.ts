@@ -2,11 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST as CREATE } from "@/app/api/invitations/route";
 import { POST as UPLOAD } from "@/app/api/upload/route";
 import { GET as CLAIM } from "@/app/edit/[id]/claim/route";
+import { DELETE } from "@/app/api/invitations/[key]/route";
+import { prisma } from "@/lib/db";
 import { createInvitation, getInvitationById, listUserInvitations } from "@/lib/invitations";
 import { storage } from "@/lib/storage";
 import { signInAs } from "../auth-mock";
 import { pngOf } from "../image-fixtures";
-import { createUser, jsonRequest, resetDb } from "./helpers";
+import { createUser, ctx, jsonRequest, resetDb } from "./helpers";
 
 beforeEach(resetDb);
 
@@ -80,3 +82,45 @@ describe("аккаунты", () => {
     expect((await upload(`?id=${inv.id}`)).status).toBe(201);
   });
 });
+
+describe("удаление приглашения", () => {
+  const remove = (id: string, token?: string) => DELETE(jsonRequest(`/api/invitations/${id}${token ? `?token=${token}` : ""}`, "DELETE"), ctx(id));
+
+  it("владелец удаляет своё: пропадают приглашение, ответы гостей и файлы в хранилище", async () => {
+    await createUser("u1");
+    signInAs({ id: "u1" });
+    const { id } = await (await CREATE(jsonRequest("/api/invitations", "POST", {}))).json();
+    await prisma.rsvp.create({ data: { invitationId: id, name: "Гость", attending: true, guestsCount: 1 } });
+    const cleanup = vi.spyOn(storage, "removeFolder").mockResolvedValue();
+    const res = await remove(id);
+    expect(res.status).toBe(204);
+    expect(await getInvitationById(id)).toBeNull();
+    expect(await prisma.rsvp.count({ where: { invitationId: id } })).toBe(0);
+    expect(cleanup).toHaveBeenCalledWith(`inv/${id}`);
+    expect((await remove(id)).status).toBe(404);
+  });
+
+  it("чужое не удалить ни по сессии, ни по секретной ссылке; ничьё — по ссылке", async () => {
+    await createUser("u1");
+    await createUser("u2");
+    const owned = await createInvitation(undefined, undefined, "u1");
+    signInAs({ id: "u2" });
+    expect((await remove(owned.id)).status).toBe(403);
+    expect((await remove(owned.id, owned.editToken)).status).toBe(403);
+    expect(await getInvitationById(owned.id)).not.toBeNull();
+
+    vi.spyOn(storage, "removeFolder").mockResolvedValue();
+    const free = await createInvitation();
+    expect((await remove(free.id)).status).toBe(403);
+    expect((await remove(free.id, free.editToken)).status).toBe(204);
+  });
+
+  it("сбой хранилища не мешает удалению", async () => {
+    vi.spyOn(storage, "removeFolder").mockRejectedValue(new Error("сеть"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const inv = await createInvitation();
+    expect((await remove(inv.id, inv.editToken)).status).toBe(204);
+    expect(await getInvitationById(inv.id)).toBeNull();
+  });
+});
+

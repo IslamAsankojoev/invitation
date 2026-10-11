@@ -13,6 +13,7 @@ export const variantLabels: { [K in BlockType]: Record<VariantOf<K>, string> } =
     cover: "Фото сверху",
     monogram: "Монограмма",
     ticket: "Посадочный талон",
+    clean: "Без рамки",
   },
   countdown: { classic: "Цифры", circles: "Кольца", cards: "Карточки" },
   calendar: { classic: "Месяц", date: "Крупная дата", week: "Неделя", tearoff: "Отрывной листок" },

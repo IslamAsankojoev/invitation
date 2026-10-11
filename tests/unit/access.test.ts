@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { accountGate, canEdit, claimDecision, claimNextOf, claimUrl, guestsPageAccess, ownershipOf } from "@/lib/access";
+import { accountGate, canDelete, canEdit, claimDecision, claimNextOf, claimUrl, guestsPageAccess, ownershipOf } from "@/lib/access";
 
 const free = { editToken: "secret", userId: null };
 const owned = { editToken: "secret", userId: "u1" };
 
 describe("доступ к приглашению", () => {
+  it("удалить сохранённое в аккаунт может только владелец, ничьё — по секретной ссылке", () => {
+    expect(canDelete(owned, { userId: "u1" })).toBe(true);
+    expect(canDelete(owned, { token: "secret" })).toBe(false);
+    expect(canDelete(owned, { token: "secret", userId: "u2" })).toBe(false);
+    expect(canDelete(free, { token: "secret" })).toBe(true);
+    expect(canDelete(free, { token: "wrong", userId: "u1" })).toBe(false);
+    expect(canDelete(null, { userId: "u1" })).toBe(false);
+  });
+
   it("править можно по секретной ссылке или владельцу по аккаунту", () => {
     expect(canEdit(free, { token: "secret" })).toBe(true);
     expect(canEdit(owned, { token: "secret", userId: "u2" })).toBe(true); // старые ссылки работают и после привязки

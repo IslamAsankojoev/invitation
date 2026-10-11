@@ -89,7 +89,7 @@ export function LinkPanel({ id, token, slug, onSlugChange, account, lanOrigin }:
           {formatError ? <FieldError>{formatError}</FieldError> : <FieldDescription>Латиница, цифры и дефис, 3–40 символов.</FieldDescription>}
         </Field>
         {message && (
-          <p role="status" className={message.ok ? "text-sm text-emerald-700" : "text-sm text-destructive"}>
+          <p role="status" className={message.ok ? "text-sm text-emerald-700 dark:text-emerald-400" : "text-sm text-destructive"}>
             {message.text}
           </p>
         )}

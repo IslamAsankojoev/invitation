@@ -50,5 +50,8 @@ if (typeof window !== "undefined") {
     media: query,
     addEventListener() {},
     removeEventListener() {},
+    // Устаревшие addListener/removeListener: ими подписывается next-themes (кнопка темы сайта).
+    addListener() {},
+    removeListener() {},
   })) as never;
 }

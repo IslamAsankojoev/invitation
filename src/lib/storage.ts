@@ -10,6 +10,8 @@ export type StoredFile = { name: string; type: string; bytes: Uint8Array; folder
 export interface Storage {
   /** Сохраняет файл и возвращает публичный URL. */
   save(file: StoredFile): Promise<string>;
+  /** Удаляет все файлы подпапки (`inv/<id>`) — при удалении приглашения. */
+  removeFolder(folder: string): Promise<void>;
 }
 
 const EXTENSIONS: Record<string, string> = {
@@ -39,6 +41,9 @@ export class LocalStorage implements Storage {
     await writeFile(path.join(this.dir, fileName), file.bytes);
     return `${this.publicPrefix}/${fileName}`;
   }
+
+  /** Локально файлы лежат в одной папке без подпапок (public/uploads в .gitignore) — чистить нечего. */
+  async removeFolder(): Promise<void> {}
 }
 
 /** Supabase Storage: публичный бакет, запись — секретным ключом только с сервера (scripts/supabase-bucket.mjs). */
@@ -61,6 +66,18 @@ export class SupabaseStorage implements Storage {
     const { error } = await bucket.upload(key, file.bytes, { contentType: file.type, cacheControl: "31536000", upsert: false });
     if (error) throw new Error(`Хранилище: ${error.message}`);
     return bucket.getPublicUrl(key).data.publicUrl;
+  }
+
+  async removeFolder(folder: string): Promise<void> {
+    const bucket = this.client.from(this.bucket);
+    // list отдаёт страницу (≤ 1000) — удаляем, пока папка не опустеет.
+    for (;;) {
+      const { data, error } = await bucket.list(folder, { limit: 1000 });
+      if (error) throw new Error(`Хранилище: ${error.message}`);
+      if (!data?.length) return;
+      const { error: removeError } = await bucket.remove(data.map((f) => `${folder}/${f.name}`));
+      if (removeError) throw new Error(`Хранилище: ${removeError.message}`);
+    }
   }
 }
 

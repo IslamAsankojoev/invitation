@@ -49,4 +49,18 @@ describe("хранилище", () => {
     const store = new SupabaseStorage("https://proj.supabase.co", "wrong", "uploads", fetchMock as unknown as typeof fetch);
     await expect(store.save({ name: "a", type: "image/webp", bytes: new Uint8Array([1]) })).rejects.toThrow(/Хранилище/);
   });
+
+  it("Supabase: removeFolder удаляет все файлы папки приглашения, пока она не опустеет", async () => {
+    const listed = [[{ name: "a.webp" }, { name: "b.webp" }], []];
+    const fetchMock = vi.fn(async (url: string | URL, init?: RequestInit) => {
+      if (String(url).includes("/object/list/")) return new Response(JSON.stringify(listed.shift()), { status: 200 });
+      return new Response(JSON.stringify([]), { status: 200, headers: { "x-method": init?.method ?? "" } });
+    });
+    const store = new SupabaseStorage("https://proj.supabase.co", "sb_secret_test", "uploads", fetchMock as unknown as typeof fetch);
+    await store.removeFolder("inv/abc");
+    const remove = fetchMock.mock.calls.find(([, init]) => init?.method === "DELETE")!;
+    expect(String(remove[0])).toMatch(/\/storage\/v1\/object\/uploads$/);
+    expect(JSON.parse(String(remove[1]!.body))).toEqual({ prefixes: ["inv/abc/a.webp", "inv/abc/b.webp"] });
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).includes("/object/list/"))).toHaveLength(2);
+  });
 });

@@ -1,5 +1,6 @@
 import { LayoutTemplate, PenLine, Send } from "lucide-react";
 import { AccountMenu } from "@/components/account/AccountMenu";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { TemplateGallery } from "@/components/templates/TemplateGallery";
 import { authEnabled, currentUser } from "@/lib/session";
 
@@ -20,7 +21,10 @@ export default async function HomePage() {
     <main className="min-h-dvh bg-muted/60">
       <nav aria-label="Аккаунт" className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 pt-4">
         <img src="/logo.webp" alt="Keleber" width={56} height={40} className="h-9 w-auto sm:invisible" />
-        {enabled && <AccountMenu user={user} />}
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          {enabled && <AccountMenu user={user} />}
+        </div>
       </nav>
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pt-4 pb-10 sm:gap-10 sm:py-10">
         <header className="flex flex-col items-center gap-3 text-center">

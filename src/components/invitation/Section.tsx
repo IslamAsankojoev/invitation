@@ -85,7 +85,7 @@ export function Section({ block, children, bare = false, frame = false, fill, ba
           ? "surface-round"
           : "surface-object"
         : `surface-${block.surface}`;
-  // Края режут фон блока (панель или фото во весь блок); без такого фона край не на чем показать.
+  // Края режут фон блока: панель, фото во весь блок или (у блока без фона) слой цвета фона страницы.
   // Фоновая картинка блока — заливка во весь блок, как фото обложки: приглушается цветом фона палитры.
   const bgImage = (block.bgImage || (fillColor && !hasSurface)) && (
     <>
@@ -109,7 +109,7 @@ export function Section({ block, children, bare = false, frame = false, fill, ba
     </>
   );
   const full = isFullWidth(block);
-  const edgeable = edgesVisible(block.surface, !!fill || !!block.bgImage || !!fillColor);
+  const edgeable = edgesVisible(block.surface);
   const edges = blockEdges(block);
   const top = edgeable ? edges.top : "none";
   const bottom = edgeable ? edges.bottom : "none";
@@ -150,6 +150,8 @@ export function Section({ block, children, bare = false, frame = false, fill, ba
           {top === "torn" && <div style={tornPaperStyle("top", edges.topSeed)} />}
           {bottom === "torn" && <div style={tornPaperStyle("bottom", edges.bottomSeed)} />}
           <div className="absolute inset-0" style={edgeMaskStyle({ ...edges, top, bottom })}>
+            {/* Блок без фона и заливки: край режет слой цвета фона страницы — иначе резать нечего. */}
+            {!hasSurface && !bgImage && !fill && <div data-testid="edge-fill" className="absolute inset-0 bg-[var(--bg)]" />}
             {bgImage}
             {fill}
             {surfaceNode}

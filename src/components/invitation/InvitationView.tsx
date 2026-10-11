@@ -48,7 +48,7 @@ export function InvitationView({ data, slug, preview = false, demo = false, moti
         <PageBackground theme={data.theme} />
         <TextureLayer texture={data.theme.texture} dark={themePalette(data.theme).dark} stains={data.theme.textureStains} />
         {/* Колонка содержимого — 430 px; блок «во всю ширину» выходит на всю ширину экрана (его текст — в колонке). */}
-        <main className="relative pb-24">
+        <main className="relative">
           {data.blocks
             .filter((b) => b.visible)
             .map((block) => {

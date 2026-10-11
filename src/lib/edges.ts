@@ -25,15 +25,12 @@ export const edgeLabels: Record<Edge, string> = {
 /** Фоны, у которых режутся края: панели во весь блок. У бумаги-картинки и предметов свой силуэт. */
 export const EDGE_SURFACES: Surface[] = ["card", "vellum", "crumpled"];
 
-/** Своя заливка во весь блок — цвет или фоновая картинка блока, фото обложки/блока «Фото» (вид «classic»). */
-export const blockHasFill = (block: Block) =>
-  !!block.bgImage ||
-  (!!block.bgColor && block.surface === "plain") ||
-  ((block.type === "hero" || block.type === "photo") && block.variant === "classic" && !!block.photo);
-
-/** Видны ли края: нужен фон во весь блок — панель или фото (без фона край не на чем показать). */
-export const edgesVisible = (surface: Surface, hasFill: boolean) =>
-  EDGE_SURFACES.includes(surface) || (hasFill && surface === "plain");
+/**
+ * Можно ли резать края: панели во весь блок и блок без фона. У блока без фона и без заливки край режет слой цвета
+ * фона страницы (Section) — так рваная бумага или волна видны и без своего цвета. У бумаги-картинки и предметов
+ * свой силуэт — краёв нет.
+ */
+export const edgesVisible = (surface: Surface) => EDGE_SURFACES.includes(surface) || surface === "plain";
 
 /** Полоса рваного края: 1200×96 px картинки = 600×48 CSS px, бесшовная по горизонтали. */
 const TORN_HEIGHT = 48;

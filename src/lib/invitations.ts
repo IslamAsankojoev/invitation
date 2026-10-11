@@ -89,6 +89,12 @@ export async function updateInvitation(id: string, patch: { data?: InvitationDat
   return fromRow(row);
 }
 
+/** Удалить приглашение (ответы гостей удалятся каскадом). false — его уже нет. */
+export async function deleteInvitation(id: string): Promise<boolean> {
+  const { count } = await prisma.invitation.deleteMany({ where: { id } });
+  return count === 1;
+}
+
 export async function listRsvps(invitationId: string) {
   return prisma.rsvp.findMany({ where: { invitationId }, orderBy: { createdAt: "desc" } });
 }

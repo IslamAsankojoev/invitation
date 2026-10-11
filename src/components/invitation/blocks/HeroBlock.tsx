@@ -40,6 +40,8 @@ export function HeroBlock(props: HeroProps) {
       return <HeroMonogram {...props} />;
     case "ticket":
       return <HeroTicket {...props} />;
+    case "clean":
+      return <HeroClassic {...props} frame={false} calendar={false} />;
     default:
       return <HeroClassic {...props} />;
   }
@@ -127,7 +129,7 @@ function Sparkles({ light }: { light: boolean }) {
 }
 
 /** Дата с разрядкой, время, сердечко, подзаголовок и кнопка календаря — общий «хвост» главного экрана. */
-function HeroDetails({ block, ctx, light = false }: HeroProps & { light?: boolean }) {
+function HeroDetails({ block, ctx, light = false, calendar = true }: HeroProps & { light?: boolean; calendar?: boolean }) {
   const { dotted, time } = describeDate(block.date);
   return (
     <>
@@ -147,9 +149,11 @@ function HeroDetails({ block, ctx, light = false }: HeroProps & { light?: boolea
           {block.subtitle}
         </p>
       )}
-      <div data-reveal="5" data-delay="4.3">
-        <CalendarButton ctx={ctx} light={light} />
-      </div>
+      {calendar && (
+        <div data-reveal="5" data-delay="4.3">
+          <CalendarButton ctx={ctx} light={light} />
+        </div>
+      )}
     </>
   );
 }
@@ -170,7 +174,8 @@ function PhotoPlaceholder({ names }: { names: string }) {
   );
 }
 
-function HeroClassic({ block, ctx }: HeroProps) {
+/** Классика; вид «Без рамки» — то же без проявляющейся рамки и кнопки календаря. */
+function HeroClassic({ block, ctx, frame = true, calendar = true }: HeroProps & { frame?: boolean; calendar?: boolean }) {
   const onPhoto = !!block.photo;
   const motion = useMotion();
   const photoRef = useRef<HTMLDivElement>(null);
@@ -200,7 +205,7 @@ function HeroClassic({ block, ctx }: HeroProps) {
     <Section
       block={block}
       bare
-      frame
+      frame={frame}
       className={`inv-hero flex min-h-[min(100svh,780px)] flex-col items-center justify-center px-8 pt-20 pb-32 ${onPhoto ? "text-white" : "text-[var(--text)]"}`}
       fill={
         onPhoto && (
@@ -229,7 +234,7 @@ function HeroClassic({ block, ctx }: HeroProps) {
         </p>
       )}
       <HeroNames style={textStyle(block, "names")} names={block.names} color={onPhoto ? "#fff" : "var(--text)"} shadow={onPhoto} />
-      <HeroDetails block={block} ctx={ctx} light={onPhoto} />
+      <HeroDetails block={block} ctx={ctx} light={onPhoto} calendar={calendar} />
     </Section>
   );
 }
@@ -423,7 +428,19 @@ function HeroMonogram({ block, ctx }: HeroProps) {
   const [first, second] = monogram(block.names).split("&");
   const { day, monthGenitive, year, time } = describeDate(block.date);
   return (
-    <Section block={block} bare className="inv-hero flex min-h-[min(100svh,780px)] flex-col px-8 pt-16 text-center">
+    <Section
+      block={block}
+      bare
+      className="inv-hero flex min-h-[min(100svh,780px)] flex-col px-8 pt-16 text-center"
+      fill={
+        block.photo && (
+          // Фото — во всю ширину блока внизу и проявляется из фона сверху.
+          <div className="inv-monogram-photo absolute inset-x-0 bottom-0 h-[300px]" data-reveal="4" data-anim="fade" data-delay="0.6">
+            <img src={block.photo} alt="" data-testid="hero-photo" className="absolute inset-0 h-full w-full object-cover" />
+          </div>
+        )
+      }
+    >
       <div className="inv-monogram relative mx-auto flex size-36 items-center justify-center text-[var(--accent)]" data-reveal="1" data-anim="pop" data-delay="0.2">
         <svg aria-hidden="true" viewBox="0 0 144 144" className="absolute inset-0 size-full overflow-visible" fill="none" stroke="currentColor">
           <circle cx="72" cy="72" r="64" strokeWidth=".9" />
@@ -458,14 +475,8 @@ function HeroMonogram({ block, ctx }: HeroProps) {
       <div data-reveal="4" data-delay="3.2">
         <CalendarButton ctx={ctx} />
       </div>
-      {block.photo ? (
-        // Фото — во всю ширину блока (выходит за поля) и проявляется из фона сверху.
-        <div className="inv-monogram-photo relative -mx-8 mt-10 h-[300px]" data-reveal="4" data-anim="fade" data-delay="0.6">
-          <img src={block.photo} alt="" data-testid="hero-photo" className="absolute inset-0 h-full w-full object-cover" />
-        </div>
-      ) : (
-        <div className="pb-24" />
-      )}
+      {/* Место под фото: само фото — заливка блока (ниже), чтобы край блока резал и его. */}
+      <div className={block.photo ? "mt-10 h-[300px]" : "pb-24"} />
     </Section>
   );
 }

@@ -9,6 +9,16 @@ export function canEdit(inv: Owned | null, who: { token?: string | null; userId?
   return !!who.userId && inv.userId === who.userId;
 }
 
+/**
+ * Удалить строже, чем править: сохранённое в аккаунт — только владелец (секретная ссылка могла уйти в чат),
+ * ничьё — по token.
+ */
+export function canDelete(inv: Owned | null, who: { token?: string | null; userId?: string | null }): boolean {
+  if (!inv) return false;
+  if (inv.userId) return !!who.userId && inv.userId === who.userId;
+  return !!who.token && who.token === inv.editToken;
+}
+
 /** Чьё приглашение с точки зрения пользователя: его, ничьё (создано без входа) или чужое. */
 export type Ownership = "mine" | "none" | "other";
 

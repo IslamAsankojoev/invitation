@@ -21,9 +21,9 @@ function imageUrls(data: InvitationData): string[] {
 }
 
 describe("шаблоны", () => {
-  it("их тринадцать, id уникальны", () => {
-    expect(templates).toHaveLength(13);
-    expect(new Set(templates.map((t) => t.id)).size).toBe(13);
+  it("их двенадцать, id уникальны", () => {
+    expect(templates).toHaveLength(12);
+    expect(new Set(templates.map((t) => t.id)).size).toBe(12);
   });
 
   it.each(templates.map((t) => [t.name, t] as const))("«%s» проходит схему и ссылается только на существующие картинки", (_, t) => {
@@ -92,7 +92,12 @@ describe("applyTemplate", () => {
     expect(findBlock(deco, "story")!.entrance).toBe("blur");
 
     const back = applyTemplate(deco, findTemplate("cream-classic")!);
-    expect(back.blocks.every((b) => b.variant === "classic" && b.entrance === "auto")).toBe(true);
+    expect(back.blocks.every((b) => b.variant === (b.type === "hero" ? "clean" : "classic") && b.entrance === "auto")).toBe(true);
+  });
+
+  it("шаблоны со своим видом главного экрана его сохраняют, остальные — «Без рамки»", () => {
+    const own: Record<string, string> = { eucalyptus: "arch", "art-deco": "minimal", "lavender-provence": "polaroid", "boarding-pass": "ticket", mocha: "monogram", seaside: "cover" };
+    for (const t of templates) expect(findBlock(createFromTemplate(t), "hero")!.variant, t.id).toBe(own[t.id] ?? "clean");
   });
 
   it("не мутирует ни приглашение, ни сам шаблон", () => {
@@ -176,14 +181,14 @@ describe("шаблоны со своей структурой", () => {
     const before = createFromTemplate(findTemplate("lago")!);
     const result = applyTemplate(before, mocha);
     expect(result.blocks.map((b) => b.id)).toEqual(before.blocks.map((b) => b.id));
-    // Первый «Текст» шаблона — полоса цвета латте во всю ширину, второй — цитата на шёлке (у него тексты свои).
+    // Первый «Текст» шаблона — во всю ширину без заливки, второй — цитата на шёлке с рваными краями (тексты свои).
     const texts = result.blocks.filter((b) => b.type === "text");
-    expect(texts[0]).toMatchObject({ bgColor: "#e9dfd3", width: "full", title: "Дорогие" });
-    expect(texts[1]).toMatchObject({ variant: "card", bgColor: null });
+    expect(texts[0]).toMatchObject({ bgColor: null, width: "full", title: "Дорогие" });
+    expect(texts[1]).toMatchObject({ variant: "card", bgColor: null, edgeTop: "torn", edgeBottom: "torn" });
     // Фоновая картинка — содержимое: шаблон её не переносит.
     expect(texts[1].bgImage).toBeNull();
-    // Анкета шаблона — шоколадная, с сургучом; дата ответа — своя.
-    expect(findBlock(result, "rsvp")).toMatchObject({ bgColor: "#3b2b21", deadline: "2027-05-15" });
+    // Анкета шаблона — кремовая полоса с рваными краями и сургучом; дата ответа — своя.
+    expect(findBlock(result, "rsvp")).toMatchObject({ bgColor: "#ffeddb", edgeTop: "torn", deadline: "2027-05-15" });
     expect(findBlock(result, "rsvp")!.ornaments.map((o) => o.src)).toEqual(["/library/wax-seal.svg"]);
     // Блоки, которых в структуре нет, — оформление «без шаблона».
     const lagoOnDefault = applyTemplate(createDefaultInvitation(), findTemplate("lago")!);
