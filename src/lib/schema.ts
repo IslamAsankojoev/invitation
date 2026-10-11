@@ -81,6 +81,8 @@ export const TEXTURES = [
   "flourish",
   "stars",
   "watercolor",
+  "plaster",
+  "paper",
 ] as const;
 /** Фоны блока: бумага и предметы, на которых лежит текст. Порядок — порядок плиток в редакторе. */
 export const SURFACES = [
@@ -257,6 +259,8 @@ export const themeSchema = z.object({
   /** Свой цвет фона страницы вместо цвета палитры (null — как в палитре). Текст подстраивается под его яркость. */
   backgroundColor: hexColor.nullable().default(null),
   texture: z.enum(TEXTURES).default("none"),
+  /** «Мазки и пятна» у фактур «Стена» (пятна) и «Бумага» (волокна, облачность); на тёмном фоне они светлые. Нет — только зерно. */
+  textureStains: z.boolean().default(false),
   decor: z.object({
     type: z.enum(DECOR_TYPES),
     /** Картинка частиц для type = "image". */
@@ -287,7 +291,11 @@ export const themeSchema = z.object({
 
 export const musicSchema = z.object({
   url: z.string().max(500).nullable(),
+  /** Повторять: весь трек или выбранный фрагмент. */
   loop: z.boolean(),
+  /** Фрагмент песни, секунды: начало (0 — с начала трека) и конец (null — до конца трека). См. lib/musicFragment.ts. */
+  start: z.number().min(0, "Начало фрагмента не меньше 0").max(3600, "Начало фрагмента — не дальше часа").default(0),
+  end: z.number().min(0, "Конец фрагмента не меньше 0").max(3600, "Конец фрагмента — не дальше часа").nullable().default(null),
 });
 
 const edgeSeed = z.number().int().min(0).max(2147483646).optional();

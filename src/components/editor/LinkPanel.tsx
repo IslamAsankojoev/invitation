@@ -1,7 +1,8 @@
 "use client";
 
-import { KeyRound, Link2, Share2 } from "lucide-react";
+import { KeyRound, Link2, Share2, Wifi } from "lucide-react";
 import { useEffect, useId, useState } from "react";
+import QRCode from "react-qr-code";
 import { CopyButton } from "@/components/CopyButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -14,9 +15,17 @@ import { AccountRequired } from "./AccountRequired";
 import { Group } from "./controls";
 import type { EditorAccount } from "./Editor";
 
-type Props = { id: string; token: string; slug: string; onSlugChange: (slug: string) => void; account?: EditorAccount };
+type Props = {
+  id: string;
+  token: string;
+  slug: string;
+  onSlugChange: (slug: string) => void;
+  account?: EditorAccount;
+  /** Разработка: адрес сервера в Wi-Fi сети — ссылка для телефона. */
+  lanOrigin?: string | null;
+};
 
-export function LinkPanel({ id, token, slug, onSlugChange, account }: Props) {
+export function LinkPanel({ id, token, slug, onSlugChange, account, lanOrigin }: Props) {
   const [value, setValue] = useState(slug);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [origin, setOrigin] = useState("");
@@ -104,6 +113,31 @@ export function LinkPanel({ id, token, slug, onSlugChange, account }: Props) {
             </Button>
           )}
         </div>
+        {lanOrigin && (
+          // Только в dev-режиме: localhost с телефона не открыть — даём адрес компьютера в той же Wi-Fi сети.
+          <div className="flex flex-col gap-1.5 rounded-md border border-dashed p-2.5">
+            <p className="text-xs text-muted-foreground">С телефона в той же Wi-Fi сети (только в режиме разработки)</p>
+            <div className="flex items-center gap-2">
+              <Wifi aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
+              <a
+                href={`${lanOrigin}/i/${slug}`}
+                target="_blank"
+                rel="noopener"
+                className="min-w-0 flex-1 truncate text-sm font-medium underline-offset-4 hover:underline"
+              >
+                {`${lanOrigin}/i/${slug}`}
+              </a>
+              <CopyButton text={`${lanOrigin}/i/${slug}`} label="Скопировать ссылку для телефона в Wi-Fi сети" />
+            </div>
+          </div>
+        )}
+        {/* QR — навести камеру телефона и сразу открыть; адрес сайта известен только после гидратации. */}
+        {origin && (
+          <div className={`grid gap-3 ${lanOrigin ? "grid-cols-2" : "grid-cols-1 justify-items-center"}`}>
+            <QrTile url={publicUrl} caption="Ссылка для гостей" label="QR-код ссылки для гостей" />
+            {lanOrigin && <QrTile url={`${lanOrigin}/i/${slug}`} caption="По Wi-Fi (разработка)" label="QR-код ссылки для телефона в Wi-Fi сети" />}
+          </div>
+        )}
       </Group>
 
       <Alert>
@@ -126,3 +160,14 @@ export function LinkPanel({ id, token, slug, onSlugChange, account }: Props) {
   );
 }
 
+/** QR-код ссылки: тёмный на белом квадрате — камера читает его при любой теме; подпись — что откроется. */
+function QrTile({ url, caption, label }: { url: string; caption: string; label: string }) {
+  return (
+    <figure className="flex w-full max-w-[200px] flex-col items-center gap-2 rounded-lg border p-3">
+      <div role="img" aria-label={label} data-qr={url} className="w-full rounded-md bg-white p-2.5">
+        <QRCode value={url} size={256} level="M" className="block h-auto w-full" aria-hidden="true" />
+      </div>
+      <figcaption className="text-center text-xs text-muted-foreground">{caption}</figcaption>
+    </figure>
+  );
+}

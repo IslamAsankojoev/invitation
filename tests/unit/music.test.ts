@@ -2,7 +2,7 @@ import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { DEFAULT_MUSIC_URL, findTrack, musicTracks } from "@/lib/music";
-import { createFromTemplate, findTemplate } from "@/lib/templates";
+import { createFromTemplate, findTemplate, templates } from "@/lib/templates";
 import { checkUpload } from "@/lib/upload";
 
 describe("встроенная музыка", () => {
@@ -16,9 +16,12 @@ describe("встроенная музыка", () => {
   });
 
   it("новое приглашение сразу с песней по умолчанию", () => {
-    expect(createFromTemplate(findTemplate("rose-garden")!).music).toEqual({ url: DEFAULT_MUSIC_URL, loop: true });
+    expect(createFromTemplate(findTemplate("rose-garden")!).music).toEqual({ url: DEFAULT_MUSIC_URL, loop: true, start: 0, end: null });
     expect(findTrack(DEFAULT_MUSIC_URL)?.title).toBe("Die With A Smile");
     expect(findTrack("/uploads/old.mp3")).toBeNull();
+    // Своя песня шаблона — только встроенная.
+    for (const t of templates) if (t.music) expect(findTrack(t.music), t.id).not.toBeNull();
+    expect(createFromTemplate(findTemplate("emerald-night")!).music.url).toBe("/music/howl-s-moving-castle.mp3");
   });
 
   it("свою mp3 загрузить пока нельзя, картинки — можно", () => {

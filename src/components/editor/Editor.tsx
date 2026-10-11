@@ -44,6 +44,8 @@ type Props = {
   initialData: InvitationData;
   account?: EditorAccount;
   notice?: SaveNotice;
+  /** Только в разработке: адрес сервера в Wi-Fi сети (lib/lan.ts) — для ссылки, которую откроют с телефона. */
+  lanOrigin?: string | null;
 };
 
 const noticeText: Record<SaveNotice, { ok: boolean; text: string }> = {
@@ -139,7 +141,7 @@ const PICK_TIP_KEY = "editor-pick-tip";
 /** Плашка «PRO-оформление» над вкладками. Пока тарифов нет — скрыта; значки PRO на плитках остаются. */
 const SHOW_PREMIUM_ALERT = false;
 
-export function Editor({ id, token, initialSlug, initialData, account, notice }: Props) {
+export function Editor({ id, token, initialSlug, initialData, account, notice, lanOrigin }: Props) {
   /** Данные + история правок для «Отменить / Повторить» (lib/history.ts). Все правки идут через setData. */
   const [history, setHistory] = useState(() => createHistory(initialData));
   const data = history.present;
@@ -167,7 +169,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
   const { status, errors } = useAutosave(data, save, validate, 800);
   const statusInfo = statusView[status];
   const musicUrl = data.music.url;
-  const music = useInvitationMusic(musicUrl);
+  const music = useInvitationMusic(musicUrl, data.music);
   const premium = useMemo(() => (SHOW_PREMIUM_ALERT ? premiumUsage(data) : []), [data]);
 
   const previewRef = useRef<HTMLDivElement>(null);
@@ -345,7 +347,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
       {/* Музыка — как у гостя: включается печатью заставки или кнопкой-эквалайзером. */}
       {musicUrl && (
         <>
-          <audio {...music.audioProps} src={musicUrl} loop={data.music.loop} preload="auto" data-testid="preview-music" />
+          <audio {...music.audioProps} src={musicUrl} crossOrigin="anonymous" preload="auto" data-testid="preview-music" />
           {/* Переменные палитры: снаружи приглашения --accent — токен shadcn. */}
           <div style={themeStyle(data.theme)} className="absolute right-4 bottom-4 z-20">
             <MusicButton playing={music.playing} onClick={music.toggle} />
@@ -518,7 +520,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice }:
                 <MusicPanel data={data} onChange={setData} />
               </TabsContent>
               <TabsContent value="Ссылка">
-                <LinkPanel id={id} token={token} slug={slug} onSlugChange={setSlug} account={account} />
+                <LinkPanel id={id} token={token} slug={slug} onSlugChange={setSlug} account={account} lanOrigin={lanOrigin} />
               </TabsContent>
             </div>
           </Tabs>

@@ -21,6 +21,7 @@ export const musicTracks: MusicTrack[] = [
   track("erke-sary", "Эрке Сары", "Ордо Сахна"),
   track("comptine", "Comptine d'un autre été", "Yann Tiersen"),
   track("idea-10", "Idea 10", "Gibran Alcocer"),
+  track("howl-s-moving-castle", "Howl's Moving Castle", "Joe Hisaishi"),
 ];
 
 /** Песня нового приглашения. */

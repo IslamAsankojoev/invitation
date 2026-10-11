@@ -47,12 +47,14 @@ export type Template = {
   name: string;
   description: string;
   /** Тема; заголовки по умолчанию — капителью. */
-  theme: Omit<Theme, "headings" | "ornamentMotion" | "backgroundMode" | "backgroundDim" | "backgroundColor"> &
-    Partial<Pick<Theme, "headings" | "ornamentMotion" | "backgroundMode" | "backgroundDim" | "backgroundColor">>;
+  theme: Omit<Theme, "headings" | "ornamentMotion" | "backgroundMode" | "backgroundDim" | "backgroundColor" | "textureStains"> &
+    Partial<Pick<Theme, "headings" | "ornamentMotion" | "backgroundMode" | "backgroundDim" | "backgroundColor" | "textureStains">>;
   /** Оформление по типам блоков; незаданное сбрасывается к «классика, без фона, без украшений». */
   blocks: { [K in BlockType]?: Partial<BlockDesign<K>> };
   /** Цвета дресс-кода, подобранные под палитру шаблона. */
   dresscodeColors: string[];
+  /** Песня нового приглашения (встроенная, lib/music.ts); нет — DEFAULT_MUSIC_URL. Смена шаблона музыку не трогает. */
+  music?: string;
   /**
    * Своя структура нового приглашения: блоки по порядку с примером текстов, фото и оформлением. Без неё —
    * стандартный набор блоков с оформлением из `blocks`. При смене шаблона n-й блок типа в приглашении получает
@@ -87,6 +89,8 @@ const CHOCOLATE = "#3b2b21";
 const LATTE = "#e9dfd3";
 /** «Изумрудная ночь»: светлая бумага с рваными краями между тёмными блоками. */
 const PAPER = "#e6dccb";
+/** Анимация украшения «появляется как обычно, но не качается» — для переходов между блоками. */
+const STILL = { enter: "auto", enterSpeed: 1, idle: "none", idleSpeed: 1, idleAmplitude: 1 } as const;
 
 const plainDesign: BlockDesign = {
   variant: "classic",
@@ -843,14 +847,15 @@ export const templates: Template[] = [
       bodyFont: "manrope",
       headings: "names",
       background: null,
-      texture: "halftone",
-      backgroundColor: "#061e10",
+      texture: "paper",
+      backgroundColor: "#04110a",
       decor: { type: "none", image: null, color: "#f3eee4", density: 0, size: 1, speed: 1 },
       envelope: { ornament: lib("roses-white-spray"), style: "seal" },
       motion: { style: "elegant", speed: 1 },
     },
     blocks: {},
     dresscodeColors: ["#1c3a30", "#2f6b58", "#e3d3b0", "#c9a862", "#f3eee4"],
+    music: "/music/howl-s-moving-castle.mp3",
     layout: [
       {
         type: "hero",
@@ -866,7 +871,7 @@ export const templates: Template[] = [
         icon: undefined,
         width: "full",
         // Переходы между блоками — украшения с seam: гирлянда ложится на стык с фото обложки.
-        ornaments: [orn("garland-dogrose", "top", { size: 400, opacity: 1, flip: true, seam: true })],
+        ornaments: [orn("garland-dogrose", "top", { size: 400, opacity: 1, flip: true, seam: true, motion: STILL })],
         textStyles: { title: { font: "yeseva" }, text: { font: "alegreya" } },
         text: "В нашей жизни наступает особенный день — мы создаём семью. Разделить эту радость мы хотим с самыми дорогими людьми, которые всегда рядом.",
       },
@@ -906,7 +911,7 @@ export const templates: Template[] = [
         type: "dresscode",
         title: "Dress code",
         scriptLine: "Внешний вид",
-        ornaments: [orn("roses-white-spray", "top", { size: 267, opacity: 1, seam: true })],
+        ornaments: [orn("roses-white-spray", "top", { size: 267, opacity: 1, seam: true, motion: STILL })],
         textStyles: { text: { font: "serif" } },
         text: "Будем признательны, если в своих нарядах вы поддержите цветовую гамму нашего вечера: тёмные изумрудные, тёплые бежевые и золотые оттенки. Просим воздержаться от ярко-белых нарядов — этот цвет оставим невесте.",
         colors: [],
@@ -940,7 +945,7 @@ export const templates: Template[] = [
         type: "rsvp",
         title: "Questionnaire",
         scriptLine: "Анкета гостя",
-        ornaments: [orn("roses-white-spray", "top", { size: 387, opacity: 1, flip: true, seam: true })],
+        ornaments: [orn("roses-white-spray", "top", { size: 387, opacity: 1, flip: true, seam: true, motion: STILL })],
         deadline: "2027-08-01",
       },
       {
@@ -954,7 +959,7 @@ export const templates: Template[] = [
         ornaments: [
           orn("roses-white-spray", "bottom-left", { size: 150, rotate: 8 }),
           orn("roses-white-spray", "bottom-right", { size: 150, rotate: -8, flip: true }),
-          orn("garland-dogrose", "bottom", { size: 400, opacity: 1, seam: true }),
+          orn("garland-dogrose", "bottom", { size: 400, opacity: 1, seam: true, motion: STILL }),
         ],
       },
     ],
@@ -990,6 +995,7 @@ const themeOf = (template: Template): Theme => ({
   backgroundDim: 0.7,
   // Свой цвет фона — оформление: шаблон ставит цвет своей палитры (applyTemplate его сбрасывает).
   backgroundColor: null,
+  textureStains: false,
   ornamentMotion: { ...DEFAULT_ORNAMENT_MOTION },
   ...structuredClone(template.theme),
 });
@@ -1150,7 +1156,7 @@ export function createBlock(data: InvitationData, type: BlockType, presetId?: st
 /** Новое приглашение по шаблону — с примером текстов (и структурой шаблона, если она есть). */
 export function createFromTemplate(template: Template): InvitationData {
   return applyTemplate(
-    { schemaVersion: SCHEMA_VERSION, theme: themeOf(template), music: { url: DEFAULT_MUSIC_URL, loop: true }, blocks: sampleBlocks(template) },
+    { schemaVersion: SCHEMA_VERSION, theme: themeOf(template), music: { url: template.music ?? DEFAULT_MUSIC_URL, loop: true, start: 0, end: null }, blocks: sampleBlocks(template) },
     template,
   );
 }

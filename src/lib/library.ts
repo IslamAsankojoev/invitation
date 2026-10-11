@@ -521,7 +521,48 @@ export type TextureDef = {
   opacity: number;
   /** Цветная текстура (использует --accent): не инвертируется на тёмной теме и кладётся без multiply. */
   tinted?: boolean;
+  /** «Мазки и пятна» (волокна бумаги, пятна штукатурки) — добавляются только при theme.textureStains. */
+  stains?: string;
 };
+
+/** CSS фактуры: с пятнами — их слой поверх основного. */
+export const textureCss = (t: TextureDef, stains: boolean) => (stains && t.stains ? `${t.stains}, ${t.css}` : t.css);
+
+/**
+ * Шум-плитка: feTurbulence со stitchTiles (края плитки сшиты — без стыков), канал шума → прозрачность чёрного.
+ * contrast/offset — насколько резкие пятна: альфа = шум × contrast − offset.
+ */
+const noiseFilter = (id: string, freq: string, octaves: number, contrast: number, offset: number, seed = 1) =>
+  `<filter id='${id}' x='0' y='0' width='100%' height='100%'><feTurbulence type='fractalNoise' baseFrequency='${freq}' numOctaves='${octaves}' seed='${seed}' stitchTiles='stitch'/>` +
+  `<feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ${contrast} 0 0 0 ${-offset}'/></filter>`;
+
+/** Волокна бумаги: короткие тонкие дуги в случайных направлениях (по зерну — один и тот же рисунок). */
+function paperFibers(size: number, count: number, seed: number): string {
+  let s = seed;
+  const rnd = () => ((s = (s * 16807) % 2147483647) - 1) / 2147483646;
+  const paths: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const x = rnd() * size;
+    const y = rnd() * size;
+    const len = 6 + rnd() ** 2 * 26;
+    const a = rnd() * Math.PI;
+    const bend = (rnd() - 0.5) * len * 0.6;
+    const [dx, dy] = [Math.cos(a) * len, Math.sin(a) * len];
+    const w = (0.25 + rnd() * 0.45).toFixed(2);
+    const o = (0.25 + rnd() * 0.5).toFixed(2);
+    // Волокно у края повторяем с другой стороны плитки — рисунок бесшовный.
+    for (const ox of [0, -size, size]) {
+      for (const oy of [0, -size, size]) {
+        const [x0, y0] = [x + ox, y + oy];
+        if (x0 + Math.abs(dx) < -2 || x0 - Math.abs(dx) > size + 2 || y0 + Math.abs(dy) < -2 || y0 - Math.abs(dy) > size + 2) continue;
+        paths.push(
+          `<path d='M${x0.toFixed(1)} ${y0.toFixed(1)}q${(dx / 2 - dy * bend * 0.02).toFixed(1)} ${(dy / 2 + dx * bend * 0.02).toFixed(1)} ${dx.toFixed(1)} ${dy.toFixed(1)}' stroke-width='${w}' stroke-opacity='${o}'/>`,
+        );
+      }
+    }
+  }
+  return `<g fill='none' stroke='black' stroke-linecap='round'>${paths.join("")}</g>`;
+}
 
 /** Бесшовные текстуры страницы на чистом CSS/SVG (картинки-тайлы давали видимые стыки). */
 export const textures: Record<Exclude<Texture, "none">, TextureDef> = {
@@ -624,6 +665,26 @@ export const textures: Record<Exclude<Texture, "none">, TextureDef> = {
       .join(", "),
     opacity: 0.45,
     tinted: true,
+  },
+  // Гладкая стена: мелкая шероховатость (+ по желанию крупные мягкие пятна штукатурки); цвет — фона страницы.
+  plaster: {
+    label: "Стена",
+    css: [
+      svgTile(160, noiseFilter("g", ".85", 2, 0.9, 0.3, 7) + "<rect width='100%' height='100%' filter='url(#g)'/>"),
+      svgTile(640, noiseFilter("t", ".02 .006", 3, 0.9, 0.38, 11) + "<rect width='100%' height='100%' filter='url(#t)' opacity='.5'/>"),
+    ].join(", "),
+    stains: svgTile(640, noiseFilter("m", ".0065", 4, 1.1, 0.42, 3) + "<rect width='100%' height='100%' filter='url(#m)'/>"),
+    opacity: 0.22,
+  },
+  // Бумага: зерно (+ по желанию волокна и облачная неравномерность).
+  paper: {
+    label: "Бумага",
+    css: svgTile(180, noiseFilter("g", ".7", 3, 1.1, 0.42, 5) + "<rect width='100%' height='100%' filter='url(#g)'/>"),
+    stains: [
+      svgTile(320, paperFibers(320, 170, 20240611)),
+      svgTile(480, noiseFilter("c", ".012", 4, 0.7, 0.3, 9) + "<rect width='100%' height='100%' filter='url(#c)'/>"),
+    ].join(", "),
+    opacity: 0.26,
   },
 };
 

@@ -18,7 +18,7 @@ export function InvitationPage({ data, slug, demo = false }: { data: InvitationD
   const [envelope, setEnvelope] = useState(true);
   const musicUrl = data.music.url;
   const hero = findBlock(data, "hero");
-  const music = useInvitationMusic(musicUrl);
+  const music = useInvitationMusic(musicUrl, data.music);
 
   // Пока конверт не открыт, страница под ним не прокручивается.
   useEffect(() => {
@@ -42,8 +42,8 @@ export function InvitationPage({ data, slug, demo = false }: { data: InvitationD
         <audio
           {...music.audioProps}
           src={musicUrl}
-          loop={data.music.loop}
           preload="auto"
+          crossOrigin="anonymous"
           data-testid="music"
         />
       )}

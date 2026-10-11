@@ -250,6 +250,12 @@ describe("Editor", () => {
     await user.click(screen.getByRole("button", { name: "Текстура Сердечки" }));
     expect(within(invitation()).getByTestId("texture")).toHaveAttribute("data-texture", "hearts");
     expect(screen.getByRole("button", { name: "Текстура Сердечки" })).toHaveAttribute("aria-pressed", "true");
+    // У «Сердечек» пятен нет — переключателя нет; у «Стены» есть, по умолчанию выключен.
+    expect(screen.queryByLabelText("Мазки и пятна")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Текстура Стена" }));
+    expect(within(invitation()).getByTestId("texture")).not.toHaveAttribute("data-stains");
+    await user.click(screen.getByLabelText("Мазки и пятна"));
+    expect(within(invitation()).getByTestId("texture")).toHaveAttribute("data-stains");
 
     // Свой цвет фона страницы: тёмный на светлой палитре — текст становится светлым; «Как в палитре» — обратно.
     const before = invitation().style.getPropertyValue("--bg");
@@ -700,6 +706,28 @@ describe("Editor: добавление, копирование и удалени
     expect(fetchMock).toHaveBeenCalledWith("/api/upload?id=inv1&token=secret", expect.objectContaining({ method: "POST" }));
   });
 
+  it("в разработке во вкладке «Ссылка» — ещё ссылка для телефона по адресу в Wi-Fi сети", async () => {
+    const user = userEvent.setup();
+    render(<Editor id="inv1" token="secret" initialSlug="demo" initialData={createDefaultInvitation()} lanOrigin="http://192.168.0.107:3001" />);
+    await user.click(screen.getByRole("tab", { name: "Ссылка" }));
+    expect(screen.getByRole("link", { name: "http://192.168.0.107:3001/i/demo" })).toHaveAttribute("href", "http://192.168.0.107:3001/i/demo");
+    expect(screen.getByRole("button", { name: "Скопировать ссылку для телефона в Wi-Fi сети" })).toBeInTheDocument();
+    // QR-коды: основной сайт и адрес в сети.
+    expect(screen.getByRole("img", { name: "QR-код ссылки для гостей" })).toHaveAttribute("data-qr", `${window.location.origin}/i/demo`);
+    expect(screen.getByRole("img", { name: "QR-код ссылки для телефона в Wi-Fi сети" })).toHaveAttribute("data-qr", "http://192.168.0.107:3001/i/demo");
+    expect(screen.getByRole("img", { name: "QR-код ссылки для гостей" }).querySelector("svg")).toBeInTheDocument();
+  });
+
+  it("без адреса в сети (прод) строки и QR для телефона нет, QR основной ссылки — есть", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+    await user.click(screen.getByRole("tab", { name: "Ссылка" }));
+    expect(screen.queryByText(/той же Wi-Fi сети/)).not.toBeInTheDocument();
+    // QR основной ссылки есть всегда, по Wi-Fi — нет.
+    expect(screen.getByRole("img", { name: "QR-код ссылки для гостей" })).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "QR-код ссылки для телефона в Wi-Fi сети" })).not.toBeInTheDocument();
+  });
+
   describe("аккаунт", () => {
     const renderWith = (account: EditorAccount) =>
       render(<Editor id="inv1" token="secret" initialSlug="demo" initialData={createDefaultInvitation()} account={account} />);
@@ -806,6 +834,61 @@ describe("Editor: добавление, копирование и удалени
       expect(screen.queryByLabelText("Повторять по кругу")).not.toBeInTheDocument();
     });
 
+    it("фрагмент песни: волна с ручками, перезапуск после сдвига, «Весь трек»; сохраняется в music.start/end", async () => {
+      // Длительность трека — из метаданных: в jsdom их нет, подставляем песню на 3:20.
+      vi.stubGlobal(
+        "Audio",
+        class {
+          preload = "";
+          duration = 200;
+          onloadedmetadata: (() => void) | null = null;
+          set src(_: string) {
+            queueMicrotask(() => this.onloadedmetadata?.());
+          }
+          removeAttribute() {}
+        },
+      );
+      const user = userEvent.setup();
+      const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+      vi.stubGlobal("fetch", fetchMock);
+      renderEditor();
+      await user.click(screen.getByRole("tab", { name: "Музыка" }));
+      expect(await screen.findByTestId("fragment-range")).toHaveTextContent("0:00 — 3:20 · 3:20");
+      expect(screen.getByRole("button", { name: "Весь трек" })).toBeDisabled();
+
+      // Начало — на 5 с вперёд (PageUp = 10 шагов по 0.5 с).
+      screen.getByRole("slider", { name: "Начало фрагмента" }).focus();
+      await user.keyboard("{PageUp}");
+      expect(screen.getByTestId("fragment-range")).toHaveTextContent("0:05 — 3:20 · 3:15");
+      expect(screen.getByLabelText("Повторять фрагмент по кругу")).toBeInTheDocument();
+      await act(() => new Promise((r) => setTimeout(r, 900)));
+      expect(JSON.parse(fetchMock.mock.calls.at(-1)![1].body).data.music).toMatchObject({ start: 5, end: null });
+
+      // Сдвинули начало — фрагмент сам заиграл заново (с нового начала), как в аудиоредакторах.
+      const preview = screen.getByTestId("fragment-preview") as HTMLAudioElement;
+      await waitFor(() => expect(preview.paused).toBe(false));
+      expect(screen.getByRole("button", { name: /Остановить/ })).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: /Остановить/ }));
+      expect(preview.paused).toBe(true);
+
+      // Конец — на 5 с назад: тоже перезапуск (последние секунды перед концом).
+      screen.getByRole("slider", { name: "Конец фрагмента" }).focus();
+      await user.keyboard("{PageDown}");
+      expect(screen.getByTestId("fragment-range")).toHaveTextContent("0:05 — 3:15 · 3:10");
+      await waitFor(() => expect(preview.paused).toBe(false));
+      await user.click(screen.getByRole("button", { name: /Остановить/ }));
+
+      // Волна и линия воспроизведения на месте.
+      expect(screen.getByTestId("waveform")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: /Послушать фрагмент/ }));
+      expect(preview.paused).toBe(false);
+      await user.click(screen.getByRole("button", { name: /Остановить/ }));
+
+      await user.click(screen.getByRole("button", { name: "Весь трек" }));
+      expect(screen.getByTestId("fragment-range")).toHaveTextContent("0:00 — 3:20 · 3:20");
+      expect(screen.getByLabelText("Повторять по кругу")).toBeInTheDocument();
+    });
+
     it("«Послушать» играет песню в редакторе, повторное нажатие останавливает", async () => {
       const user = userEvent.setup();
       renderEditor();
@@ -851,7 +934,7 @@ describe("Editor: добавление, копирование и удалени
     it("песня, загруженная до ограничения, остаётся и видна отдельной строкой", async () => {
       const user = userEvent.setup();
       const data = createDefaultInvitation();
-      data.music = { url: "/uploads/old.mp3", loop: true };
+      data.music = { url: "/uploads/old.mp3", loop: true, start: 0, end: null };
       render(<Editor id="inv1" token="secret" initialSlug="demo" initialData={data} />);
       await user.click(screen.getByRole("tab", { name: "Музыка" }));
       expect(screen.getByRole("button", { name: "Песня «Своя песня» — загружена раньше" })).toHaveAttribute("aria-pressed", "true");

@@ -14,7 +14,7 @@ const withMusic = () => {
 describe("InvitationPage", () => {
   it("кнопки звука нет, если music.url не задан", () => {
     // У нового приглашения песня уже выбрана по умолчанию — «Без музыки» задаём явно.
-    render(<InvitationPage data={{ ...createDefaultInvitation(), music: { url: null, loop: true } }} slug="demo" />);
+    render(<InvitationPage data={{ ...createDefaultInvitation(), music: { url: null, loop: true, start: 0, end: null } }} slug="demo" />);
     expect(screen.queryByRole("button", { name: /музыку/ })).not.toBeInTheDocument();
     expect(screen.queryByTestId("music")).not.toBeInTheDocument();
   });

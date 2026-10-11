@@ -57,7 +57,7 @@ describe("applyTemplate", () => {
     data = updateBlock(data, "location", { placeName: "Шато", photo: "/uploads/hall.jpg" });
     data = toggleBlock(data, "story");
     data = moveBlock(data, 4, 1);
-    return { ...data, music: { url: "/uploads/song.mp3", loop: false }, theme: { ...data.theme, background: "/uploads/bg.jpg" } };
+    return { ...data, music: { url: "/uploads/song.mp3", loop: false, start: 0, end: null }, theme: { ...data.theme, background: "/uploads/bg.jpg" } };
   }
 
   it("меняет оформление: тему, фоны, украшения блоков и цвета дресс-кода", () => {

@@ -16,7 +16,7 @@
 > **Перед продакшеном:** картинки из `new-sources/` (pngwing.com) встроены, но их лицензии **не куплены** — статус
 > «уточняется» в `public/library/CREDITS.md`. Подробности и итог разбора — `new-sources.md`.
 > Встроенные песни (`public/music/`: Lady Gaga & Bruno Mars, Ed Sheeran, Christina Perri, Elvis Presley, Bruno Mars,
-> Jax 02.14, Indila, Temirlan & Yernat, Ордо Сахна, Yann Tiersen, Gibran Alcocer) — коммерческие
+> Jax 02.14, Indila, Temirlan & Yernat, Ордо Сахна, Yann Tiersen, Gibran Alcocer, Joe Hisaishi) — коммерческие
 > записи; права на публичное воспроизведение на сайте **не оформлены**.
 
 ## 1. Что это
@@ -159,14 +159,14 @@ InvitationData
 │  ├─ backgroundDim 0–0.9               приглушение фона цветом --bg (по умолчанию 0.7)
 │  ├─ backgroundColor: #hex | null      свой цвет фона страницы (null — палитра); другая яркость «переворачивает» тему —
 │  │                                    `themePalette(theme)` в lib/theme.ts: текст = фон палитры, акцент к контрасту
-│  ├─ texture: none | halftone | speckle | grain | linen | grid | diagonal | hearts | diamonds | flourish | stars | watercolor
+│  ├─ texture: none | halftone | speckle | grain | linen | grid | diagonal | hearts | diamonds | flourish | stars | watercolor | plaster | paper
 │  ├─ decor: { type: none|image|petals|sakura|confetti|snow, image: url|null, color: #hex, density 0–60, size 0.5–3,
 │  │           speed 0.3–3, pop?: boolean (мини-игра; не задано = включено) }
 │  ├─ envelope: { ornament: url|null, style: seal|veil|flap|curtains|book }  картинка в углах и вид заставки
 │  ├─ headings: caps | names          заголовки блоков: капитель Tenor Sans или шрифтом имён (см. §5.7)
 │  ├─ motion: { style: elegant|soft|playful|cinematic|none, speed 0.5–2 }  стиль и скорость анимаций
 │  └─ ornamentMotion: OrnamentMotion   анимация всех украшений без своей (см. §5.6)
-├─ music: { url | null, loop }
+├─ music: { url | null, loop, start 0–3600 с, end: с | null }  фрагмент песни (lib/musicFragment.ts; null — до конца)
 └─ blocks: Block[]   порядок массива = порядок на странице; ≤ MAX_BLOCKS (40); любой тип — сколько угодно, кроме
    SINGLE_BLOCK_TYPES (hero, rsvp — по одному); id уникальны (superRefine)
    общие поля (blockBase): id (у старых JSON нет → withBlockIds: «b-<тип>», повторы «b-<тип>-2»), visible, title?, scriptLine? (строка «от руки» под заголовком),
@@ -767,6 +767,15 @@ Vercel (Postgres + migrate уже сделаны), rate limit в Redis, чист
     Этап 5: нажатие на блок в превью открывает его, открытый блок подсвечен заливкой цвета шаблона.
     Этап 6: сводки под названиями блоков и «Что осталось заполнить». Этап 7 (на пробу): телефонный режим — превью
     на весь экран и панель-шторка. Коммит `ux-v1` (ветка `ux-v1`) — состояние до переделки.
+29. Формат 2.2.0: узоры фона «Стена» (`plaster`: мягкие пятна штукатурки + шероховатость) и «Бумага» (`paper`:
+    волокна `paperFibers` + зерно + лёгкая облачность) — шум feTurbulence со stitchTiles (`noiseFilter`), рисуются
+    чёрным, цвет — фона страницы. Крупное (пятна стены, волокна и облачность бумаги) — слой `stains`, включается
+    `theme.textureStains` («Мазки и пятна», по умолчанию выкл.; `textureCss`).
+28. Формат 2.1.0: фрагмент песни (`music.start/end`): в «Музыке» — волна как в clideo.com/cut-audio
+    (`WaveformTrimmer`: пики из decodeAudioData, `computePeaks`; ручки `moveHandle`, линия воспроизведения; отпустили
+    начало — играет с него, конец — последние 3 с; клик по волне — играть оттуда), «Весь трек»; повтор — фрагмента. Плеер (`useInvitationMusic`) сам перематывает к началу, повторяет и всегда
+    плавно затухает за 1,5 с до конца; громкость — через Web Audio GainNode (на iPhone audio.volume только для
+    чтения), для файлов с чужого домена — через volume (иначе без CORS тишина). Атрибут loop у <audio> не нужен.
 27. Формат 2.0.0: блок «Переход» убран — переход стал украшением блока (`ornament.seam`, переключатель «Как переход
     между блоками» в карточке украшения). Миграция переносит каждый переход в украшение следующего блока сверху
     (последний — предыдущего снизу), размер % → px колонки 430; сдвиг и «своей полосой» не переносятся.

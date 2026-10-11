@@ -46,7 +46,7 @@ export function InvitationView({ data, slug, preview = false, demo = false, moti
       <MotionContext.Provider value={motion}>
       <OrnamentMotionContext.Provider value={data.theme.ornamentMotion}>
         <PageBackground theme={data.theme} />
-        <TextureLayer texture={data.theme.texture} dark={themePalette(data.theme).dark} />
+        <TextureLayer texture={data.theme.texture} dark={themePalette(data.theme).dark} stains={data.theme.textureStains} />
         {/* Колонка содержимого — 430 px; блок «во всю ширину» выходит на всю ширину экрана (его текст — в колонке). */}
         <main className="relative pb-24">
           {data.blocks

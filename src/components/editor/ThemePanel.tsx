@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { findBlock } from "@/lib/blocks";
 import { splitNames } from "@/lib/calendar";
 import { decorShortLabels, densityLevel, densityLevelLabels, densityOf, type DensityLevel } from "@/lib/decor";
-import { textureLabels } from "@/lib/library";
+import { textureLabels, textures } from "@/lib/library";
 import {
   BODY_FONTS,
   DECOR_TYPES,
@@ -104,6 +104,7 @@ export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
   // Образец для шрифтов — первое имя из приглашения.
   const sampleName = splitNames(findBlock(data, "hero")?.names ?? "Анна")[0].split(" ")[0] || "Анна";
   const colorId = useId();
+  const stainsId = useId();
   const popId = useId();
   const decorOn = theme.decor.type !== "none";
 
@@ -346,13 +347,19 @@ export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
                   className={cn(tile, "overflow-hidden text-[10px] text-muted-foreground")}
                 >
                   <span className="relative block h-12" style={{ background: colors.bg, ["--accent" as string]: colors.accent }}>
-                    <TextureLayer texture={t} dark={colors.dark} />
+                    <TextureLayer texture={t} dark={colors.dark} stains={theme.textureStains} />
                   </span>
                   <span className="block truncate px-1 py-1">{textureLabels[t]}</span>
                 </button>
               ))}
             </div>
           </div>
+          {theme.texture !== "none" && textures[theme.texture].stains && (
+            <Field orientation="horizontal">
+              <Switch id={stainsId} checked={theme.textureStains} onCheckedChange={(textureStains) => set({ textureStains })} />
+              <FieldLabel htmlFor={stainsId}>Мазки и пятна</FieldLabel>
+            </Field>
+          )}
           <UploadField label="Фоновое фото" value={theme.background} onChange={(background) => set({ background })} />
           {theme.background && (
             <>
