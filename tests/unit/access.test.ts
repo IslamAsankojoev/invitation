@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accountGate, canDelete, canEdit, claimDecision, claimNextOf, claimUrl, guestsPageAccess, ownershipOf } from "@/lib/access";
+import { accountGate, canDelete, shareGate, canEdit, claimDecision, claimNextOf, claimUrl, guestsPageAccess, ownershipOf } from "@/lib/access";
 
 const free = { editToken: "secret", userId: null };
 const owned = { editToken: "secret", userId: "u1" };
@@ -52,6 +52,15 @@ describe("доступ к приглашению", () => {
     // Вход не обязателен (AUTH_REQUIRED не задан) — ничего не закрыто.
     expect(accountGate({ user: null, ownership: "none", required: false })).toBeNull();
     expect(accountGate({ user: u, ownership: "other", required: false })).toBeNull();
+  });
+
+  it("поделиться ссылкой при включённом входе — только из своего аккаунта, даже если вход не обязателен", () => {
+    const u = { id: "u1" };
+    expect(shareGate(undefined)).toBeNull(); // вход выключен
+    expect(shareGate({ user: null, ownership: "none" })).toBe("login");
+    expect(shareGate({ user: u, ownership: "none" })).toBe("save");
+    expect(shareGate({ user: u, ownership: "other" })).toBe("other");
+    expect(shareGate({ user: u, ownership: "mine" })).toBeNull();
   });
 
   it("ответы гостей при входе — только владельцу; ничьё с token забирается в аккаунт", () => {

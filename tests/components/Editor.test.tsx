@@ -475,12 +475,43 @@ describe("Editor на телефоне: превью на весь экран, �
     expect(sheet()).toHaveClass("invisible");
   });
 
-  it("«Поделиться» открывает вкладку «Ссылка» с крупной кнопкой копирования", async () => {
+  it("«Отправить гостям» над превью открывает «Ссылку»: копирование, WhatsApp, Telegram, «Посмотреть как гость»", async () => {
     const user = userEvent.setup();
     renderEditor();
-    await user.click(screen.getByRole("button", { name: "Поделиться" }));
+    await user.click(screen.getByRole("button", { name: "Отправить гостям" }));
     expect(screen.getByRole("tab", { name: "Ссылка" })).toHaveAttribute("aria-selected", "true");
+    expect(sheet()).not.toHaveClass("invisible");
     expect(screen.getByRole("button", { name: "Скопировать ссылку для гостей" })).toHaveTextContent("Скопировать ссылку для гостей");
+    const url = `${window.location.origin}/i/demo`;
+    const wa = screen.getByRole("link", { name: "Отправить в WhatsApp" }).getAttribute("href")!;
+    expect(decodeURIComponent(wa)).toContain(url);
+    const tg = new URL(screen.getByRole("link", { name: "Отправить в Telegram" }).getAttribute("href")!);
+    expect(tg.searchParams.get("url")).toBe(url);
+    expect(screen.getByRole("link", { name: "Посмотреть как гость" })).toHaveAttribute("href", "/i/demo");
+    expect(screen.getByRole("button", { name: "Скачать PNG: QR-код ссылки для гостей" })).toBeInTheDocument();
+  });
+
+  it("«Открыть», «Гости» и «Отправить гостям» — над превью, а не в шапке панели", () => {
+    renderEditor();
+    const bar = screen.getByRole("region", { name: "Превью" });
+    expect(within(bar).getByRole("link", { name: "Открыть" })).toHaveAttribute("href", "/i/demo");
+    expect(within(bar).getByRole("link", { name: "Гости" })).toHaveAttribute("href", "/edit/inv1/guests?token=secret");
+    expect(within(bar).getByRole("button", { name: "Отправить гостям" })).toBeInTheDocument();
+    expect(within(screen.getByRole("navigation", { name: "Действия" })).queryByRole("link", { name: "Открыть" })).not.toBeInTheDocument();
+  });
+
+  it("«Красивая ссылка»: вариант из имён сохраняется одним нажатием", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <Editor id="inv1" token="secret" initialSlug="demo" initialData={updateBlock(createDefaultInvitation(), "hero", { names: "Айбек & Айзада" })} />,
+    );
+    await user.click(screen.getByRole("tab", { name: "Ссылка" }));
+    await user.click(screen.getByRole("button", { name: "Сделать ссылку /i/aibek-aizada" }));
+    expect(fetchMock).toHaveBeenCalledWith("/api/invitations/inv1?token=secret", expect.objectContaining({ method: "PATCH", body: JSON.stringify({ slug: "aibek-aizada" }) }));
+    expect(await screen.findByText("Ссылка сохранена")).toBeInTheDocument();
+    expect(screen.getByLabelText("Адрес приглашения")).toHaveValue("aibek-aizada");
   });
 
   it("нажатие на блок в превью открывает шторку с этим блоком", async () => {
@@ -764,15 +795,24 @@ describe("Editor: добавление, копирование и удалени
       expect(screen.getByRole("dialog", { name: "Открыть приглашение" })).toBeInTheDocument();
     });
 
-    it("вход не обязателен (AUTH_REQUIRED не задан): без входа ссылка, «Открыть» и «Гости» доступны", async () => {
+    it("вход не обязателен (AUTH_REQUIRED не задан): «Открыть» и «Гости» доступны, а поделиться — только из аккаунта", async () => {
       const user = userEvent.setup();
       renderWith({ user: null, ownership: "none", required: false });
       expect(screen.getByRole("button", { name: "Войти" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Гости" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Открыть" })).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Отправить гостям" }));
+      expect(screen.getByText("Войдите, чтобы продолжить")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Скопировать ссылку для гостей" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "Отправить в WhatsApp" })).not.toBeInTheDocument();
+    });
+
+    it("вход не обязателен, вошёл, приглашение ничьё — поделиться можно после «Сохранить в аккаунт»", async () => {
+      const user = userEvent.setup();
+      renderWith({ user: { id: "u1", email: "anna@example.com", name: "Анна", image: null }, ownership: "none", required: false });
       await user.click(screen.getByRole("tab", { name: "Ссылка" }));
-      expect(screen.queryByText("Войдите, чтобы продолжить")).not.toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Скопировать ссылку для гостей" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Сохранить в аккаунт anna@example.com" })).toHaveAttribute("href", "/edit/inv1/claim?token=secret");
+      expect(screen.queryByRole("link", { name: "Отправить в WhatsApp" })).not.toBeInTheDocument();
     });
 
     it("вошёл в другой аккаунт — ссылки и ответы закрыты, можно сменить аккаунт", async () => {

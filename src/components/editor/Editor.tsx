@@ -444,6 +444,13 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
     if (on && expanded) scrollPreview(expanded);
   }
 
+  /** «Отправить гостям»: панель «Ссылка» с кнопками WhatsApp и Telegram (на телефоне — открыть шторку). */
+  function openShare() {
+    setIntro(false);
+    setTab("Ссылка");
+    setSheet(true);
+  }
+
   function reloadPreview() {
     setPreviewKey((k) => k + 1);
     previewRef.current?.scrollTo({ top: 0 });
@@ -534,41 +541,10 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
                   </span>
                   <div className="flex shrink-0 items-center gap-1.5">{templateMode.actions(data, setData)}</div>
                 </>
-              ) : gate ? (
-                <>
-                  <Button type="button" variant="outline" size="sm" className={actionBtn} onClick={() => setGateFor("editor")}>
-                    <ExternalLink /> <span className="max-lg:sr-only">Открыть</span>
-                  </Button>
-                  <Button type="button" variant="outline" size="sm" className={actionBtn} onClick={() => setGateFor("guests")}>
-                    <Users /> <span className="max-lg:sr-only">Гости</span>
-                  </Button>
-                </>
               ) : (
-                <>
-                  <Button asChild variant="outline" size="sm" className={actionBtn}>
-                    <a href={`/i/${slug}`} target="_blank" rel="noopener">
-                      <ExternalLink /> <span className="max-lg:sr-only">Открыть</span>
-                    </a>
-                  </Button>
-                  <Button asChild variant="outline" size="sm" className={actionBtn}>
-                    <a href={`/edit/${id}/guests?token=${token}`}>
-                      <Users /> <span className="max-lg:sr-only">Гости</span>
-                    </a>
-                  </Button>
-                </>
+                // «Открыть», «Гости» и «Отправить гостям» — над превью; здесь только тема и аккаунт, прижатые вправо.
+                <span aria-hidden="true" className="hidden flex-1 lg:block" />
               )}
-            {/* Главное действие редактора — отправить гостям ссылку: одна заметная кнопка, остальное — второстепенное. */}
-            {!templateMode && <Button
-              type="button"
-              size="sm"
-              className="hidden lg:ml-auto lg:inline-flex"
-              onClick={() => {
-                setTab("Ссылка");
-                setIntro(false);
-              }}
-            >
-              <Send /> Поделиться
-            </Button>}
               <ThemeToggle />
               {account && <AccountMenu user={account.user} compact />}
               <Button type="button" variant="ghost" size="icon-sm" className="size-10 lg:hidden" aria-label="Свернуть панель" onClick={() => setSheet(false)}>
@@ -648,7 +624,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
                 <MusicPanel data={data} onChange={setData} />
               </TabsContent>
               <TabsContent value="Ссылка">
-                <LinkPanel id={id} token={token} slug={slug} onSlugChange={setSlug} account={account} lanOrigin={lanOrigin} />
+                <LinkPanel id={id} token={token} slug={slug} onSlugChange={setSlug} account={account} lanOrigin={lanOrigin} data={data} />
               </TabsContent>
             </div>
           </Tabs>
@@ -660,8 +636,10 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
           aria-label="Превью"
           className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-hidden pt-2 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:h-svh lg:gap-3 lg:p-8"
         >
-          <div className="flex w-full max-w-[433px] flex-wrap items-center gap-2 px-3 lg:px-0">
-            <Button type="button" variant="outline" size="icon-sm" className="pointer-coarse:size-10" onClick={reloadPreview} aria-label="Перезагрузить" title="Перезагрузить превью">
+          {/* z-[35] — над невидимой подложкой шторки: кнопки сверху нажимаются с первого раза и при открытой панели. */}
+          <div className="relative z-[35] flex w-full max-w-[433px] items-center gap-2 px-3 lg:max-w-[720px] lg:px-0">
+            {/* На телефоне места мало: перезагрузка превью нужна редко, «Отменить» — часто. */}
+            <Button type="button" variant="outline" size="icon-sm" className="pointer-coarse:size-10 max-sm:hidden" onClick={reloadPreview} aria-label="Перезагрузить" title="Перезагрузить превью">
               <RotateCw />
             </Button>
             <div role="group" aria-label="История правок" className="flex">
@@ -678,12 +656,43 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
               <span className={cn((status === "saved" || status === "saving") && "max-sm:sr-only")}>{statusInfo.text}</span>
             </Badge>
             <label
-              className="ml-auto flex min-h-8 cursor-pointer pointer-coarse:min-h-10 items-center gap-2 text-sm"
+              className="ml-auto flex min-h-8 cursor-pointer pointer-coarse:min-h-10 items-center gap-2 text-sm max-lg:hidden"
               title="Прокручивать превью к блоку, который открыт в редакторе"
             >
               <Switch checked={follow} onCheckedChange={toggleFollow} aria-label="Следовать за редактируемым блоком" />
               Следовать
             </label>
+            {!templateMode && (
+              <div className="ml-auto flex gap-2 lg:ml-2">
+                {gate ? (
+                  <>
+                    <Button type="button" variant="outline" size="sm" className="pointer-coarse:h-10" onClick={() => setGateFor("editor")} aria-label="Открыть">
+                      <ExternalLink /> <span className="max-sm:hidden">Открыть</span>
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" className="pointer-coarse:h-10" onClick={() => setGateFor("guests")}>
+                      <Users /> <span className="max-sm:sr-only">Гости</span>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button asChild variant="outline" size="sm" className="pointer-coarse:h-10">
+                      <a href={`/i/${slug}`} target="_blank" rel="noopener" aria-label="Открыть">
+                        <ExternalLink /> <span className="max-sm:hidden">Открыть</span>
+                      </a>
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="pointer-coarse:h-10">
+                      <a href={`/edit/${id}/guests?token=${token}`}>
+                        <Users /> <span className="max-sm:sr-only">Гости</span>
+                      </a>
+                    </Button>
+                  </>
+                )}
+                {/* Главное действие редактора — отправить гостям ссылку: одна заметная кнопка. */}
+                <Button type="button" size="sm" className="pointer-coarse:h-10" onClick={openShare}>
+                  <Send /> Отправить <span className="max-sm:sr-only">гостям</span>
+                </Button>
+              </div>
+            )}
           </div>
           {pickTip && !(sheet && !desktop) && (
             <p role="note" className="mx-3 flex w-[calc(100%-1.5rem)] max-w-[433px] items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm lg:mx-0 lg:w-full">

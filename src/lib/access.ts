@@ -49,6 +49,18 @@ export function accountGate(
 ): AccountGate {
   if (!account) return null; // вход выключен — всё по token, как раньше
   if (account.required === false) return null; // вход есть, но не обязателен (AUTH_REQUIRED не задан)
+  return ownerGate(account);
+}
+
+/**
+ * Поделиться ссылкой («Ссылка», «Отправить гостям») — при включённом входе всегда только из аккаунта, даже если
+ * AUTH_REQUIRED не задан: так автор не потеряет приглашение, которое уже разослал гостям.
+ */
+export function shareGate(account: { user: { id: string } | null; ownership: Ownership } | undefined): AccountGate {
+  return account ? ownerGate(account) : null;
+}
+
+function ownerGate(account: { user: { id: string } | null; ownership: Ownership }): AccountGate {
   if (!account.user) return "login";
   return account.ownership === "mine" ? null : account.ownership === "none" ? "save" : "other";
 }
