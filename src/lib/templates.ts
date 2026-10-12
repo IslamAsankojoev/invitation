@@ -60,6 +60,8 @@ export type Template = {
   dresscodeColors: string[];
   /** Песня нового приглашения (встроенная, lib/music.ts); нет — DEFAULT_MUSIC_URL. Смена шаблона музыку не трогает. */
   music?: string;
+  /** Фрагмент песни и повтор (как music.start/end/loop приглашения); нет — вся песня по кругу. */
+  musicFragment?: { start: number; end: number | null; loop: boolean };
   /**
    * Своя структура нового приглашения: блоки по порядку с примером текстов, фото и оформлением. Без неё —
    * стандартный набор блоков с оформлением из `blocks`. При смене шаблона n-й блок типа в приглашении получает
@@ -1195,7 +1197,7 @@ export function createBlock(data: InvitationData, type: BlockType, presetId?: st
 /** Новое приглашение по шаблону — с примером текстов (и структурой шаблона, если она есть). */
 export function createFromTemplate(template: Template): InvitationData {
   return applyTemplate(
-    { schemaVersion: SCHEMA_VERSION, theme: themeOf(template), music: { url: template.music ?? DEFAULT_MUSIC_URL, loop: true, start: 0, end: null }, blocks: sampleBlocks(template) },
+    { schemaVersion: SCHEMA_VERSION, theme: themeOf(template), music: { url: template.music ?? DEFAULT_MUSIC_URL, loop: true, start: 0, end: null, ...template.musicFragment }, blocks: sampleBlocks(template) },
     template,
   );
 }

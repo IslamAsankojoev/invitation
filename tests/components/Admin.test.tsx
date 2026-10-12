@@ -43,20 +43,24 @@ describe("админка: шаблоны", () => {
     await user.click(screen.getByRole("radio", { name: "#111111" }));
     await user.click(screen.getByRole("button", { name: "Записать" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Нет SHOWCASE_KEY");
-    expect(onRecord).toHaveBeenLastCalledWith({ fullscreen: false, bg: "#111111" });
+    expect(onRecord).toHaveBeenLastCalledWith({ fullscreen: false, bg: "#111111", sound: false });
+    // Со звуком — подсказка «без звука» в описании пропадает.
+    expect(screen.getByText(/Без звука — музыку можно добавить в Instagram/)).toBeInTheDocument();
+    await user.click(screen.getByRole("switch", { name: "Со звуком" }));
+    expect(screen.queryByText(/Без звука — музыку можно добавить в Instagram/)).not.toBeInTheDocument();
     await user.click(screen.getByRole("radio", { name: /На весь кадр/ }));
     // На весь кадр фона вокруг телефона нет — и выбора цвета тоже.
     expect(screen.queryByRole("radiogroup", { name: "Фон вокруг телефона" })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Записать" }));
     await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
-    expect(onRecord).toHaveBeenLastCalledWith({ fullscreen: true, bg: "#111111" });
+    expect(onRecord).toHaveBeenLastCalledWith({ fullscreen: true, bg: "#111111", sound: true });
   });
 });
 
 describe("админка: видео", () => {
   const videos = [
-    { name: "mocha--2026-10-12_14-00-00.mp4", templateId: "mocha", fullscreen: false, size: 4_200_000, createdAt: "2026-10-12T08:00:00.000Z" },
-    { name: "lago--2026-10-11_10-00-00--full.mp4", templateId: "lago", fullscreen: true, size: 7_000_000, createdAt: "2026-10-11T04:00:00.000Z" },
+    { name: "mocha--2026-10-12_14-00-00.mp4", templateId: "mocha", fullscreen: false, sound: false, size: 4_200_000, createdAt: "2026-10-12T08:00:00.000Z" },
+    { name: "lago--2026-10-11_10-00-00--full--sound.mp4", templateId: "lago", fullscreen: true, sound: true, size: 7_000_000, createdAt: "2026-10-11T04:00:00.000Z" },
   ];
   const names = { mocha: "Шоколад и сургуч", lago: "Итальянское озеро" };
 
@@ -88,6 +92,8 @@ describe("админка: видео", () => {
     rerender(<AdminVideos api={api} videos={videos} names={names} filter="lago" onFilter={vi.fn()} onChanged={onChanged} onGoRecord={vi.fn()} />);
     expect(within(screen.getByRole("list", { name: "Видео" })).getAllByRole("listitem")).toHaveLength(1);
     expect(screen.getByText("Весь кадр")).toBeInTheDocument();
+    expect(screen.getByText("Со звуком")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Смотреть видео «Итальянское озеро».*, со звуком$/ })).toBeInTheDocument();
   });
 });
 

@@ -10,6 +10,8 @@ const postSchema = z.object({
   templates: z.array(z.string()).min(1).max(50),
   fullscreen: z.boolean().default(false),
   bg: z.string().regex(/^#[0-9a-f]{6}$/i).default("#1b2b27"),
+  /** С музыкой приглашения. */
+  sound: z.boolean().default(false),
 });
 
 /** Ролики и очередь записи (админка опрашивает, пока что-то пишется). */
@@ -29,7 +31,7 @@ export async function POST(req: Request, { params }: Ctx) {
   const all = await adminTemplates();
   const chosen = parsed.data.templates.map((id) => all.find((t) => t.template.id === id)?.template);
   if (chosen.some((t) => !t)) return NextResponse.json({ error: "Шаблон не найден" }, { status: 404 });
-  const { fullscreen, bg } = parsed.data;
-  const jobs = enqueue(chosen.map((t) => ({ templateId: t!.id, templateName: t!.name, fullscreen, bg })), new URL(req.url).origin);
+  const { fullscreen, bg, sound } = parsed.data;
+  const jobs = enqueue(chosen.map((t) => ({ templateId: t!.id, templateName: t!.name, fullscreen, bg, sound })), new URL(req.url).origin);
   return NextResponse.json({ jobs }, { status: 202 });
 }

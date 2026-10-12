@@ -116,7 +116,7 @@ describe("админка: шаблоны", () => {
 describe("админка: видео", () => {
   it("список, отдача целиком и кусками (Range), скачивание, удаление; чужие имена — 404", async () => {
     const media = await (await MEDIA(jsonRequest("/api/admin/k/videos", "GET"), keyOnly())).json();
-    expect(media.videos).toMatchObject([{ name: VIDEO, templateId: "mocha", fullscreen: false, size: 100 }]);
+    expect(media.videos).toMatchObject([{ name: VIDEO, templateId: "mocha", fullscreen: false, sound: false, size: 100 }]);
 
     const full = await GET_VIDEO(jsonRequest(`/api/admin/k/videos/${VIDEO}`, "GET"), video(VIDEO));
     expect(full.status).toBe(200);
@@ -154,11 +154,12 @@ describe("админка: видео", () => {
     try {
       expect((await RECORD(jsonRequest("/api/admin/k/videos", "POST", { ...body, templates: ["nope"] }), keyOnly())).status).toBe(404);
       expect((await RECORD(jsonRequest("/api/admin/k/videos", "POST", { ...body, bg: "red" }), keyOnly())).status).toBe(400);
-      const res = await RECORD(jsonRequest("/api/admin/k/videos", "POST", body), keyOnly());
+      const res = await RECORD(jsonRequest("/api/admin/k/videos", "POST", { ...body, sound: true }), keyOnly());
       expect(res.status).toBe(202);
       const [job] = (await res.json()).jobs;
-      expect(job).toMatchObject({ templateId: "mocha", templateName: "Шоколад и сургуч", fullscreen: true });
-      expect(calls[0]).toEqual(["mocha", "--base", "http://localhost", "--name", job.file, "--bg", "#111111", "--fullscreen"]);
+      expect(job).toMatchObject({ templateId: "mocha", templateName: "Шоколад и сургуч", fullscreen: true, sound: true });
+      expect(job.file).toMatch(/--full--sound\.mp4$/);
+      expect(calls[0]).toEqual(["mocha", "--base", "http://localhost", "--name", job.file, "--bg", "#111111", "--fullscreen", "--audio"]);
       expect((await CANCEL(jsonRequest(`/api/admin/k/jobs/${job.id}`, "DELETE"), tpl(job.id))).status).toBe(204);
       const start = Date.now();
       while (!listJobs().every(isFinished) && Date.now() - start < 5000) await new Promise((r) => setTimeout(r, 20));

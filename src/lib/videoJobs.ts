@@ -15,6 +15,8 @@ export type VideoJob = {
   templateName: string;
   fullscreen: boolean;
   bg: string;
+  /** С музыкой приглашения (скрипт с --audio). */
+  sound: boolean;
   file: string;
   stage: VideoStage;
   /** Доля пролистанной страницы, 0–1. */
@@ -26,7 +28,7 @@ export type VideoJob = {
   endedAt?: string;
 };
 
-export type VideoRequest = { templateId: string; templateName: string; fullscreen: boolean; bg: string };
+export type VideoRequest = { templateId: string; templateName: string; fullscreen: boolean; bg: string; sound: boolean };
 
 /** Как запустить запись (в тестах — подменяется). */
 export type Runner = (args: string[]) => ChildProcess;
@@ -63,7 +65,7 @@ export function enqueue(requests: VideoRequest[], base: string): VideoJob[] {
     ...r,
     id: randomUUID(),
     // Секунды в имени разводим номером, чтобы «Записать все» не дал одинаковых имён.
-    file: videoFileName(r.templateId, r.fullscreen, new Date(now.getTime() + i * 1000)),
+    file: videoFileName(r.templateId, r.fullscreen, new Date(now.getTime() + i * 1000), r.sound),
     stage: "queued",
     progress: 0,
     log: [],
@@ -98,7 +100,7 @@ function pump() {
   const job = state.jobs.find((j) => j.stage === "queued");
   if (!job) return;
   job.stage = "open";
-  const args = [job.templateId, "--base", state.base, "--name", job.file, "--bg", job.bg, ...(job.fullscreen ? ["--fullscreen"] : [])];
+  const args = [job.templateId, "--base", state.base, "--name", job.file, "--bg", job.bg, ...(job.fullscreen ? ["--fullscreen"] : []), ...(job.sound ? ["--audio"] : [])];
   let child: ChildProcess;
   try {
     child = state.runner(args);

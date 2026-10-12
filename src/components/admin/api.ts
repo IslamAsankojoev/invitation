@@ -21,7 +21,8 @@ export function adminApi(adminKey: string) {
   return {
     videoUrl: (name: string) => `${base}/videos/${encodeURIComponent(name)}`,
     media: () => call<{ videos: VideoFile[]; jobs: VideoJob[] }>("/videos"),
-    record: (templates: string[], fullscreen: boolean, bg: string) => call<{ jobs: VideoJob[] }>("/videos", { method: "POST", json: { templates, fullscreen, bg } }),
+    record: (templates: string[], options: { fullscreen: boolean; bg: string; sound: boolean }) =>
+      call<{ jobs: VideoJob[] }>("/videos", { method: "POST", json: { templates, ...options } }),
     cancelJob: (id: string) => call<null>(`/jobs/${id}`, { method: "DELETE" }),
     deleteVideo: (name: string) => call<null>(`/videos/${encodeURIComponent(name)}`, { method: "DELETE" }),
     rename: (id: string, name: string, description: string) => call(`/templates/${id}`, { method: "PATCH", json: { name, description } }),

@@ -131,20 +131,20 @@ async function addCredit(file: string, templateName: string) {
 
 // ——— Видео ———
 
-/** Имя ролика: <шаблон>--<дата_время>[--full].mp4; старые ролики скрипта — просто <шаблон>.mp4. */
-export const VIDEO_NAME = /^[a-z0-9][a-z0-9-]*(--[0-9_-]+)?(--full)?\.mp4$/;
+/** Имя ролика: <шаблон>--<дата_время>[--full][--sound].mp4; старые ролики скрипта — просто <шаблон>.mp4. */
+export const VIDEO_NAME = /^[a-z0-9][a-z0-9-]*(--[0-9_-]+)?(--full)?(--sound)?\.mp4$/;
 
-export type VideoFile = { name: string; templateId: string; fullscreen: boolean; size: number; createdAt: string };
+export type VideoFile = { name: string; templateId: string; fullscreen: boolean; sound: boolean; size: number; createdAt: string };
 
-export function videoFileName(templateId: string, fullscreen: boolean, now = new Date()) {
+export function videoFileName(templateId: string, fullscreen: boolean, now = new Date(), sound = false) {
   const p = (n: number) => String(n).padStart(2, "0");
   const stamp = `${now.getFullYear()}-${p(now.getMonth() + 1)}-${p(now.getDate())}_${p(now.getHours())}-${p(now.getMinutes())}-${p(now.getSeconds())}`;
-  return `${templateId}--${stamp}${fullscreen ? "--full" : ""}.mp4`;
+  return `${templateId}--${stamp}${fullscreen ? "--full" : ""}${sound ? "--sound" : ""}.mp4`;
 }
 
 export function parseVideoName(name: string) {
   const [templateId, ...rest] = name.replace(/\.mp4$/, "").split("--");
-  return { templateId, fullscreen: rest.includes("full") };
+  return { templateId, fullscreen: rest.includes("full"), sound: rest.includes("sound") };
 }
 
 /** Ролики, свежие сверху. */

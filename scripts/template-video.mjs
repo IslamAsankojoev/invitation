@@ -1,11 +1,16 @@
 // Видео шаблона для Instagram (Reels 9:16, 1080×1920): открывает скрытый показ /showcase/<ключ>/<шаблон>,
 // нажимает на печать конверта и листает приглашение «пальцем» — как в эталонном ролике (замеры по кадрам):
-// свайп 0,83 с, старт сразу на полной скорости, скорость гаснет как (1−t)^1,5 (путь 1−(1−t)^2,5), шаг — до начала
-// следующего блока, но не больше ~1,05 экрана, пауза ~2,6 с; анкету заполняют (имя по буквам, «Приду», +2 гостя,
-// «Подтвердить»). Звука нет (музыку добавлять в Instagram — права на песни из public/music не оформлены).
+// свайп 1,15 с (в эталоне 0,83 — медленнее плавнее), старт сразу на полной скорости, скорость гаснет как (1−t)^1,5
+// (путь 1−(1−t)^2,5); каждый следующий блок встаёт к верху экрана, уже целиком видные пропускаются, высокий блок
+// листается по частям (nextScrollTarget), пауза ~2,6 с; анкету заполняют (имя по буквам, «Приду», +2 гостя,
+// «Подтвердить»). По умолчанию без звука; --audio — с музыкой приглашения, как её слышит гость: песня шаблона с
+// нажатия на печать (момент нажатия + ~0,15 с — как у живого телефона; headless под съёмкой начинает играть на
+// секунду позже, этот сдвиг в ролик не переносим; часы кадров и Node совпадают до мс), нарастание 2 с, фрагмент
+// start…end с затуханием 1,5 с в конце и повтором (нарастание 0,8 с), в конце ролика — затухание. Права на песни из
+// public/music не оформлены — для публикации это решает владелец.
 //
 //   npm run video -- <шаблон…|all> [--base http://localhost:3000] [--out videos] [--fps 30] [--bg "#1b2b27"] [--fullscreen]
-//                    [--name <файл.mp4>]   — имя ролика (только для одного шаблона; по умолчанию <шаблон>.mp4)
+//                    [--audio] [--name <файл.mp4>]   — имя ролика (только для одного шаблона; по умолчанию <шаблон>.mp4)
 //
 // Для админки (/admin) скрипт печатает в stdout служебные строки: «@stage open|record|encode», «@progress 0.42»
 // (доля пролистанной страницы) и «@file <путь>» в конце ролика.
@@ -45,6 +50,8 @@ const fullscreen = args.includes("--fullscreen");
 /** VIDEO_DEBUG=1 — печатать шаги листания (где остановились, что нажали). */
 const debug = (...a) => process.env.VIDEO_DEBUG && console.error("·", ...a);
 if (fullscreen) args.splice(args.indexOf("--fullscreen"), 1);
+const withAudio = args.includes("--audio");
+if (withAudio) args.splice(args.indexOf("--audio"), 1);
 const key = process.env.SHOWCASE_KEY;
 if (!key) throw new Error("Нет SHOWCASE_KEY в .env — без него страницы показа не открываются");
 
@@ -56,9 +63,9 @@ const VIEW = fullscreen ? { width: 405, height: 720 } : { width: 390, height: Ma
 const DPR = fullscreen ? 8 / 3 : 1.6;
 
 /** Тайминги эталонного ролика, мс. */
-const T = { envelope: 2300, hero: 4200, flick: 830, dwell: 2600, beforeRsvp: 900, afterThanks: 2600, end: 2400 };
-/** Шаг свайпа в долях экрана: не дальше MAX, блок ближе MIN не считается «следующим». */
-const STEP = { min: 0.35, max: 1.05, fallback: 0.85 };
+const T = { envelope: 2300, hero: 4200, flick: 1150, dwell: 2600, beforeRsvp: 900, afterThanks: 2600, end: 2400 };
+/** Шаг свайпа по высокому блоку без подходящей части, доля экрана. */
+const STEP = { fallback: 0.85 };
 
 async function templateIds() {
   const res = await fetch(`${base}/showcase/${key}`);
@@ -109,36 +116,52 @@ async function record(browser, id) {
   });
 
   report("stage", "record");
+  // Заиграла ли песня после нажатия на печать — только проверка (звук ставим по моменту нажатия, см. шапку).
+  if (withAudio)
+    await page.evaluate(() => {
+      const audio = document.querySelector('audio[data-testid="music"]');
+      audio?.addEventListener("playing", () => (window.__musicPlayed = true), { once: true });
+    });
   // Конверт: даём рассмотреть, «касание» пальцем по печати, приглашение открывается.
   await page.waitForTimeout(T.envelope);
-  await tap(page, page.getByRole("button", { name: "Открыть приглашение" }));
+  const openedAt = await tap(page, page.getByRole("button", { name: "Открыть приглашение" }));
   await page.waitForTimeout(T.hero);
 
   // Свайпы до конца страницы; положения блоков меряем заново (анкета после ответа меняет высоту).
   let rsvpDone = false;
   for (let guard = 0; guard < 60; guard++) {
-    const { y, maxScroll, tops, rsvpTop } = await page.evaluate(() => {
-      const sections = [...document.querySelectorAll("section[data-block]")].filter((s) => s.dataset.block !== "divider");
-      const top = (s) => s.getBoundingClientRect().top + scrollY;
-      const rsvp = sections.find((s) => s.dataset.block === "rsvp");
+    const { y, maxScroll, sections, photos } = await page.evaluate(() => {
+      const box = (el) => {
+        const r = el.getBoundingClientRect();
+        return { top: r.top + scrollY, bottom: r.bottom + scrollY };
+      };
       return {
         y: scrollY,
         maxScroll: document.documentElement.scrollHeight - innerHeight,
-        tops: sections.map(top),
-        rsvpTop: rsvp ? top(rsvp) : null,
+        // Фото (img и фото-заливки блоков) — их нижний край экрана резать не должен.
+        photos: [...document.querySelectorAll('section[data-block] img, section[data-block] [data-testid*="photo"]')]
+          .map(box)
+          .filter((b) => b.bottom - b.top > 60),
+        sections: [...document.querySelectorAll("section[data-block]")]
+          .filter((s) => s.dataset.block !== "divider")
+          .map((s) => ({
+            block: s.dataset.block,
+            ...box(s),
+            // Части блока (то, что появляется анимацией, и фото) — по ним листается блок выше экрана.
+            parts: [...s.querySelectorAll("[data-reveal], img")].map(box).filter((b) => b.bottom - b.top > 24),
+          })),
       };
     });
     if (maxScroll > 0) report("progress", Math.min(1, y / maxScroll).toFixed(3));
     if (y >= maxScroll - 2) break;
-    const vh = VIEW.height;
-    const next = tops.find((t) => t > y + vh * STEP.min);
-    let target = next !== undefined && next - y <= vh * STEP.max ? next - vh * 0.04 : y + vh * STEP.fallback;
+    let target = avoidCutPhotos(nextScrollTarget(y, VIEW.height, sections, rsvpDone), y, VIEW.height, photos);
     target = Math.min(maxScroll, Math.max(0, target));
+    const rsvpTop = sections.find((s) => s.block === "rsvp")?.top ?? null;
     debug(`свайп ${Math.round(y)} → ${Math.round(target)} (конец ${Math.round(maxScroll)})`);
     await flick(page, target);
     // Упёрлись в низ (в мобильной эмуляции расчётный конец страницы бывает дальше реального) — это конец.
     if (Math.abs((await page.evaluate(() => scrollY)) - y) < 2) break;
-    const atRsvp = !rsvpDone && rsvpTop !== null && Math.abs(target - (rsvpTop - vh * 0.04)) < 4;
+    const atRsvp = !rsvpDone && rsvpTop !== null && Math.abs(target - rsvpTop) < 4;
     if (atRsvp) {
       rsvpDone = true;
       await page.waitForTimeout(T.beforeRsvp);
@@ -151,12 +174,60 @@ async function record(browser, id) {
   await page.waitForTimeout(T.end - T.dwell);
 
   await cdp.send("Page.stopScreencast");
+  // Музыка приглашения: файл, фрагмент, повтор и момент старта (мс по часам системы).
+  const music = withAudio
+    ? await page.evaluate(() => {
+        const audio = document.querySelector('audio[data-testid="music"]');
+        if (!audio) return null;
+        const { start, end, loop } = audio.dataset;
+        return { src: audio.currentSrc || audio.src, start: Number(start) || 0, end: end ? Number(end) : null, loop: loop !== undefined, played: !!window.__musicPlayed };
+      })
+    : null;
+  if (music) music.at = openedAt + PLAY_LATENCY;
   await context.close();
-  return frames;
+  return { frames, music };
+}
+
+/** Допуск при сравнении границ блоков с краем экрана, px. */
+const EDGE = 4;
+
+/**
+ * Куда листать: блоки, уже целиком видные на экране, пропускаем; первый блок, который виден не целиком, встаёт к
+ * верху экрана — его анимации проигрываются целиком, а не за нижним краем. Блок выше экрана листается частями: к
+ * верху встаёт первая его часть (фото, абзац), обрезанная снизу, — без неё ~0,85 экрана. Анкету не пропускаем, даже
+ * если она уже видна: её надо заполнить.
+ */
+function nextScrollTarget(y, vh, sections, rsvpDone) {
+  const rsvp = !rsvpDone && sections.find((s) => s.block === "rsvp" && s.top > y + EDGE);
+  const s = sections.find((s) => s.bottom > y + vh + EDGE);
+  if (rsvp && (!s || rsvp.top <= s.top)) return rsvp.top;
+  if (!s) return Infinity; // всё видно — к концу страницы
+  if (s.top > y + EDGE) return s.top;
+  const cut = s.parts.filter((p) => p.top > y + vh * 0.15 && p.top < y + vh - EDGE && p.bottom > y + vh + EDGE).map((p) => p.top);
+  const below = s.parts.filter((p) => p.top >= y + vh - EDGE).map((p) => p.top);
+  let target = cut.length ? Math.min(...cut) - 16 : below.length ? Math.min(...below) - 16 : y + vh * STEP.fallback;
+  // Не дальше экрана (иначе что-то пролетит невиденным) и не мельче четверти экрана.
+  target = Math.min(target, y + vh * 0.95);
+  return target < y + vh * 0.25 ? y + vh * STEP.fallback : target;
 }
 
 /**
- * Свайп как в эталонном ролике: 0,83 с, старт сразу на полной скорости, скорость гаснет как (1−t)^1,5 —
+ * Остановка не должна резать фото нижним краем экрана: его анимация проиграется наполовину за краем, а когда блок
+ * доедет наверх, фото будет уже неподвижным. Лучше не долистать (фото ещё за краем), иначе — долистать до его низа;
+ * оба варианта — только если шаг остаётся заметным и ничего не пролетает невиденным.
+ */
+function avoidCutPhotos(target, y, vh, photos) {
+  if (!Number.isFinite(target)) return target;
+  const cut = photos.filter((p) => p.top < target + vh - EDGE && p.bottom > target + vh + EDGE);
+  if (!cut.length) return target;
+  const before = Math.min(...cut.map((p) => p.top)) - vh - 8;
+  if (before > y + vh * 0.25) return before;
+  const after = Math.max(...cut.map((p) => p.bottom)) - vh + 8;
+  return after - y <= vh * 0.95 ? after : target;
+}
+
+/**
+ * Свайп как в эталонном ролике (чуть медленнее — плавнее): старт сразу на полной скорости, скорость гаснет как (1−t)^1,5 —
  * путь 1−(1−t)^2,5. Короткие поправки (меньше трети экрана) — чуть быстрее.
  */
 async function flick(page, target) {
@@ -181,13 +252,15 @@ async function flick(page, target) {
   );
 }
 
-/** Нажатие «пальцем»: след касания, затем само нажатие. */
+/** Нажатие «пальцем»: след касания, затем само нажатие. Возвращает момент нажатия (мс, часы системы — как у кадров). */
 async function tap(page, locator) {
   debug("нажатие", String(locator));
   await locator.scrollIntoViewIfNeeded().catch(() => {});
   const box = await locator.boundingBox();
   if (box) await showTap(page, box.x + box.width / 2, box.y + box.height / 2);
+  const at = Date.now();
   await locator.click();
+  return at;
 }
 
 /** Анкета как в ролике: имя по буквам, «Приду», двое гостей сверху, отправка; держим кадр на «Спасибо!». */
@@ -284,8 +357,50 @@ async function mockupLayers(dir) {
   await sharp(Buffer.from(top)).png().toFile(path.join(dir, "top.png"));
 }
 
-/** Кадры с метками времени → MP4 с постоянной частотой (кадр держится, пока не придёт следующий). */
-async function encode(frames, file) {
+/** Как в lib/musicFragment.ts: короче фрагмент не бывает, и за сколько секунд до конца он затухает. */
+const MIN_FRAGMENT = 3;
+const FADE_OUT = 1.5;
+/** Через сколько после нажатия на печать песня начинает звучать в живом браузере, мс. */
+const PLAY_LATENCY = 150;
+/** Нарастание при включении и при повторе — как в useInvitationMusic. */
+const FADE_IN = 2;
+const FADE_IN_REPEAT = 0.8;
+
+/**
+ * Дорожка музыки (часть filter_complex → [a]; метки не пересекаются с графом видео: [s] [m] [sr] [vo] [v]): песня с момента, когда заиграла у гостя, как её играет плеер
+ * приглашения, — фрагмент, нарастание, затухание у конца фрагмента и повторы; в конце ролика — затухание.
+ */
+async function audioGraph(music, dir, input, t0, duration) {
+  const res = await fetch(new URL(music.src, base));
+  if (!res.ok) throw new Error(`Не удалось скачать песню ${music.src} (${res.status})`);
+  const file = path.join(dir, `music${path.extname(new URL(music.src, base).pathname) || ".mp3"}`);
+  writeFileSync(file, new Uint8Array(await res.arrayBuffer()));
+  const track = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", file]).toString().trim());
+  if (!Number.isFinite(track) || track <= 0) throw new Error(`Не удалось прочитать длину песни ${music.src}`);
+  const start = Math.min(Math.max(0, music.start), Math.max(0, track - MIN_FRAGMENT));
+  const end = music.end == null ? track : Math.min(track, Math.max(start + MIN_FRAGMENT, music.end));
+  const fragment = end - start;
+  const delay = Math.max(0, (music.at - t0) / 1000);
+  const length = duration - delay;
+  if (length <= 0.5) return null;
+  const copies = music.loop ? Math.min(50, Math.ceil(length / fragment)) : 1;
+  const labels = Array.from({ length: copies }, (_, i) => `[x${i}]`).join("");
+  const parts = [`[${input}:a]aresample=48000${copies > 1 ? `,asplit=${copies}${labels}` : "[x0]"}`];
+  for (let i = 0; i < copies; i++)
+    parts.push(
+      `[x${i}]atrim=start=${start.toFixed(3)}:end=${end.toFixed(3)},asetpts=PTS-STARTPTS,` +
+        `afade=t=in:st=0:d=${i === 0 ? FADE_IN : FADE_IN_REPEAT},afade=t=out:st=${Math.max(0, fragment - FADE_OUT).toFixed(3)}:d=${FADE_OUT}[p${i}]`,
+    );
+  parts.push(copies > 1 ? `${Array.from({ length: copies }, (_, i) => `[p${i}]`).join("")}concat=n=${copies}:v=0:a=1[mus]` : "[p0]anull[mus]");
+  parts.push(
+    `[mus]atrim=end=${length.toFixed(3)},afade=t=out:st=${Math.max(0, length - FADE_OUT).toFixed(3)}:d=${FADE_OUT},` +
+      `adelay=${Math.round(delay * 1000)}:all=1,apad[a]`,
+  );
+  return { file, graph: parts.join(";") };
+}
+
+/** Кадры с метками времени → MP4 с постоянной частотой (кадр держится, пока не придёт следующий); music — со звуком. */
+async function encode(frames, file, music = null) {
   const dir = mkdtempSync(path.join(tmpdir(), "inv-video-"));
   try {
     const list = [];
@@ -300,7 +415,7 @@ async function encode(frames, file) {
     const input = ["-f", "concat", "-safe", "0", "-i", "list.txt"];
     let filter;
     if (fullscreen) {
-      filter = ["-vf", `fps=${fps},scale=1080:1920:flags=lanczos,format=yuv420p`];
+      filter = ["-filter_complex", `[0]fps=${fps},scale=1080:1920:flags=lanczos,format=yuv420p[v]`];
     } else {
       await mockupLayers(dir);
       // Картинки рамки зациклены (бесконечны) — длину ролика задаёт -t ниже, иначе ffmpeg не остановится.
@@ -309,14 +424,21 @@ async function encode(frames, file) {
       filter = [
         "-filter_complex",
         `[0]fps=${fps},scale=${w}:${h}:flags=lanczos,format=rgba[s];[2]format=gray,scale=${w}:${h}[m];[s][m]alphamerge[sr];` +
-          `[1][sr]overlay=${x}:${y}:shortest=1[v];[v][3]overlay=0:0:shortest=1,format=yuv420p`,
+          `[1][sr]overlay=${x}:${y}:shortest=1[vo];[vo][3]overlay=0:0:shortest=1,format=yuv420p[v]`,
       ];
     }
     const duration = (frames.at(-1).t - frames[0].t + 1 / fps).toFixed(3);
+    // Звук: песня — следующий вход, её граф дописывается к видео в тот же filter_complex.
+    const audio = music ? await audioGraph(music, dir, input.filter((a) => a === "-i").length, frames[0].t * 1000, Number(duration)) : null;
+    if (audio) {
+      input.push("-i", audio.file);
+      filter[1] += `;${audio.graph}`;
+    }
+    const maps = ["-map", "[v]", ...(audio ? ["-map", "[a]", "-c:a", "aac", "-b:a", "192k", "-ac", "2"] : [])];
     // nice и 4 потока — кодирование не забирает весь процессор; preset medium почти не уступает slow по качеству.
     execFileSync(
       "nice",
-      ["-n", "15", "ffmpeg", "-y", "-loglevel", "error", "-filter_threads", "2", ...input, ...filter, "-t", duration, "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-threads", "4", "-r", String(fps), "-movflags", "+faststart", path.resolve(file)],
+      ["-n", "15", "ffmpeg", "-y", "-loglevel", "error", "-filter_threads", "2", ...input, ...filter, ...maps, "-t", duration, "-c:v", "libx264", "-preset", "medium", "-crf", "18", "-threads", "4", "-r", String(fps), "-movflags", "+faststart", path.resolve(file)],
       { cwd: dir, stdio: "inherit" },
     );
   } finally {
@@ -358,15 +480,19 @@ try {
     const started = Date.now();
     report("stage", "open", id);
     // Предохранитель: один ролик — около минуты; дольше 3 минут — значит, что-то зависло, не греем ноутбук зря.
-    const frames = await Promise.race([
+    // Таймер снимаем: иначе после последнего ролика процесс ждал бы его ещё до 3 минут (админка — «Склеиваю видео…»).
+    let guard;
+    const { frames, music } = await Promise.race([
       record(browser, id),
-      new Promise((_, fail) => setTimeout(() => fail(new Error(`${id}: съёмка дольше 3 минут — остановлено`)), 180_000)),
-    ]);
+      new Promise((_, fail) => (guard = setTimeout(() => fail(new Error(`${id}: съёмка дольше 3 минут — остановлено`)), 180_000))),
+    ]).finally(() => clearTimeout(guard));
     const seconds = frames.at(-1).t - frames[0].t;
     const file = path.join(outDir, fileName ?? `${id}.mp4`);
     report("progress", "1");
     report("stage", "encode");
-    await encode(frames, file);
+    if (withAudio && !music) console.error(`${id}: в приглашении нет музыки — ролик без звука`);
+    else if (withAudio && !music.played) console.error(`${id}: песня не заиграла в браузере (файл не загрузился?) — звук всё равно наложен`);
+    await encode(frames, file, music);
     report("file", file);
     console.log(`${file}  ${seconds.toFixed(1)} с, ${frames.length} кадров (~${(frames.length / seconds).toFixed(0)} к/с снято), ${((Date.now() - started) / 1000).toFixed(0)} с работы`);
   }

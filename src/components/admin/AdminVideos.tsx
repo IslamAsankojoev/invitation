@@ -1,6 +1,6 @@
 "use client";
 
-import { Clapperboard, Download, Play, Trash2 } from "lucide-react";
+import { Clapperboard, Download, Play, Trash2, Volume2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   AlertDialog,
@@ -91,7 +91,7 @@ export function AdminVideos({ api, videos, names, filter, onFilter, onChanged, o
                 type="button"
                 onClick={() => setPlaying(v)}
                 className="group relative block aspect-[9/16] w-full overflow-hidden bg-black outline-none focus-visible:ring-3 focus-visible:ring-ring focus-visible:ring-inset"
-                aria-label={`Смотреть видео «${nameOf(v)}», ${formatDate(v.createdAt)}`}
+                aria-label={`Смотреть видео «${nameOf(v)}», ${formatDate(v.createdAt)}${v.sound ? ", со звуком" : ""}`}
               >
                 {/* #t=1 — браузер показывает кадр с первой секунды (в нулевой — ещё пустой экран перед конвертом). */}
                 <video src={`${api.videoUrl(v.name)}#t=1`} preload="metadata" muted playsInline className="h-full w-full object-cover" aria-hidden="true" tabIndex={-1} />
@@ -100,9 +100,14 @@ export function AdminVideos({ api, videos, names, filter, onFilter, onChanged, o
                     <Play className="size-5 translate-x-px fill-current" aria-hidden="true" />
                   </span>
                 </span>
-                <Badge variant="secondary" className="absolute top-2 left-2">
-                  {v.fullscreen ? "Весь кадр" : "Телефон"}
-                </Badge>
+                <span className="absolute top-2 left-2 flex flex-wrap gap-1">
+                  <Badge variant="secondary">{v.fullscreen ? "Весь кадр" : "Телефон"}</Badge>
+                  {v.sound && (
+                    <Badge variant="secondary">
+                      <Volume2 aria-hidden="true" /> Со звуком
+                    </Badge>
+                  )}
+                </span>
               </button>
               <div className="flex flex-col gap-2 p-3">
                 <div className="min-w-0">
@@ -137,6 +142,7 @@ export function AdminVideos({ api, videos, names, filter, onFilter, onChanged, o
                 <DialogTitle>{nameOf(playing)}</DialogTitle>
                 <DialogDescription>
                   {formatDate(playing.createdAt)} · {formatSize(playing.size)} · {playing.fullscreen ? "весь кадр" : "телефон в рамке"}
+                  {playing.sound ? " · со звуком" : " · без звука"}
                 </DialogDescription>
               </DialogHeader>
               <video key={playing.name} src={api.videoUrl(playing.name)} controls autoPlay playsInline className="mx-auto aspect-[9/16] max-h-[70svh] w-auto rounded-lg bg-black" />

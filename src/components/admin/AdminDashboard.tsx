@@ -38,9 +38,12 @@ export function AdminDashboard({ adminKey, templates, videos: initialVideos, job
   /** Законченные записи, которые человек уже убрал из панели. */
   const [dismissed, setDismissed] = useState<string[]>(() => initialJobs.filter((j) => j.endedAt).map((j) => j.id));
 
-  // Вкладка — в адресе (#videos): после перезагрузки и по ссылке открывается та же.
+  // Вкладка — в адресе (#videos): после перезагрузки, по ссылке и при смене адреса без перезагрузки открывается та же.
   useEffect(() => {
-    if (window.location.hash === "#videos") setTab("videos");
+    const fromHash = () => setTab(window.location.hash === "#videos" ? "videos" : "templates");
+    fromHash();
+    window.addEventListener("hashchange", fromHash);
+    return () => window.removeEventListener("hashchange", fromHash);
   }, []);
   const switchTab = (next: Tab) => {
     setTab(next);
@@ -98,7 +101,7 @@ export function AdminDashboard({ adminKey, templates, videos: initialVideos, job
             jobs={panelJobs}
             onCancel={(id) => api.cancelJob(id).then(refreshMedia, refreshMedia)}
             onDismiss={(id) => setDismissed((d) => [...d, id])}
-            onRetry={(job) => api.record([job.templateId], job.fullscreen, job.bg).then(refreshMedia)}
+            onRetry={(job) => api.record([job.templateId], { fullscreen: job.fullscreen, bg: job.bg, sound: job.sound }).then(refreshMedia)}
             onWatch={(job) => {
               setDismissed((d) => [...d, job.id]);
               showVideos(job.templateId);
@@ -144,8 +147,8 @@ export function AdminDashboard({ adminKey, templates, videos: initialVideos, job
         templates={recordFor ?? []}
         open={!!recordFor}
         onOpenChange={(open) => !open && setRecordFor(null)}
-        onRecord={async ({ fullscreen, bg }) => {
-          await api.record(recordFor!.map((t) => t.id), fullscreen, bg);
+        onRecord={async (options) => {
+          await api.record(recordFor!.map((t) => t.id), options);
           await refreshMedia();
         }}
       />
@@ -199,7 +202,11 @@ function JobsPanel({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">
-                  {job.templateName} <span className="font-normal text-muted-foreground">· {job.fullscreen ? "весь кадр" : "телефон"}</span>
+                  {job.templateName}{" "}
+                  <span className="font-normal text-muted-foreground">
+                    · {job.fullscreen ? "весь кадр" : "телефон"}
+                    {job.sound && " · со звуком"}
+                  </span>
                 </p>
                 <p className={cn("truncate text-xs", job.stage === "error" ? "text-destructive" : "text-muted-foreground")} title={job.error}>
                   {job.stage === "error" ? job.error : job.stage === "record" ? `${STAGE.record} · ${percent}%` : STAGE[job.stage]}

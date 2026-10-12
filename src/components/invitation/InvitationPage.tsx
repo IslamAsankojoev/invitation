@@ -45,6 +45,10 @@ export function InvitationPage({ data, slug, demo = false }: { data: InvitationD
           preload="auto"
           crossOrigin="anonymous"
           data-testid="music"
+          // Фрагмент и повтор — для записи видео со звуком (scripts/template-video.mjs собирает дорожку как у гостя).
+          data-start={data.music.start}
+          data-end={data.music.end ?? undefined}
+          data-loop={data.music.loop ? "" : undefined}
         />
       )}
 

@@ -26,6 +26,10 @@ export function templateFromInvitation(base: Template, data: InvitationData): Te
     blocks: structuredClone(base.blocks),
     dresscodeColors: dresscode?.colors.length ? [...dresscode.colors] : [...base.dresscodeColors],
     ...(data.music.url && { music: data.music.url }),
+    // Фрагмент — только если выбран не «весь трек по кругу» (иначе шаблон не отличается от прежнего).
+    ...((data.music.start || data.music.end != null || !data.music.loop) && {
+      musicFragment: { start: data.music.start, end: data.music.end, loop: data.music.loop },
+    }),
     layout,
   };
 }
@@ -52,7 +56,7 @@ const stable = (v: unknown): string =>
 
 /** Содержимое для сравнения: тема, песня и блоки без id (id черновика и нового приглашения могут различаться). */
 const comparable = (data: InvitationData) =>
-  stable({ theme: data.theme, music: data.music.url, blocks: data.blocks.map(({ id: _id, ...b }) => b) });
+  stable({ theme: data.theme, music: data.music, blocks: data.blocks.map(({ id: _id, ...b }) => b) });
 
 /** Черновик совпадает с шаблоном — сохранять в шаблон нечего. */
 export const sameAsTemplate = (template: Template, data: InvitationData) => comparable(createFromTemplate(template)) === comparable(data);

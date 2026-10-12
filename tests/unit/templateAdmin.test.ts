@@ -54,6 +54,17 @@ describe("шаблон из приглашения", () => {
     }
   });
 
+  it("фрагмент песни (начало, конец, повтор) — правка, сохраняется в шаблон и попадает в новое приглашение", () => {
+    const base = createFromTemplate(mocha);
+    const draft = { ...base, music: { ...base.music, start: 42.5, end: 95, loop: false } };
+    expect(sameAsTemplate(mocha, draft)).toBe(false);
+    const saved = JSON.parse(JSON.stringify(templateFromInvitation(mocha, draft)));
+    expect(createFromTemplate(saved).music).toEqual(draft.music);
+    expect(sameAsTemplate(saved, draft)).toBe(true);
+    // Весь трек по кругу — отдельного фрагмента в шаблоне нет.
+    expect(templateFromInvitation(mocha, base).musicFragment).toBeUndefined();
+  });
+
   it("цвета дресс-кода — из блока дресс-кода", () => {
     const draft = updateBlock(createFromTemplate(mocha), "dresscode", { colors: ["#111111", "#222222"] });
     expect(templateFromInvitation(mocha, draft).dresscodeColors).toEqual(["#111111", "#222222"]);
@@ -101,8 +112,12 @@ describe("имена роликов", () => {
     const name = videoFileName("mocha", true, new Date(2026, 9, 12, 14, 3, 9));
     expect(name).toBe("mocha--2026-10-12_14-03-09--full.mp4");
     expect(VIDEO_NAME.test(name)).toBe(true);
-    expect(parseVideoName(name)).toEqual({ templateId: "mocha", fullscreen: true });
-    expect(parseVideoName("cream-classic.mp4")).toEqual({ templateId: "cream-classic", fullscreen: false });
+    expect(parseVideoName(name)).toEqual({ templateId: "mocha", fullscreen: true, sound: false });
+    const sound = videoFileName("lago", false, new Date(2026, 9, 12, 14, 3, 9), true);
+    expect(sound).toBe("lago--2026-10-12_14-03-09--sound.mp4");
+    expect(VIDEO_NAME.test(sound) && VIDEO_NAME.test(videoFileName("lago", true, new Date(), true))).toBe(true);
+    expect(parseVideoName(sound)).toEqual({ templateId: "lago", fullscreen: false, sound: true });
+    expect(parseVideoName("cream-classic.mp4")).toEqual({ templateId: "cream-classic", fullscreen: false, sound: false });
     for (const bad of ["../x.mp4", "a/b.mp4", ".env", "x.mov"]) expect(VIDEO_NAME.test(bad), bad).toBe(false);
   });
 });

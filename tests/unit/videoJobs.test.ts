@@ -18,7 +18,7 @@ const waitFor = async (check: () => boolean, ms = 5000) => {
   }
 };
 
-const job = (templateId: string) => ({ templateId, templateName: templateId, fullscreen: false, bg: "#1b2b27" });
+const job = (templateId: string, sound = false) => ({ templateId, templateName: templateId, fullscreen: false, bg: "#1b2b27", sound });
 
 afterEach(async () => {
   for (const j of listJobs()) if (!isFinished(j)) cancel(j.id);
@@ -39,6 +39,15 @@ describe("очередь записи видео", () => {
     expect(calls[0]).toEqual(["mocha", "--base", "http://localhost:3001", "--name", a.file, "--bg", "#1b2b27"]);
     expect(calls[1][0]).toBe("lago");
     expect(listJobs().find((j) => j.id === a.id)!.progress).toBe(0.5);
+  });
+
+  it("со звуком — скрипт с --audio, в имени файла пометка --sound", async () => {
+    const calls: string[][] = [];
+    setRunner(fakeRunner(``, calls));
+    const [a] = enqueue([job("mocha", true)], "http://localhost:3000");
+    expect(a.file).toMatch(/^mocha--.+--sound\.mp4$/);
+    await waitFor(() => listJobs().find((j) => j.id === a.id)!.stage === "done");
+    expect(calls[0]).toContain("--audio");
   });
 
   it("ошибка скрипта — понятное сообщение из его вывода, очередь идёт дальше", async () => {
