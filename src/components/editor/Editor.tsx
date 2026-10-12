@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, ArrowLeft, Check, ChevronDown, Redo2, Undo2, CircleCheck, Crown, ExternalLink, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, RotateCw, Send, Users, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Check, ChevronDown, Redo2, Undo2, CircleCheck, Crown, Eye, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, RotateCw, Send, Settings, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Iphone } from "@/components/ui/iphone";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -118,6 +119,9 @@ function usePhoneScale(fit: React.RefObject<HTMLDivElement | null>, enabled: boo
 
 /** Кнопки «Открыть»/«Гости»: на телефоне в шторке только иконки (подпись остаётся для скринридеров). */
 const actionBtn = "max-lg:size-10 max-lg:px-0 max-lg:[&_svg]:size-5";
+/** Круглые кнопки-иконки в шапке панели — как переключатель темы рядом. */
+const headerIcon =
+  "inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none";
 
 const DESKTOP_QUERY = "(min-width: 1024px)";
 /** Компьютер (≥ 1024 px) или телефон. На сервере — компьютер; после гидратации — как на самом деле. */
@@ -545,6 +549,23 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
                 // «Открыть», «Гости» и «Отправить гостям» — над превью; здесь только тема и аккаунт, прижатые вправо.
                 <span aria-hidden="true" className="hidden flex-1 lg:block" />
               )}
+              {/* Настройки редактора — пока одна; сюда же пойдут следующие. */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" className={headerIcon} aria-label="Настройки редактора" title="Настройки редактора">
+                    <Settings className="size-5" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-72">
+                  <label className="flex cursor-pointer items-start gap-3 text-sm">
+                    <Switch checked={follow} onCheckedChange={toggleFollow} aria-label="Следовать за редактируемым блоком" className="mt-0.5" />
+                    <span className="flex flex-col gap-0.5">
+                      <span className="font-medium">Следовать за редактором</span>
+                      <span className="text-muted-foreground">Превью прокручивается к блоку, который открыт в панели</span>
+                    </span>
+                  </label>
+                </PopoverContent>
+              </Popover>
               <ThemeToggle />
               {account && <AccountMenu user={account.user} compact />}
               <Button type="button" variant="ghost" size="icon-sm" className="size-10 lg:hidden" aria-label="Свернуть панель" onClick={() => setSheet(false)}>
@@ -637,7 +658,11 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
           className="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-hidden pt-2 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:h-svh lg:gap-3 lg:p-8"
         >
           {/* z-[35] — над невидимой подложкой шторки: кнопки сверху нажимаются с первого раза и при открытой панели. */}
-          <div className="relative z-[35] flex w-full max-w-[433px] items-center gap-2 px-3 lg:max-w-[720px] lg:px-0">
+          {/* На компьютере ряд — ровно по ширине телефона в превью (он уменьшается вместе с окном), не шире. */}
+          <div
+            className="relative z-[35] flex w-full max-w-[433px] items-center gap-2 px-3 lg:px-0"
+            style={desktop ? { maxWidth: PHONE_W * phoneScale } : undefined}
+          >
             {/* На телефоне места мало: перезагрузка превью нужна редко, «Отменить» — часто. */}
             <Button type="button" variant="outline" size="icon-sm" className="pointer-coarse:size-10 max-sm:hidden" onClick={reloadPreview} aria-label="Перезагрузить" title="Перезагрузить превью">
               <RotateCw />
@@ -655,47 +680,44 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
               {/* На узком экране «Сохранено/Сохраняю» — только значком (текст для скринридеров), ошибки — всегда словами. */}
               <span className={cn((status === "saved" || status === "saving") && "max-sm:sr-only")}>{statusInfo.text}</span>
             </Badge>
-            <label
-              className="ml-auto flex min-h-8 cursor-pointer pointer-coarse:min-h-10 items-center gap-2 text-sm max-lg:hidden"
-              title="Прокручивать превью к блоку, который открыт в редакторе"
-            >
-              <Switch checked={follow} onCheckedChange={toggleFollow} aria-label="Следовать за редактируемым блоком" />
-              Следовать
-            </label>
             {!templateMode && (
-              <div className="ml-auto flex gap-2 lg:ml-2">
+              <div className="ml-auto flex gap-2">
                 {gate ? (
                   <>
-                    <Button type="button" variant="outline" size="sm" className="pointer-coarse:h-10" onClick={() => setGateFor("editor")} aria-label="Открыть">
-                      <ExternalLink /> <span className="max-sm:hidden">Открыть</span>
-                    </Button>
                     <Button type="button" variant="outline" size="sm" className="pointer-coarse:h-10" onClick={() => setGateFor("guests")}>
                       <Users /> <span className="max-sm:sr-only">Гости</span>
+                    </Button>
+                    <Button type="button" variant="outline" size="icon-sm" className="pointer-coarse:size-10" aria-label="Посмотреть как гость" title="Посмотреть как гость" onClick={() => setGateFor("editor")}>
+                      <Eye />
                     </Button>
                   </>
                 ) : (
                   <>
                     <Button asChild variant="outline" size="sm" className="pointer-coarse:h-10">
-                      <a href={`/i/${slug}`} target="_blank" rel="noopener" aria-label="Открыть">
-                        <ExternalLink /> <span className="max-sm:hidden">Открыть</span>
-                      </a>
-                    </Button>
-                    <Button asChild variant="outline" size="sm" className="pointer-coarse:h-10">
                       <a href={`/edit/${id}/guests?token=${token}`}>
                         <Users /> <span className="max-sm:sr-only">Гости</span>
                       </a>
                     </Button>
+                    <Button asChild variant="outline" size="icon-sm" className="pointer-coarse:size-10">
+                      <a href={`/i/${slug}`} target="_blank" rel="noopener" aria-label="Посмотреть как гость" title="Посмотреть как гость">
+                        <Eye />
+                      </a>
+                    </Button>
                   </>
                 )}
-                {/* Главное действие редактора — отправить гостям ссылку: одна заметная кнопка. */}
-                <Button type="button" size="sm" className="pointer-coarse:h-10" onClick={openShare}>
-                  <Send /> Отправить <span className="max-sm:sr-only">гостям</span>
+                {/* Главное действие редактора — отправить гостям ссылку: заметная (основного цвета) кнопка-иконка. */}
+                <Button type="button" size="icon-sm" className="pointer-coarse:size-10" aria-label="Отправить гостям" title="Отправить гостям" onClick={openShare}>
+                  <Send />
                 </Button>
               </div>
             )}
           </div>
           {pickTip && !(sheet && !desktop) && (
-            <p role="note" className="mx-3 flex w-[calc(100%-1.5rem)] max-w-[433px] items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm lg:mx-0 lg:w-full">
+            <p
+              role="note"
+              className="mx-3 flex w-[calc(100%-1.5rem)] max-w-[433px] items-center gap-2 rounded-lg bg-primary/10 px-3 py-1.5 text-sm lg:mx-0 lg:w-full"
+              style={desktop ? { maxWidth: PHONE_W * phoneScale } : undefined}
+            >
               <MousePointerClick className="size-4 shrink-0 text-primary" />
               <span className="flex-1">Нажмите на любой блок в превью, чтобы изменить его</span>
               <Button type="button" variant="ghost" size="icon-xs" className="pointer-coarse:size-9" aria-label="Закрыть подсказку" onClick={closePickTip}>
@@ -753,7 +775,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
       {account && gate && (
         <Dialog open={gateFor !== null} onOpenChange={(open) => !open && setGateFor(null)}>
           <DialogContent className="sm:max-w-md">
-            <DialogTitle className="sr-only">{gateFor === "guests" ? "Ответы гостей" : "Открыть приглашение"}</DialogTitle>
+            <DialogTitle className="sr-only">{gateFor === "guests" ? "Ответы гостей" : "Посмотреть как гость"}</DialogTitle>
             <DialogDescription className="sr-only">Нужно войти и сохранить приглашение в аккаунт</DialogDescription>
             <AccountRequired id={id} token={token} account={account} gate={gate} next={gateFor ?? "editor"} />
           </DialogContent>

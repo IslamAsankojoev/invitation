@@ -81,11 +81,12 @@ describe("Editor", () => {
     expect(scrollTo).toHaveBeenCalledTimes(1);
   });
 
-  it("«Следовать» выключается — превью не прокручивается; «Перезагрузить» пересоздаёт превью", async () => {
+  it("«Следовать за редактором» (в настройках редактора) выключается — превью не прокручивается; «Перезагрузить» пересоздаёт превью", async () => {
     const user = userEvent.setup();
     renderEditor();
     const preview = screen.getByTestId("preview");
     const scrollTo = vi.spyOn(preview, "scrollTo");
+    await user.click(screen.getByRole("button", { name: "Настройки редактора" }));
     const follow = screen.getByRole("switch", { name: "Следовать за редактируемым блоком" });
     expect(follow).toBeChecked();
 
@@ -94,8 +95,9 @@ describe("Editor", () => {
     await user.click(screen.getByRole("button", { name: "Место" }));
     expect(scrollTo).not.toHaveBeenCalled();
 
-    // Включили снова — сразу прокрутка к открытому блоку.
-    await user.click(follow);
+    // Включили снова — сразу прокрутка к открытому блоку (окно настроек закрылось при нажатии на блок — открываем).
+    await user.click(screen.getByRole("button", { name: "Настройки редактора" }));
+    await user.click(screen.getByRole("switch", { name: "Следовать за редактируемым блоком" }));
     expect(scrollTo).toHaveBeenCalledTimes(1);
 
     const before = within(preview).getByTestId("invitation");
@@ -475,7 +477,7 @@ describe("Editor на телефоне: превью на весь экран, �
     expect(sheet()).toHaveClass("invisible");
   });
 
-  it("«Отправить гостям» над превью открывает «Ссылку»: копирование, WhatsApp, Telegram, «Посмотреть как гость»", async () => {
+  it("«Отправить гостям» над превью открывает «Ссылку»: копирование, WhatsApp, Telegram, QR в PNG", async () => {
     const user = userEvent.setup();
     renderEditor();
     await user.click(screen.getByRole("button", { name: "Отправить гостям" }));
@@ -487,17 +489,18 @@ describe("Editor на телефоне: превью на весь экран, �
     expect(decodeURIComponent(wa)).toContain(url);
     const tg = new URL(screen.getByRole("link", { name: "Отправить в Telegram" }).getAttribute("href")!);
     expect(tg.searchParams.get("url")).toBe(url);
-    expect(screen.getByRole("link", { name: "Посмотреть как гость" })).toHaveAttribute("href", "/i/demo");
     expect(screen.getByRole("button", { name: "Скачать PNG: QR-код ссылки для гостей" })).toBeInTheDocument();
   });
 
-  it("«Открыть», «Гости» и «Отправить гостям» — над превью, а не в шапке панели", () => {
+  it("над превью справа — «Гости», «Посмотреть как гость» и «Отправить гостям» (иконкой); в шапке панели — настройки", () => {
     renderEditor();
     const bar = screen.getByRole("region", { name: "Превью" });
-    expect(within(bar).getByRole("link", { name: "Открыть" })).toHaveAttribute("href", "/i/demo");
     expect(within(bar).getByRole("link", { name: "Гости" })).toHaveAttribute("href", "/edit/inv1/guests?token=secret");
-    expect(within(bar).getByRole("button", { name: "Отправить гостям" })).toBeInTheDocument();
-    expect(within(screen.getByRole("navigation", { name: "Действия" })).queryByRole("link", { name: "Открыть" })).not.toBeInTheDocument();
+    expect(within(bar).getByRole("link", { name: "Посмотреть как гость" })).toHaveAttribute("href", "/i/demo");
+    expect(within(bar).getByRole("button", { name: "Отправить гостям" })).not.toHaveTextContent(/\S/);
+    expect(within(bar).queryByRole("link", { name: "Открыть" })).not.toBeInTheDocument();
+    expect(within(bar).queryByRole("switch")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("navigation", { name: "Действия" })).getByRole("button", { name: "Настройки редактора" })).toBeInTheDocument();
   });
 
   it("«Красивая ссылка»: вариант из имён сохраняется одним нажатием", async () => {
@@ -782,25 +785,25 @@ describe("Editor: добавление, копирование и удалени
       expect(screen.queryByRole("button", { name: "Скопировать ссылку для гостей" })).not.toBeInTheDocument();
     });
 
-    it("без входа «Открыть» и «Гости» не ведут на страницы, а просят войти", async () => {
+    it("без входа «Посмотреть как гость» и «Гости» не ведут на страницы, а просят войти", async () => {
       const user = userEvent.setup();
       renderWith({ user: null, ownership: "none" });
       expect(screen.queryByRole("link", { name: "Гости" })).not.toBeInTheDocument();
-      expect(screen.queryByRole("link", { name: "Открыть" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "Посмотреть как гость" })).not.toBeInTheDocument();
       await user.click(screen.getByRole("button", { name: "Гости" }));
       const dialog = screen.getByRole("dialog", { name: "Ответы гостей" });
       expect(within(dialog).getByRole("button", { name: "Войти через Google" })).toBeInTheDocument();
       await user.keyboard("{Escape}");
-      await user.click(screen.getByRole("button", { name: "Открыть" }));
-      expect(screen.getByRole("dialog", { name: "Открыть приглашение" })).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Посмотреть как гость" }));
+      expect(screen.getByRole("dialog", { name: "Посмотреть как гость" })).toBeInTheDocument();
     });
 
-    it("вход не обязателен (AUTH_REQUIRED не задан): «Открыть» и «Гости» доступны, а поделиться — только из аккаунта", async () => {
+    it("вход не обязателен (AUTH_REQUIRED не задан): «Посмотреть как гость» и «Гости» доступны, а поделиться — только из аккаунта", async () => {
       const user = userEvent.setup();
       renderWith({ user: null, ownership: "none", required: false });
       expect(screen.getByRole("button", { name: "Войти" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Гости" })).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: "Открыть" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Посмотреть как гость" })).toBeInTheDocument();
       await user.click(screen.getByRole("button", { name: "Отправить гостям" }));
       expect(screen.getByText("Войдите, чтобы продолжить")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Скопировать ссылку для гостей" })).not.toBeInTheDocument();

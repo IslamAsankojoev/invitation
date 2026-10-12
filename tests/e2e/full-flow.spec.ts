@@ -87,7 +87,7 @@ test("создать → настроить → открыть → послуш�
   await expect(saveStatus).toHaveText("Сохранено");
 
   // 7. Открыть публичную ссылку
-  const publicHref = await page.getByRole("link", { name: "Открыть" }).getAttribute("href");
+  const publicHref = await page.getByRole("link", { name: "Посмотреть как гость" }).getAttribute("href");
   await page.goto(publicHref!);
 
   await expect(page.getByTestId("decor-layer")).toHaveAttribute("data-decor", "petals");

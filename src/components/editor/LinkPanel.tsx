@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Eye, KeyRound, Link2, Send, Share2, Sparkles, Wifi } from "lucide-react";
+import { Download, KeyRound, Link2, Send, Share2, Sparkles, Wifi } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import QRCode from "react-qr-code";
 import { CopyButton } from "@/components/CopyButton";
@@ -137,11 +137,6 @@ export function LinkPanel({ id, token, slug, onSlugChange, account, lanOrigin, d
           <summary className="cursor-pointer text-muted-foreground">Текст сообщения</summary>
           <p className="mt-2 rounded-lg border p-3 whitespace-pre-line">{text}</p>
         </details>
-        <Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
-          <a href={`/i/${slug}`} target="_blank" rel="noopener">
-            <Eye /> Посмотреть как гость
-          </a>
-        </Button>
       </Group>
 
       <Group title="Красивая ссылка">
