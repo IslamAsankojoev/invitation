@@ -532,7 +532,7 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
               </p>
             </div>
             {/* min-w-0: без него длинное название шаблона (без переноса) не даёт шапке сжаться — кнопки вылезали за панель. */}
-            <nav aria-label="Действия" className="flex shrink-0 items-center gap-1.5 lg:min-w-0 lg:flex-1 lg:gap-2">
+            <nav aria-label="Действия" className="flex shrink-0 items-center gap-1.5 lg:min-w-0 lg:flex-1">
               {templateMode ? (
                 <>
                   <Button asChild variant="outline" size="sm" className={actionBtn}>
@@ -546,9 +546,9 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
                   <div className="flex shrink-0 items-center gap-1.5">{templateMode.actions(data, setData)}</div>
                 </>
               ) : (
-                // Кнопки приглашения — над превью; здесь приветствие рукописным шрифтом, как имена в приглашениях.
+                // Кнопки приглашения — над превью; здесь только название.
                 <p className="hidden min-w-0 flex-1 items-center gap-1.5 lg:flex">
-                  <span className="truncate font-[family-name:var(--font-great-vibes)] text-3xl leading-none">Творите</span>
+                  <span className="truncate text-[15px] font-semibold">Редактор пригласительного</span>
                   <Sparkles aria-hidden="true" className="size-5 shrink-0 text-primary" />
                 </p>
               )}
