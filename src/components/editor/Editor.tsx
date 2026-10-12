@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, ArrowLeft, Check, ChevronDown, Redo2, Undo2, CircleCheck, Crown, Eye, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, RotateCw, Send, Settings, Users, X } from "lucide-react";
+import { AlertCircle, ArrowLeft, Check, ChevronDown, Redo2, Undo2, CircleCheck, Crown, Eye, LayoutList, Link2, Loader2, MousePointerClick, Music, Palette, RotateCw, Send, Settings, Sparkles, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import { AccountMenu } from "@/components/account/AccountMenu";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
@@ -546,8 +546,11 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
                   <div className="flex shrink-0 items-center gap-1.5">{templateMode.actions(data, setData)}</div>
                 </>
               ) : (
-                // «Открыть», «Гости» и «Отправить гостям» — над превью; здесь только тема и аккаунт, прижатые вправо.
-                <span aria-hidden="true" className="hidden flex-1 lg:block" />
+                // Кнопки приглашения — над превью; здесь приветствие рукописным шрифтом, как имена в приглашениях.
+                <p className="hidden min-w-0 flex-1 items-center gap-1.5 lg:flex">
+                  <span className="truncate font-[family-name:var(--font-great-vibes)] text-3xl leading-none">Творите</span>
+                  <Sparkles aria-hidden="true" className="size-5 shrink-0 text-primary" />
+                </p>
               )}
               {/* Настройки редактора — пока одна; сюда же пойдут следующие. */}
               <Popover>
