@@ -91,9 +91,10 @@ export function useInvitationMusic(url: string | null, fragment: Fragment = {}) 
       else audio.play().catch(() => {});
     };
     // Заиграл другой плеер (например, «Послушать» в редакторе) — замолкаем, чтобы песни не накладывались.
+    // Немые ролики (видео-конверт) песне не мешают.
     const onOtherPlay = (e: Event) => {
       const audio = audioRef.current;
-      if (!audio || e.target === audio || !(e.target instanceof HTMLMediaElement)) return;
+      if (!audio || e.target === audio || !(e.target instanceof HTMLMediaElement) || e.target.muted) return;
       wantMusic.current = false;
       audio.pause();
     };

@@ -28,6 +28,8 @@ export function adminApi(adminKey: string) {
     rename: (id: string, name: string, description: string) => call(`/templates/${id}`, { method: "PATCH", json: { name, description } }),
     duplicate: (id: string) => call<{ template: { id: string } }>(`/templates/${id}`, { method: "POST" }),
     reset: (id: string) => call<null>(`/templates/${id}`, { method: "DELETE" }),
+    setPublished: (id: string, published: boolean) => call<{ published: boolean }>(`/templates/${id}`, { method: "PATCH", json: { published } }),
+    reorder: (order: string[]) => call<{ order: string[] }>("/templates", { method: "PUT", json: { order } }),
   };
 }
 

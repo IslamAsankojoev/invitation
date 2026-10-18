@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { findBlock, moveBlock, toggleBlock, updateBlock } from "@/lib/blocks";
 import { createDefaultInvitation } from "@/lib/defaults";
 import { invitationDataSchema, type InvitationData } from "@/lib/schema";
-import { applyTemplate, createBlock, createFromTemplate, findTemplate, templates } from "@/lib/templates";
+import { allTemplates, applyTemplate, baseTemplates, createBlock, createFromTemplate, findTemplate, templates } from "@/lib/templates";
 
 /** Все URL картинок, на которые ссылается приглашение: украшения, фоны блоков и фото-примеры. */
 function imageUrls(data: InvitationData): string[] {
@@ -21,12 +21,15 @@ function imageUrls(data: InvitationData): string[] {
 }
 
 describe("шаблоны", () => {
-  it("их двенадцать, id уникальны", () => {
-    expect(templates).toHaveLength(12);
-    expect(new Set(templates.map((t) => t.id)).size).toBe(12);
+  // Порядок и публикацию меняют в админке (template-overrides.json) — тесты не завязаны на них.
+  it("их тринадцать, id уникальны; опубликованные — из них", () => {
+    expect(allTemplates).toHaveLength(13);
+    expect(new Set(allTemplates.map((t) => t.id)).size).toBe(13);
+    expect(templates.length).toBeGreaterThan(0);
+    expect(templates.every((t) => allTemplates.includes(t))).toBe(true);
   });
 
-  it.each(templates.map((t) => [t.name, t] as const))("«%s» проходит схему и ссылается только на существующие картинки", (_, t) => {
+  it.each(allTemplates.map((t) => [t.name, t] as const))("«%s» проходит схему и ссылается только на существующие картинки", (_, t) => {
     const data = createFromTemplate(t);
     expect(invitationDataSchema.safeParse(data).success).toBe(true);
     for (const url of imageUrls(data)) {
@@ -36,13 +39,13 @@ describe("шаблоны", () => {
 
   it("шаблоны действительно разные: палитра не повторяется, как и сочетание палитра/шрифт/текстура", () => {
     // Шрифт имён может повторяться: изящных рукописных с кириллицей мало (Great Vibes, Comforter…).
-    const keys = templates.map((t) => [t.theme.palette, t.theme.font, t.theme.texture].join("/"));
-    expect(new Set(templates.map((t) => t.theme.palette)).size).toBe(templates.length);
-    expect(new Set(keys).size).toBe(templates.length);
+    const keys = allTemplates.map((t) => [t.theme.palette, t.theme.font, t.theme.texture].join("/"));
+    expect(new Set(allTemplates.map((t) => t.theme.palette)).size).toBe(allTemplates.length);
+    expect(new Set(keys).size).toBe(allTemplates.length);
   });
 
-  it("приглашение по умолчанию — первый шаблон", () => {
-    expect(createDefaultInvitation()).toEqual(createFromTemplate(templates[0]));
+  it("приглашение по умолчанию — первый шаблон в коде (не зависит от порядка на главной)", () => {
+    expect(createDefaultInvitation()).toEqual(createFromTemplate(findTemplate(baseTemplates[0].id)!));
     expect(findTemplate("starry-night")?.name).toBe("Звёздная ночь");
     expect(findTemplate("nope")).toBeUndefined();
   });
@@ -96,8 +99,8 @@ describe("applyTemplate", () => {
   });
 
   it("шаблоны со своим видом главного экрана его сохраняют, остальные — «Без рамки»", () => {
-    const own: Record<string, string> = { eucalyptus: "arch", "art-deco": "minimal", "lavender-provence": "polaroid", "boarding-pass": "ticket", mocha: "monogram", seaside: "cover" };
-    for (const t of templates) expect(findBlock(createFromTemplate(t), "hero")!.variant, t.id).toBe(own[t.id] ?? "clean");
+    const own: Record<string, string> = { eucalyptus: "arch", "art-deco": "minimal", "lavender-provence": "polaroid", "boarding-pass": "ticket", mocha: "monogram", seaside: "cover", etno: "scene" };
+    for (const t of allTemplates) expect(findBlock(createFromTemplate(t), "hero")!.variant, t.id).toBe(own[t.id] ?? "clean");
   });
 
   it("не мутирует ни приглашение, ни сам шаблон", () => {
@@ -124,7 +127,7 @@ describe("applyTemplate", () => {
 
 describe("createBlock", () => {
   it("новый блок — с примером содержимого, уникальным id и валидный", () => {
-    const data = createFromTemplate(templates[0]);
+    const data = createDefaultInvitation();
     for (const type of ["text", "photo", "gallery", "contacts", "story", "program"] as const) {
       const block = createBlock(data, type);
       expect(block.type).toBe(type);
@@ -135,7 +138,7 @@ describe("createBlock", () => {
   });
 
   it("пресет задаёт заголовок, значок и текст блока «Текст»", () => {
-    const block = createBlock(createFromTemplate(templates[0]), "text", "gifts");
+    const block = createBlock(createDefaultInvitation(), "text", "gifts");
     expect(block).toMatchObject({ type: "text", title: "Подарки", icon: "gift" });
   });
 
@@ -151,7 +154,7 @@ describe("createBlock", () => {
   });
 
   it("applyTemplate сохраняет добавленные блоки и оформляет их по типу", () => {
-    let data = createFromTemplate(templates[0]);
+    let data = createDefaultInvitation();
     data = { ...data, blocks: [...data.blocks, { ...createBlock(data, "story"), id: "story-2" }, createBlock(data, "gallery")] };
     const result = applyTemplate(data, findTemplate("rose-garden")!);
     expect(result.blocks.map((b) => b.id)).toEqual(data.blocks.map((b) => b.id));
@@ -161,7 +164,7 @@ describe("createBlock", () => {
 });
 
 describe("шаблоны со своей структурой", () => {
-  const withLayout = templates.filter((t) => t.layout);
+  const withLayout = allTemplates.filter((t) => t.layout);
 
   it("новое приглашение получает структуру шаблона: блоки по порядку, id «b-<тип>», повторы — с номером", () => {
     expect(withLayout.length).toBeGreaterThanOrEqual(4);

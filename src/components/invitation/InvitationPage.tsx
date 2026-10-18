@@ -28,9 +28,12 @@ export function InvitationPage({ data, slug, demo = false }: { data: InvitationD
     };
   }, [opened]);
 
+  const videoIntro = data.theme.envelope.style === "video";
+
   function open() {
     if (opened) return;
-    if (musicUrl) music.play();
+    // У видео-конверта музыка включилась ещё при нажатии (onStart), сейчас ролик доиграл.
+    if (musicUrl && !videoIntro) music.play();
     window.scrollTo(0, 0);
     setOpened(true);
     setTimeout(() => setEnvelope(false), prefersReducedMotion() ? 0 : INTRO_LEAVE_MS[data.theme.envelope.style]);
@@ -62,9 +65,12 @@ export function InvitationPage({ data, slug, demo = false }: { data: InvitationD
           date={hero ? describeDate(hero.date).dotted : undefined}
           ornament={data.theme.envelope.ornament}
           variant={data.theme.envelope.style}
+          video={data.theme.envelope.video}
+          poster={data.theme.envelope.poster}
           hasMusic={!!musicUrl}
           leaving={opened}
           onOpen={open}
+          onStart={() => musicUrl && music.play()}
         />
       )}
 

@@ -27,9 +27,13 @@ export function IntroPreview({ data, onOpen, onClose }: { data: InvitationData; 
         ornament={data.theme.envelope.ornament}
         hasMusic={!!data.music.url}
         variant={style}
+        video={data.theme.envelope.video}
+        poster={data.theme.envelope.poster}
         leaving={leaving}
+        // Видео-конверт: нажатие — жест пользователя (музыка), а onOpen — когда ролик доиграл.
+        onStart={onOpen}
         onOpen={() => {
-          onOpen?.(); // нажатие на печать — жест пользователя: тут можно включить музыку, как у гостя
+          if (style !== "video") onOpen?.(); // нажатие на печать — жест пользователя: тут можно включить музыку, как у гостя
           setLeaving(true);
           timer.current = setTimeout(onClose, prefersReducedMotion() ? 0 : INTRO_LEAVE_MS[style]);
         }}

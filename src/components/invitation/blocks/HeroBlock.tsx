@@ -42,6 +42,8 @@ export function HeroBlock(props: HeroProps) {
       return <HeroTicket {...props} />;
     case "clean":
       return <HeroClassic {...props} frame={false} calendar={false} />;
+    case "scene":
+      return <HeroScene {...props} />;
     default:
       return <HeroClassic {...props} />;
   }
@@ -174,13 +176,10 @@ function PhotoPlaceholder({ names }: { names: string }) {
   );
 }
 
-/** Классика; вид «Без рамки» — то же без проявляющейся рамки и кнопки календаря. */
-function HeroClassic({ block, ctx, frame = true, calendar = true }: HeroProps & { frame?: boolean; calendar?: boolean }) {
-  const onPhoto = !!block.photo;
+/** Параллакс: при прокрутке фото движется чуть медленнее страницы (только у гостя, не в превью). */
+function usePhotoParallax(ctx: BlockContext, onPhoto: boolean) {
   const motion = useMotion();
   const photoRef = useRef<HTMLDivElement>(null);
-
-  // Параллакс: при прокрутке фото движется чуть медленнее страницы (только у гостя, не в превью).
   useEffect(() => {
     const photo = photoRef.current;
     if (!photo || ctx.preview || motion !== "on" || prefersReducedMotion()) return;
@@ -200,6 +199,13 @@ function HeroClassic({ block, ctx, frame = true, calendar = true }: HeroProps & 
       cancelAnimationFrame(frame);
     };
   }, [ctx.preview, motion, onPhoto]);
+  return photoRef;
+}
+
+/** Классика; вид «Без рамки» — то же без проявляющейся рамки и кнопки календаря. */
+function HeroClassic({ block, ctx, frame = true, calendar = true }: HeroProps & { frame?: boolean; calendar?: boolean }) {
+  const onPhoto = !!block.photo;
+  const photoRef = usePhotoParallax(ctx, onPhoto);
 
   return (
     <Section
@@ -235,6 +241,48 @@ function HeroClassic({ block, ctx, frame = true, calendar = true }: HeroProps & 
       )}
       <HeroNames style={textStyle(block, "names")} names={block.names} color={onPhoto ? "#fff" : "var(--text)"} shadow={onPhoto} />
       <HeroDetails block={block} ctx={ctx} light={onPhoto} calendar={calendar} />
+    </Section>
+  );
+}
+
+/**
+ * Сцена (как обложка toigokel.kg «Этно»): светлая картина на весь экран без затемнения, поверх в её верхней половине —
+ * событие капителью, имена цветом акцента от руки, дата словами. Нижняя часть картины (горы, ткани) остаётся открытой.
+ */
+function HeroScene({ block, ctx }: HeroProps) {
+  const onPhoto = !!block.photo;
+  const photoRef = usePhotoParallax(ctx, onPhoto);
+  const { day, monthGenitive, year } = describeDate(block.date);
+  return (
+    <Section
+      block={block}
+      bare
+      frame={false}
+      className="inv-hero flex min-h-[min(100svh,860px)] flex-col items-center px-8 pt-[min(26svh,220px)] pb-40 text-[var(--text)]"
+      fill={
+        onPhoto && (
+          <div ref={photoRef} aria-hidden="true" className="absolute inset-x-0 -inset-y-[4%]">
+            <div data-testid="hero-photo" className="inv-hero-photo absolute inset-0 bg-cover bg-top" style={{ backgroundImage: `url("${block.photo}")` }} />
+          </div>
+        )
+      }
+      background={<ScrollHint />}
+    >
+      {block.label && (
+        <p className="inv-caps text-[var(--accent)] opacity-90" data-reveal="1" data-delay="0.4" style={textStyle(block, "label")}>
+          {block.label}
+        </p>
+      )}
+      <span aria-hidden="true" className="mx-auto mt-5 mb-7 block h-px w-14 bg-[var(--accent)] opacity-40" data-reveal="1" data-anim="spread" data-delay="0.6" />
+      <HeroNames style={textStyle(block, "names")} names={block.names} color="var(--accent)" />
+      <p className="mt-7 font-[family-name:var(--font-heading)] text-base tracking-[0.18em] text-[var(--accent)]" data-reveal="3" data-anim="spread" data-delay="2.8">
+        {day} {monthGenitive} {year} г.
+      </p>
+      {block.subtitle && (
+        <p className="mx-auto mt-4 max-w-xs text-xl italic leading-snug opacity-90" data-reveal="4" data-anim="blur" data-delay="3.2" style={textStyle(block, "subtitle")}>
+          {block.subtitle}
+        </p>
+      )}
     </Section>
   );
 }

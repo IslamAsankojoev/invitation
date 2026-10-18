@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Envelope } from "@/components/invitation/Envelope";
+import { DEFAULT_ENVELOPE_VIDEO, Envelope } from "@/components/invitation/Envelope";
 import { InvitationView } from "@/components/invitation/InvitationView";
 import { insertBlock, updateBlock } from "@/lib/blocks";
 import { createDefaultInvitation } from "@/lib/defaults";
@@ -77,7 +77,7 @@ describe("Виды блоков", () => {
 });
 
 describe("Виды заставки", () => {
-  it.each(ENVELOPE_STYLES)("%s: имена, дата и кнопка открытия на месте", (style) => {
+  it.each(ENVELOPE_STYLES.filter((s) => s !== "video"))("%s: имена, дата и кнопка открытия на месте", (style) => {
     let opened = 0;
     render(
       <Envelope names="Анна & Иван" date="19 . 06 . 2027" ornament={null} hasMusic variant={style} leaving={false} onOpen={() => opened++} />,
@@ -88,6 +88,27 @@ describe("Виды заставки", () => {
     expect(env).toHaveTextContent("А&И");
     expect(env).toHaveTextContent("19 . 06 . 2027");
     fireEvent.click(screen.getByRole("button", { name: "Открыть приглашение" }));
+    expect(opened).toBe(1);
+  });
+
+  it("video: нажатие включает музыку и ролик, приглашение открывается, когда ролик доиграл", () => {
+    let started = 0;
+    let opened = 0;
+    const { container } = render(
+      <Envelope names="Анна & Иван" ornament={null} hasMusic variant="video" leaving={false} onStart={() => started++} onOpen={() => opened++} />,
+    );
+    expect(screen.getByTestId("envelope")).toHaveAttribute("data-style", "video");
+    const video = container.querySelector("video")!;
+    // Своего ролика нет — ролик и первый кадр по умолчанию (конверт шаблона «Этно»).
+    expect(video).toHaveAttribute("src", DEFAULT_ENVELOPE_VIDEO.video);
+    expect(video).toHaveAttribute("poster", DEFAULT_ENVELOPE_VIDEO.poster);
+    expect(screen.getByText("Нажмите, чтобы открыть")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Открыть приглашение" }));
+    expect(started).toBe(1);
+    expect(screen.queryByText("Нажмите, чтобы открыть")).not.toBeInTheDocument();
+    fireEvent.ended(video);
+    fireEvent.ended(video);
     expect(opened).toBe(1);
   });
 });

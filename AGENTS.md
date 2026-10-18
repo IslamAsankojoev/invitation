@@ -62,7 +62,7 @@ build`, регион функций `dub1` (vercel.json) — рядом с ба�
 `NEXT_DIST_DIR=.next-build npx next build` (отдельная папка, чтобы не мешать запущенному dev-серверу; после сборки
 верни `tsconfig.json`/`next-env.d.ts`, Next дописывает туда `.next-build/types`).
 
-Текущее состояние: **446 тестов Vitest, E2E и `next build` проходят** (после видео со звуком). Края, фоновые
+Текущее состояние: **478 тестов Vitest, E2E и `next build` проходят** (после порядка и публикации шаблонов). Края, фоновые
 картинки, ширина и стиль текста всё ещё без своих тестов — см. «Долг по тестам» в `next-blocks.md`.
 
 Если порт 3000 занят другим dev-сервером — в `.claude/launch.json` есть `dev-3200` (своя папка `.next-3200`).
@@ -115,11 +115,11 @@ src/lib/                    логика без UI, покрыта unit-тест
   schema-history/ слепки формата по версиям (1.0.0.json…) — не редактировать руками, только npm run schema:snapshot
   variants.ts     подписи видов блоков, появления, стилей анимаций, видов заставки, иконок программы
   premium.ts      какие элементы платные (PRO) и premiumUsage(data) — список использованных
-  templates.ts    ★ 12 шаблонов (у новых — своя структура layout), createFromTemplate, applyTemplate, createBlock;
+  templates.ts    ★ 13 шаблонов (у новых — своя структура layout), createFromTemplate, applyTemplate, createBlock;
                   `templates` = baseTemplates (код) + правки из template-overrides.json (mergeTemplates)
   template-overrides.json  правки шаблонов из админки (пишет adminFiles.ts, руками не править) — коммитить
   admin.ts adminFiles.ts templateAdmin.ts templateDrafts.ts videoJobs.ts — скрытая админка (§5.2.2)
-  defaults.ts     createDefaultInvitation() = первый шаблон
+  defaults.ts     createDefaultInvitation() = первый шаблон в коде (не первый на главной — порядок меняют в админке)
   blocks.ts       чистые функции над блоками и украшениями, названия/заголовки блоков
   theme.ts        палитры, шрифты → CSS-переменные (themeStyle), headingsMode
   color.ts        яркость и смешивание #rrggbb (цвет фона блока, образцы в редакторе)
@@ -159,7 +159,7 @@ tests/fixtures/invitations/ замороженные приглашения пр
 ```
 InvitationData
 ├─ theme
-│  ├─ palette: cream | blush | emerald | ivory | autumn | night | lavender | noir | navy | mocha | pearl | sand | forest
+│  ├─ palette: cream | blush | emerald | ivory | autumn | night | lavender | noir | navy | mocha | pearl | sand | forest | burgundy
 │  ├─ font: 17 шрифтов имён (script=Great Vibes, serif=Cormorant, sans=Inter, marck, bad-script, caveat, lobster,
 │  │        pacifico, amatic, playfair, prata, forum, yeseva, cormorant-sc, oranienbaum, poiret, comfortaa)
 │  ├─ bodyFont: auto | cormorant | lora | eb-garamond | playfair | old-standard | pt-serif | montserrat | raleway | manrope | inter
@@ -171,7 +171,8 @@ InvitationData
 │  ├─ texture: none | halftone | speckle | grain | linen | grid | diagonal | hearts | diamonds | flourish | stars | watercolor | plaster | paper
 │  ├─ decor: { type: none|image|petals|sakura|confetti|snow, image: url|null, color: #hex, density 0–60, size 0.5–3,
 │  │           speed 0.3–3, pop?: boolean (мини-игра; не задано = включено) }
-│  ├─ envelope: { ornament: url|null, style: seal|veil|flap|curtains|book }  картинка в углах и вид заставки
+│  ├─ envelope: { ornament: url|null, style: seal|veil|flap|curtains|book|video, video?: url|null, poster?: url|null }
+│  │           картинка в углах, вид заставки; у video — ролик открытия и его первый кадр (нет — DEFAULT_ENVELOPE_VIDEO)
 │  ├─ headings: caps | names          заголовки блоков: капитель Tenor Sans или шрифтом имён (см. §5.7)
 │  ├─ motion: { style: elegant|soft|playful|cinematic|none, speed 0.5–2 }  стиль и скорость анимаций
 │  └─ ornamentMotion: OrnamentMotion   анимация всех украшений без своей (см. §5.6)
@@ -190,7 +191,8 @@ InvitationData
    Ornament: { src, position: top-left|top|top-right|left|right|bottom-left|bottom|bottom-right|center, size 40–400,
                rotate −180..180, flip, opacity 0.1–1, motion?: OrnamentMotion (нет — общая theme.ornamentMotion),
                seam?: boolean — «Как переход между блоками»: у мест сверху/снизу центр на краю блока, рисуется
-               слоем SeamOrnaments (Section.tsx) в обёртке блока поверх соседей (z-30), без обрезки и до 100% ширины }
+               слоем SeamOrnaments (Section.tsx) в обёртке блока поверх соседей (z-30), без обрезки и до 100% ширины;
+               переход размера 400 (максимум) — ровно во всю ширину блока (волна-разделитель не обрывается у краёв) }
    OrnamentMotion { enter: auto|side|fade|rise|drop|zoom|grow|spin|blur|none, enterSpeed 0.25–3,
                     idle: auto|sway|swing|float|breathe|flutter|shimmer|spin|none, idleSpeed 0.25–3, idleAmplitude 0.2–3 }
    hero      { names, date "YYYY-MM-DDTHH:mm", label?, subtitle?, photo }
@@ -261,7 +263,7 @@ InvitationData
 ## 5. Функционал и реализация
 
 ### 5.1 Шаблоны (`lib/templates.ts`, `components/templates/*`, `editor/TemplatePicker.tsx`)
-- 12 шаблонов. Первые четыре — только тема и украшения: `cream-classic` (Кремовая классика), `rose-garden` (Розовый сад), `golden-autumn` (Золотая осень),
+- 13 шаблонов. Первые четыре — только тема и украшения: `cream-classic` (Кремовая классика), `rose-garden` (Розовый сад), `golden-autumn` (Золотая осень),
   `starry-night` (Звёздная ночь). Следующие три собраны на новых возможностях (виды блоков, заставки, векторные
   ассеты, CSS-фоны, PRO-шрифты): `eucalyptus` (Эвкалипт), `art-deco` (Великий Гэтсби, палитра `noir`),
   `lavender-provence` (Лавандовый Прованс, палитра `lavender`); `marble-olive` (Мрамор и олива) удалён (его фикстура
@@ -276,7 +278,13 @@ InvitationData
   рваными краями, цитата на шёлке, галерея, сургуч — по приглашению владельца), `seaside` (Морской берег:
   `pearl`, обложка `cover`, ракушка, жемчуг, розы), `emerald-night` (Изумрудная ночь, 1.2.0: палитра `forest` + свой фон `#061e10`, узор «Точки»,
   фото пары в лесу и беседки у пруда — от пользователя, лицензия уточняется; украшения-переходы (`seam`) — гирлянды шиповника и белые розы на стыках, светлая бумага `PAPER` с рваными краями среди
-  тёмных блоков; по мотивам промо-ролика, свои фото и тексты). Фото-примеры — `photo(id)` → `/templates/<id>.webp`.
+  тёмных блоков; по мотивам промо-ролика, свои фото и тексты), `etno` (Этно, 2.4.0: перенос первого сайта владельца
+  toigokel.kg/templates/toigokel-etno, все картинки и ролик — его, «Собственность проекта»; палитра `burgundy`,
+  видео-конверт с сургучом-юртой, обложка `scene` (кадр видео обложки), угловые узоры `etno-corner`, бордовые полосы
+  `BORDO` = цвету волн-разделителей `etno-divider-*` (переходы `seam` размера 400; у картинок прозрачная половина, чтобы
+  прямой край лёг на стык, а волна — на соседний блок), календарь «Неделя» на карточке `card-etno`, анкета `choices`,
+  финал — «Текст» с фото колец фоном; тексты — русские из его конфига, музыка — «Эрке Сары»: трек комуза с его сайта
+  не переносили — права не уточнены). Фото-примеры — `photo(id)` → `/templates/<id>.webp`.
   Проверено на практике: золотая акварель `wc-gold` и шторки `curtains` на тёмной палитре выглядят грязно;
   украшения `top` у блока с заголовком налезают на него — лучше углы/бока/`bottom`.
 - У шаблонов без своей структуры — `heroPhoto` (фото обложки, `public/templates/<id>-hero.webp`, взяты с toichakyru.com —
@@ -370,7 +378,17 @@ InvitationData
   404 (страницы `noindex`, API `api/admin/[key]/guard.ts`). Работает под `npm run dev`: сохранённый шаблон — JSON,
   который импортирует templates.ts, dev-сервер перечитывает его сам (под `next start` — только после сборки).
 - **Шаблоны.** `templates` = шаблоны из кода (`baseTemplates`) + `src/lib/template-overrides.json`
-  (`{ edited: { id: Template }, added: Template[] }`, `mergeTemplates`; битая правка пропускается с console.error).
+  (`{ edited: { id: Template }, added: Template[], order?: id[], hidden?: id[] }`, `mergeTemplates`; битая правка пропускается с console.error).
+  **Порядок** — перетаскиванием карточек за ручку «Перетащить шаблон «…»» (dnd-kit, `rectSortingStrategy`; замена —
+  «Переместить раньше / позже» в меню «⋯»): сразу на экране, `PUT /api/admin/<ключ>/templates {order}` → `saveOrder`
+  (все id ровно по разу, иначе 409; совпал с порядком «как в коде» — `order` убирается), ошибка — откат.
+  `orderTemplates`: по `order`, не расставленные (новые копии, новые шаблоны в коде) — после, в своём порядке.
+  Порядок действует везде, где `templates`: главная, показ, админка. Удалённая копия уходит из `order`.
+  **Публикация** — переключатель «Опубликован» на карточке (`PATCH …/templates/<id> {published}` → `setPublished`,
+  список `hidden` в файле правок; последний опубликованный скрыть нельзя — 409). `templates` — только опубликованные
+  (главная, выбор шаблона в редакторе, шаблон по умолчанию); `allTemplates`/`findTemplate` — все (показ, админка, демо
+  в seed, `guessTemplate`); `POST /api/invitations` берёт `findPublishedTemplate` — из скрытого 400, как неизвестный.
+  Скрытый в админке — серый, с пометкой «Скрыт».
   Файл пишет только `lib/adminFiles.ts` (через временный файл + rename); корень — `ADMIN_ROOT` (в тестах — временная
   папка), иначе папка проекта. **Правки нужно закоммитить** — так они попадают на прод.
   «Редактировать» → `/admin/<ключ>/templates/<id>`: черновик — обычное приглашение со slug `tpl-<id>` (`ensureDraft`,
@@ -564,9 +582,9 @@ InvitationData
   `document.getAnimations()` вручную, а кадр обновляй сменой размера окна (`resize_window`).
 
 ### 5.7 Виды блоков, стили анимаций, заставки, PRO
-- **Виды блоков** (`variant`): hero classic/arch/polaroid/minimal/cover/monogram/ticket/clean («Без рамки» — классика без рамки и кнопки календаря; у шаблонов, где была «Классика», и у новых приглашений) · countdown classic/circles/cards · calendar
+- **Виды блоков** (`variant`): hero classic/arch/polaroid/minimal/cover/monogram/ticket/clean/scene («Сцена» — светлая картина на весь экран без затемнения, имена цветом акцента; «Без рамки» — классика без рамки и кнопки календаря; у шаблонов, где была «Классика», и у новых приглашений) · countdown classic/circles/cards · calendar
   classic/date/week/tearoff · story classic/photo/letter · program classic/cards/icons · location
-  classic/postcard/minimal · dresscode classic/stripes/chips · rsvp classic/compact. Реестр `blockComponents` не
+  classic/postcard/minimal · dresscode classic/stripes/chips · rsvp classic/compact/choices («Три ответа»: светлая карточка `.inv-rsvp-card` с вариантами «Конечно, приду» / «Приду с супругом / супругой» (= 2 гостя) / «Не смогу прийти» — формат ответа прежний). Реестр `blockComponents` не
   менялся: каждый компонент блока сам ветвится по `block.variant`. В редакторе — `VariantPicker` (плитки с настоящим
   блоком в миниатюре, `motion="off"`). Плитка — **прозрачная кнопка поверх** миниатюры (в миниатюре есть свои
   кнопки; вложенные `<button>` ломают гидратацию — есть регрессионный тест). Шаблон может задать вид (`variant`) и появление (`entrance`) блока; незаданное сбрасывается к `classic`/`auto`.
@@ -575,7 +593,10 @@ InvitationData
   в движущем CSS записаны как `calc(Xs * var(--k, 1))` (новые анимации пиши так же). «Кино» дополнительно ×1.5.
 - **Появление блока** (`entrance`) — `data-entrance` на секции, перебивает стиль для обычных элементов
   (не трогает write/curtain/spread); `none` — блок показывается сразу (`useReveal(ref, instant)`), его анимации выключены.
-- **Заставка** (`Envelope variant`): seal, veil (backdrop-blur обложки), flap (клапан + письмо), curtains, book.
+- **Заставка** (`Envelope variant`): seal, veil (backdrop-blur обложки), flap (клапан + письмо), curtains, book,
+  video (`VideoEnvelope`, как на toigokel.kg: первый кадр ролика + «Нажмите, чтобы открыть»; нажатие — `onStart`
+  (родитель включает музыку), ролик играет, `onOpen` — по `ended`/ошибке/через 15 с, «Уменьшить движение» — сразу;
+  без своего ролика — конверт «Этно»). Немые ролики (`muted`) музыку не глушат (`onOtherPlay` в music.tsx).
   Время ухода — `INTRO_LEAVE_MS` в `Envelope.tsx` (синхронно с CSS `.inv-intro-*`). В редакторе «Посмотреть
   заставку» (`IntroPreview`, `Envelope contained`) — проигрывается в рамке телефона, закрывается сменой вкладки/блока.
 - **Фоны блока — это предметы, на которых лежит текст** (лист, тетрадь, рама, тарелка), а не фактуры на весь блок:
@@ -765,7 +786,7 @@ InvitationData
   правок может понадобиться обновить. Перенести правку в код (templates.ts) и «Сбросить изменения» — по желанию.
 - **Новый шаблон:** объект в `baseTemplates` (`theme`, `blocks`, `dresscodeColors`, по желанию `layout` — своя структура:
   блоки по порядку с примером текстов, фото и оформлением). Палитра шаблона не должна повторяться (тест), шрифт может.
-  Если меняешь число шаблонов — поправь тест «их двенадцать»; `seed.ts` подхватит автоматически.
+  Если меняешь число шаблонов — поправь тест «их тринадцать»; `seed.ts` подхватит автоматически.
 - **Фото-пример шаблона:** Unsplash (не Unsplash+: в поиске `premium`/`plus` — платные), пережать в WebP ≤ 1200 px
   (q≈74) в `public/templates/<шаблон>-<что>.webp`, строка в `public/library/CREDITS.md` (раздел «Фото-примеры
   шаблонов», «Unsplash License» — тест `library.test.ts` сверяет каждый файл). Вырезка предмета с ровного цветного
@@ -856,6 +877,9 @@ Vercel (Postgres + migrate уже сделаны), rate limit в Redis, чист
     Этап 5: нажатие на блок в превью открывает его, открытый блок подсвечен заливкой цвета шаблона.
     Этап 6: сводки под названиями блоков и «Что осталось заполнить». Этап 7 (на пробу): телефонный режим — превью
     на весь экран и панель-шторка. Коммит `ux-v1` (ветка `ux-v1`) — состояние до переделки.
+32. Формат 2.4.0: шаблон «Этно» — перенос первого сайта владельца (toigokel.kg). Палитра `burgundy`, заставка `video`
+    (+ `envelope.video/poster`), обложка `scene`, анкета `choices`, фон «Карточка с узором» (`card-etno`); в библиотеке —
+    угловой узор и две волны-разделителя. Переход размера 400 — во всю ширину блока. Немой ролик не глушит музыку.
 31. Скрытая админка `/admin/<ADMIN_KEY>` (только локально): правка шаблонов в обычном редакторе (черновик tpl-<id> →
     «Сохранить в шаблон» → src/lib/template-overrides.json, фото — в public/templates), копии, сброс; запись видео из
     админки (очередь, прогресс, отмена), просмотр, скачивание и удаление роликов. Удаление приглашения на /my.

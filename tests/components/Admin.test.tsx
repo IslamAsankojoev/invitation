@@ -23,7 +23,7 @@ afterEach(() => {
 describe("админка: шаблоны", () => {
   it("у каждой карточки — «Редактировать» и «Записать видео» с названием; у изменённого — пометка и сброс", async () => {
     const user = userEvent.setup();
-    const list = templates.slice(0, 3).map((template, i) => ({ template, status: i === 1 ? ("edited" as const) : ("base" as const) }));
+    const list = templates.slice(0, 3).map((template, i) => ({ template, status: i === 1 ? ("edited" as const) : ("base" as const), published: true }));
     const onRecord = vi.fn();
     render(<AdminTemplates api={api} adminKey={KEY} templates={list} videoCount={{}} showcaseKey={null} onRecord={onRecord} onShowVideos={vi.fn()} onChanged={vi.fn()} />);
     const [first, second] = list.map((t) => t.template);
@@ -33,6 +33,64 @@ describe("админка: шаблоны", () => {
     expect(screen.getAllByText("Изменён")).toHaveLength(1);
     await user.click(screen.getByRole("button", { name: `Ещё действия с шаблоном «${second.name}»` }));
     expect(screen.getByRole("menuitem", { name: "Сбросить изменения" })).toBeInTheDocument();
+  });
+
+  it("публикация: переключатель на карточке, у скрытого — пометка «Скрыт»; ошибка сервера — переключатель возвращается", async () => {
+    const user = userEvent.setup();
+    const [a, b] = templates.slice(0, 2);
+    const list = [
+      { template: a, status: "base" as const, published: true },
+      { template: b, status: "base" as const, published: false },
+    ];
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ published: false }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const onChanged = vi.fn();
+    render(<AdminTemplates api={api} adminKey={KEY} templates={list} videoCount={{}} showcaseKey={null} onRecord={vi.fn()} onShowVideos={vi.fn()} onChanged={onChanged} />);
+    const card = (id: string) => within(document.querySelector<HTMLElement>(`[data-template-item="${id}"]`)!);
+    expect(card(b.id).getByText("Скрыт")).toBeInTheDocument();
+    expect(card(a.id).queryByText("Скрыт")).not.toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: `Опубликовать шаблон «${b.name}»` })).not.toBeChecked();
+
+    const toggle = screen.getByRole("switch", { name: `Опубликовать шаблон «${a.name}»` });
+    expect(toggle).toBeChecked();
+    await user.click(toggle);
+    expect(toggle).not.toBeChecked();
+    expect(card(a.id).getByText("Скрыт")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(`/api/admin/${KEY}/templates/${a.id}`, expect.objectContaining({ method: "PATCH", body: JSON.stringify({ published: false }) }));
+    await waitFor(() => expect(onChanged).toHaveBeenCalled());
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ error: "Хотя бы один шаблон должен остаться опубликованным" }), { status: 409 }));
+    const other = screen.getByRole("switch", { name: `Опубликовать шаблон «${b.name}»` });
+    await user.click(other);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Хотя бы один шаблон");
+    expect(other).not.toBeChecked();
+  });
+
+  it("порядок: ручка перетаскивания у каждой карточки; «Переместить позже» сразу меняет порядок и сохраняет его, ошибка — откат", async () => {
+    const user = userEvent.setup();
+    const list = templates.slice(0, 3).map((template) => ({ template, status: "base" as const, published: true }));
+    const [a, b, c] = list.map((t) => t.template);
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ order: [b.id, a.id, c.id] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const onChanged = vi.fn();
+    render(<AdminTemplates api={api} adminKey={KEY} templates={list} videoCount={{}} showcaseKey={null} onRecord={vi.fn()} onShowVideos={vi.fn()} onChanged={onChanged} />);
+    const order = () => [...document.querySelectorAll("[data-template-item]")].map((el) => el.getAttribute("data-template-item"));
+    for (const t of [a, b, c]) expect(screen.getByRole("button", { name: `Перетащить шаблон «${t.name}»` })).toBeInTheDocument();
+
+    // У первого нет «раньше», у последнего — «позже».
+    await user.click(screen.getByRole("button", { name: `Ещё действия с шаблоном «${a.name}»` }));
+    expect(screen.queryByRole("menuitem", { name: "Переместить раньше" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("menuitem", { name: "Переместить позже" }));
+    expect(order()).toEqual([b.id, a.id, c.id]);
+    expect(fetchMock).toHaveBeenCalledWith(`/api/admin/${KEY}/templates`, expect.objectContaining({ method: "PUT", body: JSON.stringify({ order: [b.id, a.id, c.id] }) }));
+    await waitFor(() => expect(onChanged).toHaveBeenCalled());
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ error: "Список шаблонов изменился — обновите страницу" }), { status: 409 }));
+    await user.click(screen.getByRole("button", { name: `Ещё действия с шаблоном «${c.name}»` }));
+    expect(screen.queryByRole("menuitem", { name: "Переместить позже" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("menuitem", { name: "Переместить раньше" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Список шаблонов изменился");
+    expect(order()).toEqual([b.id, a.id, c.id]);
   });
 
   it("окно записи: выбранный кадр и цвет уходят в запись, ошибка сервера видна в окне", async () => {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TemplateCard } from "@/components/templates/TemplateCard";
 import { showcaseKeyValid } from "@/lib/showcase";
-import { templates } from "@/lib/templates";
+import { allTemplates as templates } from "@/lib/templates";
 
 type Props = { params: Promise<{ key: string }> };
 

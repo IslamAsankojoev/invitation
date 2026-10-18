@@ -1,6 +1,7 @@
 import { prisma } from "../src/lib/db";
 import { createInvitation } from "../src/lib/invitations";
-import { createFromTemplate, templates } from "../src/lib/templates";
+// Демо — у каждого шаблона, и у скрытого в админке.
+import { allTemplates as templates, createFromTemplate } from "../src/lib/templates";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
 

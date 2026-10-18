@@ -9,8 +9,8 @@ const publicDir = path.join(process.cwd(), "public");
 const credits = readFileSync(path.join(publicDir, "library/CREDITS.md"), "utf8");
 /** Строка CREDITS.md для файла внутри public/library (например, `surfaces/scroll.webp`). */
 const creditRow = (file: string) => credits.split("\n").find((line) => line.includes(`\`${file}\``));
-/** Допустимые статусы: свободные лицензии, купленная у автора и «уточняется» (pngwing — до покупки). */
-const LICENSE = /\| (CC0|Public domain|Unsplash License|Лицензия приобретена|уточняется[^|]*) \|/;
+/** Допустимые статусы: свободные лицензии, купленная у автора, свои (сайты владельца) и «уточняется» (pngwing — до покупки). */
+const LICENSE = /\| (CC0|Public domain|Unsplash License|Лицензия приобретена|Собственность проекта|уточняется[^|]*) \|/;
 /** Картинки первой версии библиотеки (свои, до CREDITS.md); всё новое растровое — только со строкой в CREDITS. */
 const IN_HOUSE = [
   "dried-botanical",

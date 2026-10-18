@@ -27,6 +27,27 @@ describe("InvitationPage", () => {
     expect(screen.getByRole("button", { name: /музыку/ })).toBeInTheDocument();
   });
 
+  it("видео-конверт: музыка включается при нажатии и не глохнет от немого ролика, приглашение — когда ролик доиграл", () => {
+    vi.useFakeTimers();
+    const data = withMusic();
+    data.theme.envelope.style = "video";
+    render(<InvitationPage data={data} slug="demo" />);
+    const audio = screen.getByTestId<HTMLAudioElement>("music");
+    const video = screen.getByTestId("envelope").querySelector("video")!;
+
+    fireEvent.click(screen.getByRole("button", { name: "Открыть приглашение" }));
+    expect(audio.paused).toBe(false);
+    expect(video.paused).toBe(false);
+    expect(screen.getByTestId("invitation")).toHaveAttribute("data-motion", "paused");
+
+    fireEvent.ended(video);
+    expect(screen.getByTestId("invitation")).toHaveAttribute("data-motion", "on");
+    expect(audio.paused).toBe(false);
+    act(() => vi.advanceTimersByTime(600));
+    expect(screen.queryByTestId("envelope")).not.toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
   it("до открытия анимации приглашения на паузе и прокрутка заблокирована, после — запускаются", () => {
     vi.useFakeTimers();
     render(<InvitationPage data={withMusic()} slug="demo" />);

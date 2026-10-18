@@ -4,19 +4,19 @@ import { POST as CREATE } from "@/app/api/invitations/route";
 import { findBlock, updateBlock } from "@/lib/blocks";
 import { createDefaultInvitation } from "@/lib/defaults";
 import { createInvitation, getInvitationById } from "@/lib/invitations";
-import { createFromTemplate, findTemplate } from "@/lib/templates";
+import { createFromTemplate, findTemplate, templates } from "@/lib/templates";
 import { ctx, jsonRequest, resetDb } from "./helpers";
 
 beforeEach(resetDb);
 
 describe("POST /api/invitations", () => {
-  it("создаёт приглашение с дефолтными данными", async () => {
+  it("без шаблона — первый опубликованный, как на главной", async () => {
     const res = await CREATE(jsonRequest("/api/invitations", "POST"));
     expect(res.status).toBe(201);
     const body = await res.json();
     expect(body.editUrl).toBe(`/edit/${body.id}?token=${body.editToken}`);
     const saved = await getInvitationById(body.id);
-    expect(saved?.data).toEqual(createDefaultInvitation());
+    expect(saved?.data).toEqual(createFromTemplate(templates[0]));
   });
 
   it("создаёт приглашение по выбранному шаблону", async () => {

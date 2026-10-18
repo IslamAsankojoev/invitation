@@ -319,7 +319,7 @@ function BlockItem({ block, name, summary, data, expanded, onExpand, onToggle, o
             <Fields block={block} onChange={onFieldsChange} />
           </TabsContent>
           <TabsContent value="view" className="flex flex-col gap-4 p-4">
-            <VariantPicker data={data} block={block} onChange={(variant) => onFieldsChange({ variant })} />
+            <VariantPicker data={data} block={block} onChange={(variant) => onFieldsChange({ variant } as Partial<Block>)} />
             <BlockView
               block={block}
               theme={data.theme}

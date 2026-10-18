@@ -14,6 +14,7 @@ export const variantLabels: { [K in BlockType]: Record<VariantOf<K>, string> } =
     monogram: "Монограмма",
     ticket: "Посадочный талон",
     clean: "Без рамки",
+    scene: "Сцена",
   },
   countdown: { classic: "Цифры", circles: "Кольца", cards: "Карточки" },
   calendar: { classic: "Месяц", date: "Крупная дата", week: "Неделя", tearoff: "Отрывной листок" },
@@ -21,7 +22,7 @@ export const variantLabels: { [K in BlockType]: Record<VariantOf<K>, string> } =
   program: { classic: "Таймлайн", cards: "Карточки", icons: "С иконками" },
   location: { classic: "Фото и текст", postcard: "Открытка", minimal: "Табличка" },
   dresscode: { classic: "Кружки", stripes: "Полосы", chips: "Образцы цвета" },
-  rsvp: { classic: "Полная форма", compact: "Компактная" },
+  rsvp: { classic: "Полная форма", compact: "Компактная", choices: "Три ответа" },
   text: { classic: "Текст", card: "Карточка", quote: "Цитата" },
   photo: { classic: "Во всю ширину", frame: "В рамке", polaroid: "Полароид" },
   gallery: { classic: "Сетка", collage: "Коллаж", carousel: "Лента" },
@@ -77,6 +78,7 @@ export const envelopeStyleLabels: Record<EnvelopeStyle, string> = {
   flap: "Конверт",
   curtains: "Шторки",
   book: "Книга",
+  video: "Видео-конверт",
 };
 
 export const programIconLabels: Record<ProgramIcon, string> = {

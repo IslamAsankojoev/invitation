@@ -466,6 +466,12 @@ function EnvelopeIcon({ style }: { style: (typeof ENVELOPE_STYLES)[number] }) {
           <path d="M44 2 H26 Q31 16 26 30 H44Z" {...common} />
         </>
       )}
+      {style === "video" && (
+        <>
+          <rect x="4" y="2" width="40" height="28" rx="2" {...common} />
+          <path d="M20 10 L30 16 L20 22Z" fill="currentColor" opacity=".5" />
+        </>
+      )}
       {style === "book" && (
         <>
           <path d="M24 5 Q14 1 5 4 V29 Q14 26 24 30 Q34 26 43 29 V4 Q34 1 24 5Z" {...common} />

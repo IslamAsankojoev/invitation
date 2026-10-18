@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { InvitationView } from "@/components/invitation/InvitationView";
 import { createDefaultInvitation } from "@/lib/defaults";
+import { updateBlock } from "@/lib/blocks";
 
 const rsvp = () => within(document.querySelector<HTMLElement>('[data-block="rsvp"]')!);
 
@@ -43,5 +44,35 @@ describe("Анкета гостя", () => {
 
     await user.click(rsvp().getByRole("button", { name: "Изменить ответ" }));
     expect(rsvp().getByLabelText("Ваше имя")).toHaveValue("Ольга Иванова");
+  });
+
+  it("вид «Три ответа»: без ответа просит выбрать, «с супругом» отправляет двух гостей", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<InvitationView data={updateBlock(createDefaultInvitation(), "rsvp", { variant: "choices" })} slug="demo" />);
+
+    await user.type(rsvp().getByLabelText("Имя или имена гостей"), "Айжан и Бакыт");
+    await user.click(rsvp().getByRole("button", { name: "Отправить ответ" }));
+    expect(rsvp().getByRole("alert")).toHaveTextContent("выберите ответ");
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    await user.click(rsvp().getByRole("radio", { name: "Приду с супругом / супругой" }));
+    await user.click(rsvp().getByRole("button", { name: "Отправить ответ" }));
+    expect(await rsvp().findByRole("status")).toHaveTextContent("Спасибо!");
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({ name: "Айжан и Бакыт", attending: true, guestsCount: 2 });
+  });
+
+  it("вид «Три ответа»: «Не смогу прийти» — отказ", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<InvitationView data={updateBlock(createDefaultInvitation(), "rsvp", { variant: "choices" })} slug="demo" />);
+
+    await user.type(rsvp().getByLabelText("Имя или имена гостей"), "Ольга");
+    await user.click(rsvp().getByRole("radio", { name: "Не смогу прийти" }));
+    await user.click(rsvp().getByRole("button", { name: "Отправить ответ" }));
+    expect(await rsvp().findByText("Ольга, жаль, что вы не сможете прийти. Ваш ответ получен.")).toBeInTheDocument();
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({ attending: false, guestsCount: 1 });
   });
 });

@@ -14,7 +14,7 @@ const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Неверный фо
 /** URL картинки: файл из библиотеки (/library/…) или загруженный (/uploads/…, позже — S3). */
 const imageUrl = z.string().min(1).max(500);
 
-export const PALETTES = ["cream", "blush", "emerald", "ivory", "autumn", "night", "lavender", "noir", "navy", "mocha", "pearl", "sand", "forest"] as const;
+export const PALETTES = ["cream", "blush", "emerald", "ivory", "autumn", "night", "lavender", "noir", "navy", "mocha", "pearl", "sand", "forest", "burgundy"] as const;
 /** Шрифт имён и акцентных надписей. Первые три — исходные ключи, их значения не меняются. */
 export const FONTS = [
   "script",
@@ -120,6 +120,7 @@ export const SURFACES = [
   "ticket-gold",
   "ticket-pink",
   "ticket-stubs",
+  "card-etno",
   // Рамы
   "frame",
   "frame-gold",
@@ -156,14 +157,14 @@ export const LEGACY_SURFACES: Record<string, (typeof SURFACES)[number]> = {
 
 /** Виды (вёрстка) каждого блока. Первый — «classic», его получают приглашения, созданные до появления видов. */
 export const BLOCK_VARIANTS = {
-  hero: ["classic", "arch", "polaroid", "minimal", "cover", "monogram", "ticket", "clean"],
+  hero: ["classic", "arch", "polaroid", "minimal", "cover", "monogram", "ticket", "clean", "scene"],
   countdown: ["classic", "circles", "cards"],
   calendar: ["classic", "date", "week", "tearoff"],
   story: ["classic", "photo", "letter"],
   program: ["classic", "cards", "icons"],
   location: ["classic", "postcard", "minimal"],
   dresscode: ["classic", "stripes", "chips"],
-  rsvp: ["classic", "compact"],
+  rsvp: ["classic", "compact", "choices"],
   text: ["classic", "card", "quote"],
   photo: ["classic", "frame", "polaroid"],
   gallery: ["classic", "collage", "carousel"],
@@ -192,7 +193,8 @@ export const HEADINGS = ["caps", "names"] as const;
 export const BACKGROUND_MODES = ["stretch", "fixed", "parallax"] as const;
 export type BackgroundMode = (typeof BACKGROUND_MODES)[number];
 /** Вид заставки перед открытием приглашения. */
-export const ENVELOPE_STYLES = ["seal", "veil", "flap", "curtains", "book"] as const;
+/** video — ролик открытия конверта (theme.envelope.video) поверх кадра-постера (poster): играет по нажатию. */
+export const ENVELOPE_STYLES = ["seal", "veil", "flap", "curtains", "book", "video"] as const;
 /** Значки пунктов программы (вид «С иконками»). */
 export const PROGRAM_ICONS = ["rings", "glasses", "cake", "dinner", "music", "camera", "car", "heart", "church", "dance"] as const;
 /** Значки блока «Текст»: значки программы и темы информационных блоков (подарки, дети, письмо…). */
@@ -275,7 +277,13 @@ export const themeSchema = z.object({
     pop: z.boolean().optional(),
   }),
   envelope: z
-    .object({ ornament: imageUrl.nullable(), style: z.enum(ENVELOPE_STYLES).default("seal") })
+    .object({
+      ornament: imageUrl.nullable(),
+      style: z.enum(ENVELOPE_STYLES).default("seal"),
+      /** Для вида video: ролик открытия и его первый кадр (показывается до нажатия). */
+      video: imageUrl.nullable().optional(),
+      poster: imageUrl.nullable().optional(),
+    })
     .default({ ornament: null, style: "seal" }),
   headings: z.enum(HEADINGS).default("caps"),
   motion: z

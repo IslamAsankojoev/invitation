@@ -4,7 +4,7 @@ import { parseVideoName, VIDEO_NAME, videoFileName } from "@/lib/adminFiles";
 import { findBlock, toggleBlock, updateBlock } from "@/lib/blocks";
 import { invitationDataSchema } from "@/lib/schema";
 import { copyTemplate, replaceUrls, sameAsTemplate, templateFromInvitation } from "@/lib/templateAdmin";
-import { baseTemplates, createFromTemplate, findTemplate, mergeTemplates } from "@/lib/templates";
+import { baseTemplates, createFromTemplate, findTemplate, mergeTemplates, orderTemplates, publishedTemplates } from "@/lib/templates";
 
 const KEY = "0123456789abcdef0123";
 
@@ -104,6 +104,23 @@ describe("правки шаблонов (template-overrides.json)", () => {
     expect(merged).toHaveLength(baseTemplates.length + 1);
     expect(merged.find((t) => t.id === "mocha")!.name).toBe("Шоколад 2.0");
     expect(merged.at(-1)!.id).toBe("mocha-2");
+  });
+
+  it("порядок: перечисленные — по order, неизвестные id пропускаются, не расставленные — после, в своём порядке", () => {
+    const list = [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }];
+    expect(orderTemplates(list, ["c", "zzz", "a"]).map((t) => t.id)).toEqual(["c", "a", "b", "d"]);
+    expect(orderTemplates(list, undefined)).toBe(list);
+    const mocha = baseTemplates.find((t) => t.id === "mocha")!;
+    const merged = mergeTemplates(baseTemplates, { edited: {}, added: [copyTemplate(mocha, ["mocha"])], order: ["etno", "mocha-2", "lago"] });
+    expect(merged.slice(0, 3).map((t) => t.id)).toEqual(["etno", "mocha-2", "lago"]);
+    expect(merged).toHaveLength(baseTemplates.length + 1);
+    expect(merged[3].id).toBe(baseTemplates[0].id);
+  });
+
+  it("опубликованные — без скрытых; без списка — все", () => {
+    const list = [{ id: "a" }, { id: "b" }, { id: "c" }];
+    expect(publishedTemplates(list, ["b"]).map((t) => t.id)).toEqual(["a", "c"]);
+    expect(publishedTemplates(list, undefined)).toBe(list);
   });
 });
 

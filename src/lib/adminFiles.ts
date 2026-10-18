@@ -7,7 +7,7 @@ import { existsSync } from "node:fs";
 import { appendFile, copyFile, mkdir, readdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { copyTemplate, sameTemplate } from "./templateAdmin";
-import { baseTemplates, mergeTemplates, type Template, type TemplateOverrides } from "./templates";
+import { baseTemplates, mergeTemplates, publishedTemplates, type Template, type TemplateOverrides } from "./templates";
 
 const root = () => process.env.ADMIN_ROOT ?? process.cwd();
 const overridesFile = () => path.join(root(), "src/lib/template-overrides.json");
@@ -16,7 +16,12 @@ export const videosDir = () => path.join(root(), "videos");
 export async function readOverrides(): Promise<TemplateOverrides> {
   try {
     const json = JSON.parse(await readFile(overridesFile(), "utf8"));
-    return { edited: json.edited ?? {}, added: json.added ?? [] };
+    return {
+      edited: json.edited ?? {},
+      added: json.added ?? [],
+      ...(Array.isArray(json.order) && { order: json.order }),
+      ...(Array.isArray(json.hidden) && { hidden: json.hidden }),
+    };
   } catch {
     return { edited: {}, added: [] };
   }
@@ -30,7 +35,7 @@ async function writeOverrides(overrides: TemplateOverrides) {
   await rename(tmp, file);
 }
 
-export type AdminTemplate = { template: Template; status: "base" | "edited" | "added" };
+export type AdminTemplate = { template: Template; status: "base" | "edited" | "added"; published: boolean };
 
 /** Шаблоны как сейчас в файле правок (свежие — модуль templates.ts мог ещё не перечитать JSON). */
 export async function adminTemplates(): Promise<AdminTemplate[]> {
@@ -38,6 +43,7 @@ export async function adminTemplates(): Promise<AdminTemplate[]> {
   return mergeTemplates(baseTemplates, overrides).map((template) => ({
     template,
     status: overrides.edited[template.id] ? "edited" : baseTemplates.some((t) => t.id === template.id) ? "base" : "added",
+    published: !overrides.hidden?.includes(template.id),
   }));
 }
 
@@ -74,8 +80,45 @@ export async function resetTemplate(id: string): Promise<boolean> {
   const overrides = await readOverrides();
   const before = JSON.stringify(overrides);
   delete overrides.edited[id];
+  const added = overrides.added.some((t) => t.id === id);
   overrides.added = overrides.added.filter((t) => t.id !== id);
   if (JSON.stringify(overrides) === before) return false;
+  // Удалённый шаблон уходит и из порядка, и из скрытых (сброс шаблона из кода место и публикацию не меняет).
+  if (added && overrides.order) overrides.order = overrides.order.filter((o) => o !== id);
+  if (added && overrides.hidden) overrides.hidden = overrides.hidden.filter((o) => o !== id);
+  if (overrides.hidden?.length === 0) delete overrides.hidden;
+  await writeOverrides(overrides);
+  return true;
+}
+
+/**
+ * Новый порядок шаблонов (перетаскивание в админке): `ids` — все шаблоны, каждый по разу. Совпал с порядком «как в
+ * коде» — поле order удаляется (файл правок не хранит лишнего).
+ */
+export async function saveOrder(ids: string[]): Promise<void> {
+  const overrides = await readOverrides();
+  const current = mergeTemplates(baseTemplates, overrides).map((t) => t.id);
+  if (ids.length !== current.length || new Set(ids).size !== ids.length || !current.every((id) => ids.includes(id)))
+    throw new Error("Список шаблонов изменился — обновите страницу");
+  const natural = mergeTemplates(baseTemplates, { ...overrides, order: undefined }).map((t) => t.id);
+  if (ids.every((id, i) => id === natural[i])) delete overrides.order;
+  else overrides.order = ids;
+  await writeOverrides(overrides);
+}
+
+/** Опубликовать или скрыть шаблон. Скрыть последний опубликованный нельзя: главной и редактору нужен хоть один. */
+export async function setPublished(id: string, published: boolean): Promise<boolean> {
+  const overrides = await readOverrides();
+  const all = mergeTemplates(baseTemplates, overrides);
+  if (!all.some((t) => t.id === id)) return false;
+  const hidden = new Set(overrides.hidden);
+  if (published) hidden.delete(id);
+  else hidden.add(id);
+  if (!publishedTemplates(all, [...hidden]).length) throw new Error("Хотя бы один шаблон должен остаться опубликованным");
+  // В порядке шаблонов, чтобы файл читался так же, как список в админке.
+  const ids = all.map((t) => t.id).filter((t) => hidden.has(t));
+  if (ids.length) overrides.hidden = ids;
+  else delete overrides.hidden;
   await writeOverrides(overrides);
   return true;
 }

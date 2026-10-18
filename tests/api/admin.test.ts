@@ -6,13 +6,14 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DELETE as CANCEL } from "@/app/api/admin/[key]/jobs/[id]/route";
 import { POST as RESET_DRAFT } from "@/app/api/admin/[key]/templates/[id]/draft/route";
 import { DELETE, PATCH, POST, PUT } from "@/app/api/admin/[key]/templates/[id]/route";
+import { PUT as REORDER } from "@/app/api/admin/[key]/templates/route";
 import { DELETE as DELETE_VIDEO, GET as GET_VIDEO } from "@/app/api/admin/[key]/videos/[name]/route";
 import { GET as MEDIA, POST as RECORD } from "@/app/api/admin/[key]/videos/route";
 import { findBlock, updateBlock } from "@/lib/blocks";
 import { getInvitationBySlug } from "@/lib/invitations";
 import { draftSlug } from "@/lib/templateAdmin";
 import { ensureDraft } from "@/lib/templateDrafts";
-import { createFromTemplate, findTemplate } from "@/lib/templates";
+import { baseTemplates, createFromTemplate, findTemplate } from "@/lib/templates";
 import { isFinished, listJobs, setRunner } from "@/lib/videoJobs";
 import { jsonRequest, resetDb } from "./helpers";
 
@@ -101,6 +102,58 @@ describe("админка: шаблоны", () => {
     expect(overrides().edited).toEqual({});
     expect(await getInvitationBySlug(draftSlug("mocha"))).toBeNull();
     expect((await DELETE(jsonRequest("/api/admin/k/templates/mocha", "DELETE"), tpl("mocha"))).status).toBe(404);
+  });
+
+  it("порядок шаблонов: сохраняется в order; «как в коде» — order убирается; чужой список — 409; удалённая копия уходит из порядка", async () => {
+    const ids = baseTemplates.map((t) => t.id);
+    const reorder = (order: unknown, key = KEY) => REORDER(jsonRequest("/api/admin/k/templates", "PUT", { order }), keyOnly(key));
+    const moved = [ids[2], ...ids.filter((id) => id !== ids[2])];
+    const res = await reorder(moved);
+    expect(res.status).toBe(200);
+    expect((await res.json()).order).toEqual(moved);
+    expect(overrides().order).toEqual(moved);
+
+    expect((await reorder(ids)).status).toBe(200);
+    expect(overrides().order).toBeUndefined();
+
+    expect((await reorder(ids.slice(1))).status).toBe(409);
+    expect((await reorder([...ids, "nope"].slice(1))).status).toBe(409);
+    expect((await reorder("mocha")).status).toBe(400);
+    expect((await reorder(ids, "wrong-key-wrong-key")).status).toBe(404);
+
+    // Копия ставится в порядок; её удаление убирает её и из order.
+    await POST(jsonRequest("/api/admin/k/templates/mocha", "POST"), tpl("mocha"));
+    expect((await reorder(["mocha-2", ...ids])).status).toBe(200);
+    expect(overrides().order[0]).toBe("mocha-2");
+    expect((await DELETE(jsonRequest("/api/admin/k/templates/mocha-2", "DELETE"), tpl("mocha-2"))).status).toBe(204);
+    expect(overrides().order).toEqual(ids);
+  });
+
+  it("публикация: скрыть и вернуть; последний опубликованный скрыть нельзя; удалённая копия уходит из скрытых", async () => {
+    const publish = (id: string, published: unknown) => PATCH(jsonRequest(`/api/admin/k/templates/${id}`, "PATCH", { published }), tpl(id));
+    expect((await publish("lago", false)).status).toBe(200);
+    expect((await publish("mocha", false)).status).toBe(200);
+    // В порядке шаблонов, а не нажатий.
+    const order = baseTemplates.map((t) => t.id);
+    expect(overrides().hidden).toEqual(["lago", "mocha"].sort((a, b) => order.indexOf(a) - order.indexOf(b)));
+    expect((await publish("lago", true)).status).toBe(200);
+    expect(overrides().hidden).toEqual(["mocha"]);
+    expect((await publish("mocha", true)).status).toBe(200);
+    expect(overrides().hidden).toBeUndefined();
+    expect((await publish("nope", false)).status).toBe(404);
+    // Название через тот же PATCH работает как прежде; кривое тело — 400.
+    expect((await publish("lago", "да")).status).toBe(400);
+
+    for (const id of order.slice(1)) expect((await publish(id, false)).status).toBe(200);
+    const last = await publish(order[0], false);
+    expect(last.status).toBe(409);
+    expect((await last.json()).error).toMatch(/хотя бы один/i);
+
+    await POST(jsonRequest("/api/admin/k/templates/mocha", "POST"), tpl("mocha"));
+    expect((await publish("mocha-2", false)).status).toBe(200);
+    expect(overrides().hidden).toContain("mocha-2");
+    await DELETE(jsonRequest("/api/admin/k/templates/mocha-2", "DELETE"), tpl("mocha-2"));
+    expect(overrides().hidden).not.toContain("mocha-2");
   });
 
   it("«Начать заново»: черновик снова как шаблон", async () => {

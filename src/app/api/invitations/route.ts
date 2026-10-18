@@ -4,7 +4,7 @@ import { createInvitation } from "@/lib/invitations";
 import { currentUser } from "@/lib/session";
 import { formatZodErrors } from "@/lib/schema";
 import { applySetup, setupSchema } from "@/lib/setup";
-import { createFromTemplate, findTemplate, templates } from "@/lib/templates";
+import { createFromTemplate, findPublishedTemplate, templates } from "@/lib/templates";
 
 const bodySchema = z.object({ template: z.string().optional(), setup: z.unknown().optional() }).nullable();
 
@@ -22,7 +22,8 @@ export async function POST(req: Request) {
   }
   const parsed = bodySchema.safeParse(json);
   const templateId = parsed.success ? (parsed.data?.template ?? templates[0].id) : null;
-  const template = templateId ? findTemplate(templateId) : undefined;
+  // Скрытый в админке шаблон (не опубликован) — как неизвестный.
+  const template = templateId ? findPublishedTemplate(templateId) : undefined;
   if (!template) {
     return NextResponse.json({ error: "Неизвестный шаблон" }, { status: 400 });
   }

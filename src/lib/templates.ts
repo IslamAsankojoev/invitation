@@ -96,6 +96,11 @@ const SAND_STRIP = "#e7dccb";
 const CREAM = "#ffeddb";
 /** «Изумрудная ночь»: светлая бумага с рваными краями между тёмными блоками. */
 const PAPER = "#e6dccb";
+/** «Этно» (toigokel.kg): бордовые полосы — цвет волны разделителей etno-divider-*, золото надписей на них. */
+const BORDO = "#4b0a12";
+const ETNO_GOLD = "#c9a063";
+/** Бордовые рукописные заголовки на креме, как на toigokel.kg. */
+const ETNO_TITLE = { title: { color: "#6d0713" } };
 /** Анимация украшения «появляется как обычно, но не качается» — для переходов между блоками. */
 const STILL = { enter: "auto", enterSpeed: 1, idle: "none", idleSpeed: 1, idleAmplitude: 1 } as const;
 
@@ -972,13 +977,128 @@ export const baseTemplates: Template[] = [
       },
     ],
   },
+  {
+    id: "etno",
+    name: "Этно",
+    description:
+      "Бордо и золото, юрта и горы на обложке, кыргызский узор, видео-конверт с сургучом, волны-переходы и анкета с тремя ответами.",
+    theme: {
+      palette: "burgundy",
+      font: "script",
+      bodyFont: "cormorant",
+      headings: "names",
+      background: null,
+      texture: "none",
+      decor: { type: "none", image: null, color: "#c9a063", density: 0, size: 1, speed: 1 },
+      envelope: { ornament: lib("etno-corner"), style: "video", video: "/templates/etno-envelope.mp4", poster: photo("etno-envelope") },
+      motion: { style: "elegant", speed: 1 },
+    },
+    blocks: {},
+    dresscodeColors: ["#4b0a12", "#6d0713", "#c9a063", "#efe3cf", "#fbf2e4"],
+    music: "/music/erke-sary.mp3",
+    layout: [
+      { type: "hero", variant: "scene", names: "Азамат & Бегайым", date: "2027-10-19T16:00", label: "Свадьба", subtitle: undefined, photo: photo("etno-hero") },
+      {
+        type: "text",
+        title: "Дорогие наши уважаемые гости!",
+        icon: undefined,
+        textStyles: ETNO_TITLE,
+        ornaments: [
+          orn("etno-corner", "top-left", { size: 96, opacity: 1 }),
+          orn("etno-corner", "top-right", { size: 96, opacity: 1, flip: true }),
+        ],
+        text: "Приглашаем вас отведать угощения за праздничным дасторханом в честь наших детей Азамата и Бегайым — стать нашими дорогими гостями на их свадьбе, дать своё благословение и разделить с нами этот важный день!\n\nДля нас будет большой честью вместе с вами стать свидетелями счастья молодых и разделить нашу радость.",
+      },
+      {
+        type: "text",
+        // Подпись хозяев — крупно от руки (заголовок), «с уважением» — капителью под ней.
+        title: "Нурбек и Венера",
+        scriptLine: "С уважением, хозяева торжества",
+        icon: undefined,
+        text: "",
+      },
+      { type: "calendar", variant: "week", title: "", surface: "card-etno" },
+      {
+        type: "photo",
+        photo: photo("etno-hands"),
+        caption: undefined,
+        height: "square",
+        width: "content",
+        // Кремовая волна сверху ложится на фото, бордовая (у отсчёта) — снизу.
+        ornaments: [orn("etno-divider-cream", "top", { size: 400, opacity: 1, seam: true, motion: STILL })],
+      },
+      {
+        type: "countdown",
+        title: "Осталось",
+        scriptLine: "До события",
+        bgColor: BORDO,
+        textStyles: { title: { color: ETNO_GOLD } },
+        ornaments: [orn("etno-divider-burgundy", "top", { size: 400, opacity: 1, seam: true, motion: STILL })],
+      },
+      {
+        type: "location",
+        title: "Ждём вас здесь",
+        scriptLine: "Место встречи",
+        textStyles: ETNO_TITLE,
+        placeName: "Банкетный зал «Аяр»",
+        address: "г. Бишкек, ул. Фрунзе, 133",
+        mapUrl: "https://go.2gis.com/F1MTV",
+        photo: photo("etno-venue"),
+      },
+      {
+        type: "rsvp",
+        variant: "choices",
+        title: "Будете с нами?",
+        scriptLine: "Пожалуйста, подтвердите присутствие",
+        bgColor: BORDO,
+        textStyles: { title: { color: ETNO_GOLD } },
+        ornaments: [orn("etno-divider-burgundy", "top", { size: 400, opacity: 1, seam: true, motion: STILL })],
+        deadline: undefined,
+      },
+      {
+        type: "text",
+        title: "С нетерпением ждём вас!",
+        scriptLine: "До встречи",
+        icon: undefined,
+        bgImage: photo("etno-rings"),
+        bgDim: 0,
+        bgDarken: 0.5,
+        textStyles: { title: { color: "#fbf2e4" } },
+        text: "Ваше присутствие — самый ценный подарок для нас.",
+        // Бордовая волна сверху свисает на фото (картинка перевёрнута: прямой край — на стыке).
+        ornaments: [orn("etno-divider-burgundy", "top", { size: 400, opacity: 1, rotate: 180, seam: true, motion: STILL })],
+      },
+    ],
+  },
 ];
 
 /**
  * Правки шаблонов из скрытой админки (/admin, только локально): `edited` — шаблон из кода целиком заменён своей
  * версией, `added` — новые шаблоны (копии). Файл пишет lib/adminFiles.ts, руками не править.
  */
-export type TemplateOverrides = { edited: Record<string, Template>; added: Template[] };
+export type TemplateOverrides = {
+  edited: Record<string, Template>;
+  added: Template[];
+  /** Порядок шаблонов (id) — перетаскиванием в админке; нет — как в коде, новые в конце. */
+  order?: string[];
+  /** Не опубликованы (id): видны только в админке и скрытом показе — не на главной и не в выборе шаблона. */
+  hidden?: string[];
+};
+
+/** Опубликованные шаблоны (без скрытых в админке). */
+export const publishedTemplates = <T extends { id: string }>(list: T[], hidden: string[] | undefined): T[] =>
+  hidden?.length ? list.filter((t) => !hidden.includes(t.id)) : list;
+
+/**
+ * Шаблоны в заданном порядке: перечисленные в `order` — по нему, остальные (новые, ещё не расставленные) — после них,
+ * в своём порядке. Неизвестные id в `order` пропускаются.
+ */
+export function orderTemplates<T extends { id: string }>(list: T[], order: string[] | undefined): T[] {
+  if (!order?.length) return list;
+  const rank = new Map(order.map((id, i) => [id, i]));
+  const at = (t: T) => rank.get(t.id) ?? order.length;
+  return list.map((t, i) => ({ t, i })).sort((a, b) => at(a.t) - at(b.t) || a.i - b.i).map(({ t }) => t);
+}
 
 /** Шаблон из файла правок годится, если из него собирается приглашение, проходящее схему. */
 const usable = (t: Template) => {
@@ -996,10 +1116,10 @@ export function mergeTemplates(base: Template[], overrides: TemplateOverrides): 
     return t && usable(t) ? t : undefined;
   };
   const ids = new Set(base.map((t) => t.id));
-  return [
-    ...base.map((t) => checked(overrides.edited[t.id]) ?? t),
-    ...overrides.added.filter((t) => !ids.has(t.id) && checked(t)),
-  ];
+  return orderTemplates(
+    [...base.map((t) => checked(overrides.edited[t.id]) ?? t), ...overrides.added.filter((t) => !ids.has(t.id) && checked(t))],
+    overrides.order,
+  );
 }
 
 
@@ -1175,7 +1295,7 @@ const exampleCache: Partial<Record<BlockType, Block[]>> = {};
 
 /** Шаблон, по которому, судя по теме, оформлено приглашение (шаблон в данных не хранится). */
 export const guessTemplate = (theme: Theme) =>
-  templates.find((t) => t.theme.palette === theme.palette && t.theme.font === theme.font && t.theme.texture === theme.texture);
+  allTemplates.find((t) => t.theme.palette === theme.palette && t.theme.font === theme.font && t.theme.texture === theme.texture);
 
 const designOf = (block: Block): BlockDesign => designFields(block as unknown as BlockDesign) as BlockDesign;
 
@@ -1231,6 +1351,11 @@ export function applyTemplate(data: InvitationData, template: Template): Invitat
 }
 
 // В конце файла: проверка правок собирает приглашения функциями выше (const-функции до объявления ещё не готовы).
-export const templates: Template[] = mergeTemplates(baseTemplates, overrides as unknown as TemplateOverrides);
+/** Все шаблоны, и скрытые (админка, скрытый показ, демо в seed). */
+export const allTemplates: Template[] = mergeTemplates(baseTemplates, overrides as unknown as TemplateOverrides);
+/** Опубликованные — то, что видят люди: главная, выбор шаблона в редакторе, создание приглашения. */
+export const templates: Template[] = publishedTemplates(allTemplates, (overrides as unknown as TemplateOverrides).hidden);
 
-export const findTemplate = (id: string) => templates.find((t) => t.id === id);
+/** Любой шаблон, и скрытый (показ, правка в админке); создать приглашение можно только из опубликованного. */
+export const findTemplate = (id: string) => allTemplates.find((t) => t.id === id);
+export const findPublishedTemplate = (id: string) => templates.find((t) => t.id === id);

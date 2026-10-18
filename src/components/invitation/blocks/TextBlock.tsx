@@ -59,9 +59,11 @@ export function TextBlock({ block }: BlockProps<"text">) {
   const body = (
     <>
       {icon}
-      <p className="mx-auto max-w-sm whitespace-pre-line text-xl leading-relaxed" data-reveal="3" style={textStyle(block, "text")}>
-        {block.text}
-      </p>
+      {block.text && (
+        <p className="mx-auto max-w-sm whitespace-pre-line text-xl leading-relaxed" data-reveal="3" style={textStyle(block, "text")}>
+          {block.text}
+        </p>
+      )}
       {button}
     </>
   );

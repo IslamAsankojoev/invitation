@@ -53,7 +53,8 @@ export function ornamentStyle(o: Pick<Ornament, "position" | "size" | "seam">): 
     ...css,
     position: "absolute",
     display: "block",
-    width: o.size,
+    // Переход наибольшего размера — ровно во всю ширину блока (волна-разделитель не должна обрываться у краёв).
+    width: seam && o.size >= ORNAMENT_SIZE_MAX ? "100%" : o.size,
     // Переход — на всю ширину колонки (гирлянда), обычное украшение — не шире 70% блока.
     maxWidth: seam ? "100%" : "70%",
     transform: shift,

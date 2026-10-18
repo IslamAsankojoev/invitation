@@ -223,6 +223,53 @@ body {
   color: var(--text);
 }
 
+/* Анкета «Три ответа»: светлая карточка — и на тёмной заливке блока (как .inv-ticket, своя светлая палитра). */
+.inv-rsvp-card {
+  --text: var(--ink-light);
+  --accent: var(--accent-on-light);
+  --on-accent: #fff;
+  --bg: color-mix(in srgb, var(--ink-dark) 35%, white);
+  --field: color-mix(in srgb, var(--ink-dark) 55%, white);
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid color-mix(in srgb, var(--accent-on-dark) 45%, transparent);
+  box-shadow: 0 24px 50px -28px rgb(0 0 0 / 0.55);
+}
+.inv-option {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-height: 3.25rem;
+  padding: 0.6rem 1rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  background: var(--field);
+  font-size: 1.15rem;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.inv-option[data-checked] {
+  border-color: color-mix(in srgb, var(--accent) 65%, transparent);
+}
+.inv-option:has(:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.inv-option-dot {
+  flex: none;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--accent-on-dark) 80%, var(--accent));
+  background: radial-gradient(circle, var(--accent) 0 45%, transparent 48%) center / 0 0 no-repeat;
+  transition: background-size 0.2s;
+}
+.inv-option[data-checked] .inv-option-dot {
+  border-color: var(--accent);
+  background-size: 100% 100%;
+}
+
 /* ---------- Заголовки блоков шрифтом имён (theme.headings = "names", атрибут data-headings на корне) ----------
    serif — капитель шрифтом имён; script — рукописный строчными и крупно, строка под ним — капителью. */
 [data-headings="serif"] .inv-title {
@@ -395,6 +442,26 @@ body {
 }
 .inv-intro-decor {
   opacity: 0.85;
+}
+/* Видео-конверт: ролик доиграл — растворяется (INTRO_LEAVE_MS.video), подсказка мягко «дышит». */
+.inv-intro-video {
+  overscroll-behavior: contain;
+  touch-action: none;
+  transition: opacity 0.6s ease;
+}
+.inv-intro-video[data-leaving] {
+  opacity: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .inv-intro-video-hint {
+    animation: inv-video-hint 2.4s ease-in-out infinite;
+  }
+}
+@keyframes inv-video-hint {
+  50% {
+    opacity: 0.55;
+  }
 }
 /* Фоны видов заставки. */
 .inv-intro-bg {
@@ -1701,6 +1768,10 @@ body {
 /* Фоны-предметы: лёгкая тень, как у вещи, лежащей на столе. */
 .surface-layer-object {
   filter: drop-shadow(0 14px 18px color-mix(in srgb, var(--text) 22%, transparent));
+}
+/* Карточка «Этно» почти без прозрачных полей (12 px) — секция с overflow-hidden срезала бы обычную тень прямоугольником. */
+[data-surface="card-etno"] > .surface-layer-object {
+  filter: drop-shadow(0 4px 5px color-mix(in srgb, var(--text) 18%, transparent));
 }
 /* Фоны блока — CSS и фактуры (калька, бумага, штукатурка, камень): скруглённая панель, как у карточки. */
 .surface-layer-css {

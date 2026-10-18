@@ -11,6 +11,14 @@ type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent" } | { kind
 
 const formatDeadline = (d: string) => d.split("-").reverse().join(".");
 
+/** Вид «Три ответа» (как на toigokel.kg): ответ сразу задаёт, придёт ли гость и сколько их. */
+const CHOICES = [
+  { id: "alone", label: "Конечно, приду", attending: true, guests: 1 },
+  { id: "spouse", label: "Приду с супругом / супругой", attending: true, guests: 2 },
+  { id: "declined", label: "Не смогу прийти", attending: false, guests: 1 },
+] as const;
+type Choice = (typeof CHOICES)[number]["id"];
+
 export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
   const [name, setName] = useState("");
   const [attending, setAttending] = useState(true);
@@ -19,6 +27,8 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
   const compact = block.variant === "compact";
   /** Компактный вид: сначала только выбор «приду / не смогу», поля — после него. */
   const [chosen, setChosen] = useState(false);
+  const choices = block.variant === "choices";
+  const [choice, setChoice] = useState<Choice | null>(null);
   const submitRef = useRef<HTMLButtonElement>(null);
   const guestsRef = useRef<HTMLInputElement>(null);
   /** Куда перелистнуть цифру гостей: 1 — вверх (+), −1 — вниз (−), 0 — без анимации (ввод с клавиатуры). */
@@ -42,6 +52,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
     e.preventDefault();
     if (ctx.preview) return;
     const form = new FormData(e.currentTarget);
+    if (choices && (!choice || !name.trim())) return setStatus({ kind: "error", message: "Укажите имя и выберите ответ." });
     const input = {
       name,
       attending,
@@ -106,6 +117,62 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
       до {formatDeadline(block.deadline)}
     </p>
   );
+
+  if (choices) {
+    return (
+      <Section block={block}>
+        {deadline}
+        <form onSubmit={submit} noValidate className="inv-rsvp-card mx-auto flex max-w-sm flex-col gap-5 rounded-3xl px-6 py-7 text-left" data-reveal="3" data-anim="fade">
+          <label className="inv-field">
+            <span>Имя или имена гостей</span>
+            <input
+              name="name"
+              required
+              maxLength={100}
+              className="inv-input"
+              placeholder="Например, Айжан или Айжан и Бакыт"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (status.kind === "error") setStatus({ kind: "idle" });
+              }}
+            />
+          </label>
+          <fieldset className="flex flex-col gap-2.5">
+            <legend className="mb-2.5 pl-1 text-lg opacity-80">Ваш ответ</legend>
+            {CHOICES.map((c) => (
+              <label key={c.id} className="inv-option" data-checked={choice === c.id || undefined}>
+                <input
+                  type="radio"
+                  name="answer"
+                  className="sr-only"
+                  checked={choice === c.id}
+                  onChange={() => {
+                    setChoice(c.id);
+                    setAttending(c.attending);
+                    setGuests(c.guests);
+                    if (status.kind === "error") setStatus({ kind: "idle" });
+                  }}
+                />
+                <span aria-hidden="true" className="inv-option-dot" />
+                {c.label}
+              </label>
+            ))}
+          </fieldset>
+          <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
+          {status.kind === "error" && (
+            <p role="alert" className="inv-fade-up text-center text-sm text-red-700">
+              {status.message}
+            </p>
+          )}
+          <button ref={submitRef} type="submit" className="inv-btn inv-btn-lift mt-1" disabled={ctx.preview || status.kind === "sending"}>
+            {status.kind === "sending" ? "Отправляю…" : "Отправить ответ"}
+          </button>
+          {ctx.preview && <p className="text-center text-sm opacity-60">В превью ответы не отправляются</p>}
+        </form>
+      </Section>
+    );
+  }
 
   if (compact && !chosen) {
     const choose = (value: boolean) => {

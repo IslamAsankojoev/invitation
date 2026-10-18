@@ -96,6 +96,9 @@ export const library: LibraryAsset[] = [
   vector("divider-dots", "Пунктир", "dividers"),
   vector("divider-wave", "Волна", "dividers"),
   vector("plane-route", "Маршрут самолёта", "dividers"),
+  // Шаблон «Этно» (toigokel.kg — сайт владельца): переходы между полосами бордо и крема, угловой узор.
+  asset("etno-divider-burgundy", "Переход в бордо", "dividers"),
+  asset("etno-divider-cream", "Переход в крем", "dividers"),
   vector("wc-blush", "Пудровая акварель", "watercolor"),
   vector("wc-sage", "Шалфей", "watercolor"),
   vector("wc-lavender", "Лаванда", "watercolor", true),
@@ -110,6 +113,7 @@ export const library: LibraryAsset[] = [
   asset("wc-pink-splash", "Розовые брызги", "watercolor"),
   asset("wc-red-stroke", "Красный мазок", "watercolor"),
   asset("twine-bow", "Бант из бечёвки", "accents"),
+  asset("etno-corner", "Этно-узор в угол", "accents"),
   asset("twine-bow-wide", "Бант широкий", "accents"),
   asset("gold-swirl", "Золотой вихрь", "accents"),
   asset("brush-stroke", "Мазок кисти", "accents"),
@@ -223,6 +227,7 @@ export const surfaceLabels: Record<Surface, string> = {
   "ticket-gold": "Золотой билет",
   "ticket-pink": "Розовый билет",
   "ticket-stubs": "Билет с корешками",
+  "card-etno": "Карточка с узором",
   frame: "Золочёная рама",
   "frame-gold": "Золотая рама",
   "frame-baroque": "Барочная рама",
@@ -250,7 +255,7 @@ export const surfaceGroups: { label: string; items: Surface[] }[] = [
     label: "Стикеры и записки",
     items: ["sticker-yellow", "sticker-clip", "sticker-pin", "sticker-pink", "sticker-orange", "sticker-tape", "note-burlap", "fabric-lilac", "label-lilac"],
   },
-  { label: "Карточки и билеты", items: ["card-clematis", "label-vintage", "ticket-admit", "ticket-gold", "ticket-pink", "ticket-stubs"] },
+  { label: "Карточки и билеты", items: ["card-clematis", "label-vintage", "ticket-admit", "ticket-gold", "ticket-pink", "ticket-stubs", "card-etno"] },
   { label: "Рамы", items: ["frame", "frame-gold", "frame-baroque", "frame-filigree", "frame-roses"] },
   {
     label: "Тарелки, салфетки, венки",
@@ -375,6 +380,8 @@ export const surfaceObjects: Partial<Record<Surface, SurfaceObject>> = {
   "ticket-gold": sheet("ticket-gold", [751, 350], [0.32, 0.18, 0.32, 0.18], [0.2, 0.14, 0.2, 0.14]),
   "ticket-pink": sheet("ticket-pink", [1000, 506], [0.25, 0.1, 0.25, 0.1], [0.17, 0.12, 0.17, 0.12], { repeat: "round" }),
   "ticket-stubs": sheet("ticket-stubs", [1000, 509], [0.25, 0.2, 0.25, 0.2], [0.15, 0.18, 0.15, 0.18], { repeat: "round" }),
+  // Карточка доходила до края файла — Chrome срезал тень по краю картинки; добавлены прозрачные поля по 48 px.
+  "card-etno": sheet("card-etno", [1516, 946], [0.2125, 0.1346, 0.2125, 0.1346], [0.1316, 0.0972, 0.1316, 0.0972]),
   // Рамы
   "frame-gold": sheet("frame-gold", [773, 1000], [0.09, 0.1, 0.09, 0.1], [0.12, 0.14, 0.12, 0.14], { repeat: "round", window: "var(--tex-base, #fffdf8)" }),
   "frame-baroque": sheet("frame-baroque", [722, 534], [0.15, 0.1, 0.15, 0.1], [0.2, 0.14, 0.2, 0.14], { window: "var(--tex-base, #fffdf8)" }),
@@ -431,6 +438,7 @@ export const lightSurfaces: Surface[] = [
   "ticket-gold",
   "ticket-pink",
   "ticket-stubs",
+  "card-etno",
   "plate",
   "plate-roses",
   "doily-paper",

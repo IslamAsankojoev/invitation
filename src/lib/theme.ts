@@ -17,6 +17,7 @@ export const palettes: Record<Palette, { label: string; bg: string; text: string
   pearl: { label: "Жемчужная", bg: "#f7f0ea", text: "#4a3832", accent: "#c0877f" },
   sand: { label: "Песочная", bg: "#f2eadd", text: "#4a3c2f", accent: "#a2835c" },
   forest: { label: "Изумрудная ночь", bg: "#141c19", text: "#ece5d8", accent: "#c9a862", dark: true },
+  burgundy: { label: "Бордо", bg: "#fbf2e4", text: "#3a2a26", accent: "#6d0713" },
 };
 
 const stack = (variable: string, fallback: string) => `var(${variable}), ${fallback}`;

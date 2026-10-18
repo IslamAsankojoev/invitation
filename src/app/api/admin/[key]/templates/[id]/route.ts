@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { currentTemplate, duplicateTemplate, resetTemplate, saveTemplate } from "@/lib/adminFiles";
+import { currentTemplate, duplicateTemplate, resetTemplate, saveTemplate, setPublished } from "@/lib/adminFiles";
 import { deleteInvitation, getInvitationBySlug } from "@/lib/invitations";
 import { formatZodErrors, invitationDataSchema } from "@/lib/schema";
 import { draftSlug, templateFromInvitation } from "@/lib/templateAdmin";
@@ -10,6 +10,7 @@ type Ctx = { params: Promise<{ key: string; id: string }> };
 
 const putSchema = z.object({ data: invitationDataSchema });
 const patchSchema = z.object({ name: z.string().trim().min(1).max(60), description: z.string().trim().max(300) });
+const publishSchema = z.object({ published: z.boolean() });
 
 /** Сохранить в шаблон приглашение из редактора (черновик). */
 export async function PUT(req: Request, { params }: Ctx) {
@@ -27,14 +28,24 @@ export async function PUT(req: Request, { params }: Ctx) {
   }
 }
 
-/** Название и описание. */
+/** Название и описание — или публикация (`{ published }`: скрытый не виден на главной и в выборе шаблона). */
 export async function PATCH(req: Request, { params }: Ctx) {
   const { key, id } = await params;
   const denied = adminGuard(key);
   if (denied) return denied;
   const base = await currentTemplate(id);
   if (!base) return NextResponse.json({ error: "Шаблон не найден" }, { status: 404 });
-  const parsed = patchSchema.safeParse(await req.json().catch(() => null));
+  const body = await req.json().catch(() => null);
+  const publish = publishSchema.safeParse(body);
+  if (publish.success) {
+    try {
+      await setPublished(id, publish.data.published);
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "Не удалось сохранить" }, { status: 409 });
+    }
+    return NextResponse.json({ published: publish.data.published });
+  }
+  const parsed = patchSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Нужно название (до 60 символов)", details: formatZodErrors(parsed.error) }, { status: 400 });
   return NextResponse.json(await saveTemplate({ ...base, ...parsed.data }));
 }

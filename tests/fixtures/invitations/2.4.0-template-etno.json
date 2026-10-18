@@ -1,0 +1,349 @@
+{
+  "schemaVersion": "2.4.0",
+  "theme": {
+    "headings": "names",
+    "backgroundMode": "stretch",
+    "backgroundDim": 0.7,
+    "backgroundColor": null,
+    "textureStains": false,
+    "ornamentMotion": {
+      "enter": "auto",
+      "enterSpeed": 1,
+      "idle": "auto",
+      "idleSpeed": 1,
+      "idleAmplitude": 1
+    },
+    "palette": "burgundy",
+    "font": "script",
+    "bodyFont": "cormorant",
+    "background": null,
+    "texture": "none",
+    "decor": {
+      "type": "none",
+      "image": null,
+      "color": "#c9a063",
+      "density": 0,
+      "size": 1,
+      "speed": 1
+    },
+    "envelope": {
+      "ornament": "/library/etno-corner.webp",
+      "style": "video",
+      "video": "/templates/etno-envelope.mp4",
+      "poster": "/templates/etno-envelope.webp"
+    },
+    "motion": {
+      "style": "elegant",
+      "speed": 1
+    }
+  },
+  "music": {
+    "url": "/music/erke-sary.mp3",
+    "loop": true,
+    "start": 0,
+    "end": null
+  },
+  "blocks": [
+    {
+      "type": "hero",
+      "id": "b-hero",
+      "visible": true,
+      "variant": "scene",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "names": "Азамат & Бегайым",
+      "date": "2027-10-19T16:00",
+      "label": "Свадьба",
+      "photo": "/templates/etno-hero.webp"
+    },
+    {
+      "type": "text",
+      "id": "b-text",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/etno-corner.webp",
+          "position": "top-left",
+          "size": 96,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1
+        },
+        {
+          "src": "/library/etno-corner.webp",
+          "position": "top-right",
+          "size": 96,
+          "rotate": 0,
+          "flip": true,
+          "opacity": 1
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {
+        "title": {
+          "color": "#6d0713"
+        }
+      },
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Дорогие наши уважаемые гости!",
+      "text": "Приглашаем вас отведать угощения за праздничным дасторханом в честь наших детей Азамата и Бегайым — стать нашими дорогими гостями на их свадьбе, дать своё благословение и разделить с нами этот важный день!\n\nДля нас будет большой честью вместе с вами стать свидетелями счастья молодых и разделить нашу радость."
+    },
+    {
+      "type": "text",
+      "id": "b-text-2",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Нурбек и Венера",
+      "text": "",
+      "scriptLine": "С уважением, хозяева торжества"
+    },
+    {
+      "type": "calendar",
+      "id": "b-calendar",
+      "visible": true,
+      "variant": "week",
+      "surface": "card-etno",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": ""
+    },
+    {
+      "type": "photo",
+      "id": "b-photo",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/etno-divider-cream.webp",
+          "position": "top",
+          "size": 400,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1,
+          "seam": true,
+          "motion": {
+            "enter": "auto",
+            "enterSpeed": 1,
+            "idle": "none",
+            "idleSpeed": 1,
+            "idleAmplitude": 1
+          }
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {},
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "photo": "/templates/etno-hands.webp",
+      "height": "square"
+    },
+    {
+      "type": "countdown",
+      "id": "b-countdown",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/etno-divider-burgundy.webp",
+          "position": "top",
+          "size": 400,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1,
+          "seam": true,
+          "motion": {
+            "enter": "auto",
+            "enterSpeed": 1,
+            "idle": "none",
+            "idleSpeed": 1,
+            "idleAmplitude": 1
+          }
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": "#4b0a12",
+      "textStyles": {
+        "title": {
+          "color": "#c9a063"
+        }
+      },
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Осталось",
+      "scriptLine": "До события"
+    },
+    {
+      "type": "location",
+      "id": "b-location",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {
+        "title": {
+          "color": "#6d0713"
+        }
+      },
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "placeName": "Банкетный зал «Аяр»",
+      "address": "г. Бишкек, ул. Фрунзе, 133",
+      "photo": "/templates/etno-venue.webp",
+      "title": "Ждём вас здесь",
+      "scriptLine": "Место встречи",
+      "mapUrl": "https://go.2gis.com/F1MTV"
+    },
+    {
+      "type": "rsvp",
+      "id": "b-rsvp",
+      "visible": true,
+      "variant": "choices",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/etno-divider-burgundy.webp",
+          "position": "top",
+          "size": 400,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1,
+          "seam": true,
+          "motion": {
+            "enter": "auto",
+            "enterSpeed": 1,
+            "idle": "none",
+            "idleSpeed": 1,
+            "idleAmplitude": 1
+          }
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": "#4b0a12",
+      "textStyles": {
+        "title": {
+          "color": "#c9a063"
+        }
+      },
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "title": "Будете с нами?",
+      "scriptLine": "Пожалуйста, подтвердите присутствие"
+    },
+    {
+      "type": "text",
+      "id": "b-text-3",
+      "visible": true,
+      "variant": "classic",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/etno-divider-burgundy.webp",
+          "position": "top",
+          "size": 400,
+          "rotate": 180,
+          "flip": false,
+          "opacity": 1,
+          "seam": true,
+          "motion": {
+            "enter": "auto",
+            "enterSpeed": 1,
+            "idle": "none",
+            "idleSpeed": 1,
+            "idleAmplitude": 1
+          }
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgColor": null,
+      "textStyles": {
+        "title": {
+          "color": "#fbf2e4"
+        }
+      },
+      "bgImage": "/templates/etno-rings.webp",
+      "bgDim": 0,
+      "bgBlur": 0,
+      "bgDarken": 0.5,
+      "title": "С нетерпением ждём вас!",
+      "text": "Ваше присутствие — самый ценный подарок для нас.",
+      "scriptLine": "До встречи"
+    }
+  ]
+}

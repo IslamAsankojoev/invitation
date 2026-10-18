@@ -171,6 +171,29 @@ pngwing.com сам ничего не лицензирует (пометка «No
 | `art-deco-hero.webp` | Бокалы шампанского | toichakyru.com | Собственность проекта | toichakyru.com/images/anniversary/celebration.webp |
 | `lavender-provence-hero.webp` | Руки и вуаль | toichakyru.com | уточняется (pinterest-references) | toichakyru.com/images/pinterest-references/hands-clean.png |
 
+### Шаблон «Этно» с toigokel.kg
+
+Сайт toigokel.kg принадлежит владельцу проекта (его первый сайт, шаблон `toigokel-etno`); картинки и ролик конверта
+перенесены по его разрешению (15.10.2026).
+
+| Файл | Что | Автор | Лицензия | Источник |
+|---|---|---|---|---|
+| `etno-hero.webp` | Юрта, шёлк и горы (кадр видео обложки) | toigokel.kg | Собственность проекта | toigokel.kg/templates/toigokel-etno/assets/template/hero-video-poster.jpg |
+| `etno-envelope.webp` | Конверт с сургучом-юртой (первый кадр ролика) | toigokel.kg | Собственность проекта | toigokel.kg/templates/toigokel-etno/opening/assets/envelope-opening-poster.jpg |
+| `etno-envelope.mp4` | Ролик открытия конверта | toigokel.kg | Собственность проекта | toigokel.kg/templates/toigokel-etno/opening/assets/envelope-opening-compressed.mp4 |
+| `etno-hands.webp` | Руки с букетом сухоцветов | toigokel.kg | Собственность проекта | toigokel.kg/templates/toigokel-etno/assets/template/welcome-hands-bouquet.webp |
+| `etno-venue.webp` | Рисунок ресторана «Аяр» | toigokel.kg | Собственность проекта | toigokel.kg/templates/toigokel-etno/assets/template/venue-restaurant.png |
+| `etno-rings.webp` | Кольца на письме | toigokel.kg | Собственность проекта | toigokel.kg/templates/toigokel-etno/assets/template/footer-rings.webp |
+
+Узоры этого шаблона — в библиотеке (SVG с toigokel.kg переведены в WebP):
+
+| Файл | Что | Автор | Лицензия | Источник |
+|---|---|---|---|---|
+| `etno-corner.webp` | Угловой узор (бордо, золото, олива) | toigokel.kg | Собственность проекта | …/assets/template/top-left-corner-ornament.svg |
+| `etno-divider-burgundy.webp` | Волна бордо с золотым узором | toigokel.kg | Собственность проекта | …/assets/template/burgundy-divider.svg (снизу прозрачная половина: прямой край — по центру, для перехода) |
+| `etno-divider-cream.webp` | Кремовая волна с золотым узором | toigokel.kg | Собственность проекта | …/assets/template/welcome-divider.svg (сверху прозрачная половина) |
+| `surfaces/card-etno.webp` | Карточка с золотыми уголками (фон календаря) | toigokel.kg | Собственность проекта | …/assets/template/card-date.webp (убрана почти прозрачная белая кайма, добавлены прозрачные поля 48 px — под тень) |
+
 ## Падающие листья — лицензии уточняются
 
 Два составных PNG от пользователя (источник, вероятно, pngwing.com — как `new-sources/`). Разрезаны
@@ -243,3 +266,11 @@ pngwing.com сам ничего не лицензирует (пометка «No
 | `autumn-corner-bottom.webp` | Осенний угол снизу | рамка из осенних листьев | уточняется (купить у автора) | прислан пользователем | нижний угол рамки |
 | `roses-white-spray.webp` | Белые розы | композиция роз (фото) | уточняется (купить у автора) | прислан пользователем | обрезана по краю |
 | `garland-dogrose.webp` | Гирлянда шиповника | гирлянда (фото) | уточняется (купить у автора) | прислан пользователем | обрезана по краю |
+
+## Загружено в админке шаблонов (`public/templates/`)
+
+Фото, загруженные при правке шаблона в /admin. Лицензию уточнить перед продакшеном.
+
+| Файл | Что | Автор | Лицензия | Источник |
+|---|---|---|---|---|
+| `etno-4c9ed344.webp` | Фото шаблона «Этно» | — | уточняется (загружено в админке) | /admin |

@@ -1,11 +1,17 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { monogram, splitNames } from "@/lib/calendar";
 import type { EnvelopeStyle } from "@/lib/schema";
+import { prefersReducedMotion } from "./motion";
+
+/** Ролик «Видео-конверта» по умолчанию (шаблон «Этно», toigokel.kg) — если в теме нет своего. */
+export const DEFAULT_ENVELOPE_VIDEO = { video: "/templates/etno-envelope.mp4", poster: "/templates/etno-envelope.webp" };
+/** Ролик не доиграл (завис, вкладку свернули) — открываем приглашение не позже этого. */
+const VIDEO_GUARD_MS = 15000;
 
 /** Сколько уходит заставка после нажатия — по виду (совпадает с переходами .inv-intro-* в globals.css). */
-export const INTRO_LEAVE_MS: Record<EnvelopeStyle, number> = { seal: 1300, veil: 1300, flap: 2300, curtains: 1700, book: 1700 };
+export const INTRO_LEAVE_MS: Record<EnvelopeStyle, number> = { seal: 1300, veil: 1300, flap: 2300, curtains: 1700, book: 1700, video: 600 };
 
 type Props = {
   names: string;
@@ -20,6 +26,14 @@ type Props = {
   onOpen: () => void;
   /** Внутри рамки телефона в редакторе, а не поверх всего окна. */
   contained?: boolean;
+  /** Вид video: ролик открытия и его первый кадр (нет — DEFAULT_ENVELOPE_VIDEO). */
+  video?: string | null;
+  poster?: string | null;
+  /**
+   * Вид video: гость нажал, ролик начинает играть — жест пользователя, тут родитель включает музыку.
+   * onOpen у этого вида — когда ролик доиграл.
+   */
+  onStart?: () => void;
 };
 
 /**
@@ -27,7 +41,88 @@ type Props = {
  * пишутся от руки, печать с монограммой «дышит» кольцами. Клик по печати — жест пользователя, в нём родитель
  * запускает музыку. Вид задаёт фон и уход (классы inv-intro* и inv-intro-{вид} в globals.css).
  */
-export function Envelope({ names, label, date, ornament, hasMusic, variant = "seal", leaving, onOpen, contained = false }: Props) {
+export function Envelope(props: Props) {
+  if (props.variant === "video") return <VideoEnvelope {...props} />;
+  return <DrawnEnvelope {...props} />;
+}
+
+/**
+ * Видео-конверт (как на toigokel.kg): на весь экран первый кадр ролика с подсказкой; нажатие запускает музыку и
+ * ролик открытия, по его окончании приглашение открывается (заставка растворяется — .inv-intro-video).
+ */
+function VideoEnvelope({ video, poster, leaving, onOpen, onStart, contained = false }: Props) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [started, setStarted] = useState(false);
+  const done = useRef(false);
+  const guard = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const src = video || (poster ? null : DEFAULT_ENVELOPE_VIDEO.video);
+  const still = poster || (video ? undefined : DEFAULT_ENVELOPE_VIDEO.poster);
+
+  useEffect(() => () => clearTimeout(guard.current), []);
+
+  function finish() {
+    if (done.current) return;
+    done.current = true;
+    clearTimeout(guard.current);
+    onOpen();
+  }
+
+  function start() {
+    if (started) return;
+    setStarted(true);
+    onStart?.();
+    const el = ref.current;
+    if (!el || !src || prefersReducedMotion()) return finish();
+    try {
+      el.currentTime = 0;
+    } catch {
+      // на некоторых телефонах перемотка — только после метаданных
+    }
+    el.play().catch(finish);
+    guard.current = setTimeout(finish, VIDEO_GUARD_MS);
+  }
+
+  return (
+    <div
+      data-testid="envelope"
+      role="dialog"
+      aria-label="Приглашение"
+      data-style="video"
+      data-leaving={leaving || undefined}
+      className={`inv-intro-video ${contained ? "absolute" : "fixed"} inset-0 z-30 flex justify-center overflow-hidden bg-[#171715]`}
+    >
+      <button
+        type="button"
+        aria-label="Открыть приглашение"
+        disabled={started}
+        onClick={start}
+        className="relative h-full w-full max-w-[35rem] cursor-pointer overflow-hidden"
+      >
+        <video
+          ref={ref}
+          src={src ?? undefined}
+          poster={still}
+          muted
+          playsInline
+          preload="auto"
+          onEnded={finish}
+          onError={() => started && finish()}
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        {!started && (
+          <span className="inv-intro-video-hint absolute inset-x-4 top-[68%] grid -translate-y-1/2 gap-1.5 text-center" style={{ fontFamily: "var(--font-body)" }}>
+            <span className="text-[clamp(1rem,4.5vw,1.35rem)] font-semibold leading-tight text-[var(--accent)] [text-shadow:0_1px_0_rgb(255_250_242/.75)]">
+              Нажмите, чтобы открыть
+            </span>
+          </span>
+        )}
+      </button>
+    </div>
+  );
+}
+
+function DrawnEnvelope({ names, label, date, ornament, hasMusic, variant = "seal", leaving, onOpen, contained = false }: Props) {
   const parts = splitNames(names);
   const initials = monogram(names).split("&");
 
