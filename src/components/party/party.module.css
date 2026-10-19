@@ -1,0 +1,847 @@
+/* Прототип вечеринок: студия сторис и пропуск. Свои кривые — встроенные ease слишком вялые. */
+
+.stage,
+.passStage {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  position: fixed;
+  inset: 0;
+  color: #fff;
+  font-family: var(--font-party-ui), system-ui, sans-serif;
+  background:
+    radial-gradient(circle at 50% 30%, color-mix(in oklab, var(--stage-glow) 26%, transparent), transparent 62%),
+    var(--stage-bg);
+  transition: background-color 400ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stage {
+  --dock: 172px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ───── Кадр 9:16 ───── */
+
+.frame {
+  position: relative;
+  flex: none;
+  width: min(100vw, calc((100svh - var(--dock)) * 9 / 16));
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #000;
+  user-select: none;
+}
+
+@media (min-width: 640px) {
+  .frame {
+    width: min(calc(100vw - 48px), calc((100svh - var(--dock) - 24px) * 9 / 16));
+    border-radius: 32px;
+    box-shadow:
+      0 40px 120px -30px rgb(0 0 0 / 0.8),
+      0 0 0 1px rgb(255 255 255 / 0.08);
+  }
+}
+
+/* Зоны, которые закроет интерфейс сторис, — видны, пока тащишь кружок. */
+.guides {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+.guides[data-show] {
+  opacity: 1;
+}
+.guides > div {
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.85);
+  background: repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.1) 0 8px, rgb(0 0 0 / 0.25) 8px 16px);
+}
+.guides > div:first-child {
+  border-bottom: 1px dashed rgb(255 255 255 / 0.6);
+}
+.guides > div:last-child {
+  border-top: 1px dashed rgb(255 255 255 / 0.6);
+}
+
+/* Невидимая «ручка» поверх нарисованного кружка: сам кружок — на canvas, чтобы попасть в запись. */
+.bubbleHandle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 26%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  touch-action: none;
+  cursor: grab;
+  will-change: transform;
+}
+.bubbleHandle:active {
+  cursor: grabbing;
+}
+.bubbleHandle:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 6px;
+}
+
+/* ───── Верхняя панель ───── */
+
+.hud {
+  position: absolute;
+  inset: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0.35), transparent);
+  transition: opacity 150ms ease;
+}
+.hud[data-hidden],
+.chips[data-hidden],
+.sideBtn[data-hidden] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.glass {
+  background: rgb(0 0 0 / 0.38);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.segmented {
+  composes: glass;
+  display: flex;
+  padding: 3px;
+  border-radius: 999px;
+}
+.segment {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgb(255 255 255 / 0.75);
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    transform 160ms var(--ease-out);
+}
+.segment[aria-checked="true"] {
+  background: #fff;
+  color: #0b0b0f;
+}
+.segment:active {
+  transform: scale(0.97);
+}
+
+.iconBtn {
+  composes: glass;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: #fff;
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 200ms ease,
+    color 200ms ease;
+}
+.iconBtn svg {
+  width: 18px;
+  height: 18px;
+}
+.iconBtn[aria-pressed="false"] {
+  color: rgb(255 255 255 / 0.6);
+}
+.iconBtn:active {
+  transform: scale(0.94);
+}
+.iconBtn:disabled {
+  opacity: 0.5;
+}
+
+@media (pointer: coarse) {
+  .segment {
+    height: 40px;
+  }
+}
+
+/* ───── Запись: таймер, отсчёт, сообщения ───── */
+
+.recPill,
+.notice {
+  position: absolute;
+  left: 50%;
+  translate: -50% 0;
+  background: rgb(0 0 0 / 0.45);
+  border: 1px solid rgb(255 255 255 / 0.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    opacity 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
+}
+@starting-style {
+  .recPill,
+  .notice {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+.recPill {
+  top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.recDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff3b5c;
+  animation: recBlink 1s ease-in-out infinite;
+}
+@keyframes recBlink {
+  50% {
+    opacity: 0.35;
+  }
+}
+.notice {
+  top: 64px;
+  max-width: 86%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.countdown {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: rgb(0 0 0 / 0.28);
+}
+.countdown span {
+  font-family: var(--font-party-display);
+  font-size: clamp(110px, 30vw, 170px);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 10px 40px rgb(0 0 0 / 0.5);
+  animation: countTick 700ms both;
+}
+/* Цифра «падает» крупной и садится, затем тает — к следующей. */
+@keyframes countTick {
+  0% {
+    opacity: 0;
+    transform: scale(1.35);
+    animation-timing-function: var(--ease-out);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+/* ───── Нижняя панель ───── */
+
+.dock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(100vw, 480px);
+  padding: 14px 0 max(12px, env(safe-area-inset-bottom));
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  transition:
+    opacity 150ms ease,
+    transform 200ms var(--ease-out);
+}
+.chips::-webkit-scrollbar {
+  display: none;
+}
+.chips[data-hidden] {
+  transform: translateY(8px);
+}
+.chip {
+  composes: glass;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 16px 0 6px;
+  border-radius: 999px;
+  color: #fff;
+  scroll-snap-align: center;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    transform 160ms var(--ease-out);
+}
+.chip[aria-checked="true"] {
+  background: #fff;
+  color: #0b0b0f;
+}
+.chip:active {
+  transform: scale(0.97);
+}
+.swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35);
+}
+
+.sideBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 68px;
+  padding: 6px 0;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  transition:
+    opacity 150ms ease,
+    transform 160ms var(--ease-out);
+}
+.sideBtn svg {
+  width: 22px;
+  height: 22px;
+}
+.sideBtn:active {
+  transform: scale(0.95);
+}
+
+/* Кнопка записи как в камере сторис: кружок → скруглённый квадрат, кольцо заполняется за 15 с. */
+.record {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  transition: transform 160ms var(--ease-out);
+}
+.record:active {
+  transform: scale(0.95);
+}
+.record:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+.recordRing {
+  position: absolute;
+  inset: 0;
+  rotate: -90deg;
+}
+.recordRing circle {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 5;
+  transition: stroke 200ms ease;
+}
+.record[data-state="recording"] .recordRing circle:first-child {
+  stroke: rgb(255 255 255 / 0.3);
+}
+.recordProgress {
+  stroke-dasharray: 245.04;
+  stroke-dashoffset: 245.04;
+  opacity: 0;
+}
+.record[data-state="recording"] .recordProgress {
+  opacity: 1;
+  animation: recordProgress linear forwards;
+}
+@keyframes recordProgress {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.recordInner {
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  background: #ff3b5c;
+  transition:
+    transform 200ms var(--ease-out),
+    border-radius 200ms var(--ease-out),
+    opacity 200ms ease;
+}
+.record[data-state="countdown"] .recordInner {
+  transform: scale(0.86);
+  opacity: 0.8;
+}
+.record[data-state="recording"] .recordInner {
+  transform: scale(0.5);
+  border-radius: 14px;
+}
+
+/* ───── Шторка «Сторис готова» ───── */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+.scrim[data-open] {
+  opacity: 1;
+  pointer-events: auto;
+  transition-duration: 300ms;
+}
+
+/* Въезд — мягкой кривой шторки iOS, уход — быстрее: система отвечает, человек уже решил. */
+.sheet {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(100%, 440px);
+  max-height: 100svh;
+  overflow-y: auto;
+  padding: 10px 18px max(20px, env(safe-area-inset-bottom));
+  border-radius: 28px 28px 0 0;
+  background: #121217;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+  transform: translate(-50%, 100%);
+  visibility: hidden;
+  transition:
+    transform 200ms var(--ease-out),
+    visibility 0s 200ms;
+}
+.sheet[data-open] {
+  transform: translate(-50%, 0);
+  visibility: visible;
+  transition:
+    transform 450ms var(--ease-drawer),
+    visibility 0s;
+}
+.grabber {
+  width: 36px;
+  height: 5px;
+  margin: 0 auto 4px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 0.25);
+}
+.closeBtn {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.08);
+  transition: transform 160ms var(--ease-out);
+}
+.closeBtn svg {
+  width: 18px;
+  height: 18px;
+}
+.closeBtn:active {
+  transform: scale(0.94);
+}
+
+.primary,
+.secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 200ms ease;
+}
+.primary {
+  height: 52px;
+  border-radius: 16px;
+  background: #fff;
+  color: #0b0b0f;
+  font-size: 16px;
+}
+.secondary {
+  height: 46px;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.08);
+  font-size: 14px;
+}
+.primary svg,
+.secondary svg {
+  width: 18px;
+  height: 18px;
+}
+.primary:active,
+.secondary:active {
+  transform: scale(0.97);
+}
+
+.tip {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgb(255 255 255 / 0.05);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  font-size: 13px;
+  color: rgb(255 255 255 / 0.8);
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  transition: transform 160ms var(--ease-out);
+}
+.pill svg {
+  width: 15px;
+  height: 15px;
+}
+.pill:active {
+  transform: scale(0.97);
+}
+@media (pointer: coarse) {
+  .pill {
+    height: 40px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .iconBtn:hover {
+    background: rgb(0 0 0 / 0.55);
+  }
+  .chip[aria-checked="false"]:hover,
+  .segment[aria-checked="false"]:hover {
+    background: rgb(255 255 255 / 0.12);
+  }
+  .secondary:hover,
+  .pill:hover,
+  .closeBtn:hover {
+    background: rgb(255 255 255 / 0.14);
+  }
+}
+
+/* ───── Пропуск ───── */
+
+.passStage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  overflow-y: auto;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+}
+.passTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(100%, 380px);
+}
+.backBtn {
+  composes: glass;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px 0 10px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: transform 160ms var(--ease-out);
+}
+.backBtn svg {
+  width: 18px;
+  height: 18px;
+}
+.backBtn:active {
+  transform: scale(0.97);
+}
+
+.passScene {
+  position: relative;
+  width: min(100%, 340px);
+  perspective: 1100px;
+}
+.passScene::before {
+  content: "";
+  position: absolute;
+  inset: 12% -6% -4%;
+  border-radius: 40px;
+  background: var(--pass-glow);
+  filter: blur(40px);
+  opacity: 0.55;
+}
+.passTilt {
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.passCard {
+  position: relative;
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform 600ms var(--ease-in-out);
+}
+.passCard[data-flipped] {
+  transform: rotateY(180deg);
+}
+.passFace {
+  grid-area: 1 / 1;
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+/* Вырезы-полукруги по краям на линии отрыва — настоящие дыры маской, а не кружки цвета фона. */
+.passFront {
+  --notch: 64%;
+  mask:
+    radial-gradient(circle 15px at 0 var(--notch), #0000 97%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle 15px at 100% var(--notch), #0000 97%, #000) right / 51% 100% no-repeat;
+}
+.passBack {
+  transform: rotateY(180deg);
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.perforation {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  top: 64%;
+  border-top: 2px dashed rgb(255 255 255 / 0.28);
+}
+
+/* Перелив голограммы: положение задаёт наклон карточки (JS пишет background-position напрямую). */
+.holo {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  background: linear-gradient(
+    115deg,
+    transparent 25%,
+    rgb(255 120 220 / 0.55) 38%,
+    rgb(120 220 255 / 0.55) 48%,
+    rgb(210 255 120 / 0.5) 58%,
+    transparent 72%
+  );
+  background-size: 260% 260%;
+}
+
+/* Живая рамка QR: бегущий конический блик — на скриншоте он замрёт, охрана это видит. */
+.qrFrame {
+  position: relative;
+  padding: 5px;
+  border-radius: 22px;
+  overflow: hidden;
+  isolation: isolate;
+}
+.qrFrame::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  z-index: -1;
+  background: conic-gradient(from 0deg, var(--live-a), var(--live-b), #fff, var(--live-a));
+  animation: liveSpin 3s linear infinite;
+}
+.qrInner {
+  position: relative;
+  padding: 14px;
+  border-radius: 18px;
+  background: #fff;
+  overflow: hidden;
+}
+@keyframes liveSpin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+.scanLine {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 30%;
+  background: linear-gradient(to bottom, transparent, rgb(80 255 160 / 0.55) 85%, rgb(80 255 160));
+  transform: translateY(-110%);
+}
+.scanLine[data-on] {
+  animation: scan 900ms var(--ease-in-out) both;
+}
+@keyframes scan {
+  to {
+    transform: translateY(340%);
+  }
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #46f08c;
+  box-shadow: 0 0 0 0 rgb(70 240 140 / 0.6);
+  animation: livePulse 1.6s ease-out infinite;
+}
+@keyframes livePulse {
+  to {
+    box-shadow: 0 0 0 9px rgb(70 240 140 / 0);
+  }
+}
+
+/* Результат проверки: галочка или крестик прорисовываются после переворота. */
+.verdictIcon {
+  width: 96px;
+  height: 96px;
+}
+.verdictIcon path,
+.verdictIcon circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.verdictIcon path {
+  stroke-dasharray: 80;
+  stroke-dashoffset: 80;
+}
+.passCard[data-flipped] .verdictIcon path {
+  animation: drawStroke 400ms var(--ease-out) 450ms forwards;
+}
+@keyframes drawStroke {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.passActions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(100%, 340px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .sheet[data-open],
+  .chips,
+  .recPill,
+  .notice {
+    transition-property: opacity, visibility;
+  }
+  .sheet {
+    transform: translate(-50%, 0);
+    opacity: 0;
+  }
+  .sheet[data-open] {
+    opacity: 1;
+  }
+  .countdown span {
+    animation: none;
+  }
+  .qrFrame::before,
+  .liveDot,
+  .recDot {
+    animation-duration: 0s;
+  }
+  /* Без поворота — грани просто сменяются. */
+  .passCard,
+  .passCard[data-flipped] {
+    transform: none;
+  }
+  .passFace {
+    backface-visibility: visible;
+    transition: opacity 200ms ease;
+  }
+  .passBack {
+    transform: none;
+    opacity: 0;
+  }
+  .passCard[data-flipped] .passFront {
+    opacity: 0;
+  }
+  .passCard[data-flipped] .passBack {
+    opacity: 1;
+  }
+  .passCard[data-flipped] .verdictIcon path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .scanLine[data-on] {
+    animation: none;
+  }
+}
+
+/* Вход на экран пропуска: карточка поднимается, кнопки — следом (редкий экран — тут можно порадовать). */
+.passScene,
+.passActions {
+  transition:
+    opacity 500ms var(--ease-out),
+    transform 500ms var(--ease-out);
+}
+.passActions {
+  transition-delay: 80ms;
+}
+@starting-style {
+  .passScene,
+  .passActions {
+    opacity: 0;
+    transform: translateY(24px) scale(0.97);
+  }
+}
+.primary:disabled {
+  opacity: 0.7;
+}
