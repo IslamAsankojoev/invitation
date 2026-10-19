@@ -62,15 +62,14 @@ build`, регион функций `dub1` (vercel.json) — рядом с ба�
 `NEXT_DIST_DIR=.next-build npx next build` (отдельная папка, чтобы не мешать запущенному dev-серверу; после сборки
 верни `tsconfig.json`/`next-env.d.ts`, Next дописывает туда `.next-build/types`).
 
-Текущее состояние: **521 тест Vitest, 2 сценария E2E и `next build` проходят** (после этапа A `product-strategy.md`). Края, фоновые
-картинки, ширина и стиль текста всё ещё без своих тестов — см. «Долг по тестам» в `next-blocks.md`.
+Текущее состояние: **Vitest, 2 сценария E2E и `next build` проходят** (после этапа A `product-strategy.md`, одного
+ответа гостя и превью ссылки). Края, фоновые картинки, ширина и стиль текста всё ещё без своих тестов — см. «Долг по
+тестам» в `next-blocks.md`.
 
 Если порт 3000 занят другим dev-сервером — в `.claude/launch.json` есть `dev-3200` (своя папка `.next-3200`).
 
-**Node ≥ 25** (на машине владельца — 26): встроенный в Node `localStorage` перекрывает jsdom — тесты с localStorage
-падают «Cannot read properties of undefined». Пока нет фикса в конфиге, запускай `NODE_OPTIONS=--no-experimental-webstorage
-npm test` (на Node 20 флага нет — не добавляй его в package.json). Тестовая база `wedding_test` общая: две сессии,
-запустившие `npm test` одновременно, стирают друг другу данные — случайные 404/«No record was found» в API-тестах.
+Тестовая база `wedding_test` общая: две сессии, запустившие `npm test` одновременно, стирают друг другу данные —
+случайные 404/«No record was found» в API-тестах. Перезапусти, когда другой прогон закончится.
 
 ## 3. Карта кода
 
@@ -99,6 +98,8 @@ src/app/
   icon.png, apple-icon.png  фавикон и иконка iOS (из public/keleber-logo.png; лого в шапках — public/logo.webp)
   page.tsx                  главная = галерея шаблонов
   i/[slug]/page.tsx         публичная страница (server) → <InvitationPage>
+  i/[slug]/layout.tsx       метаданные превью ссылки (title, description, openGraph, metadataBase) — §5.2
+  i/[slug]/opengraph-image.tsx  картинка превью ссылки 1200×630 (next/og → JPEG) — §5.2
   edit/[id]/page.tsx        редактор (server, проверка token → forbidden()) → <Editor>
   edit/[id]/guests/page.tsx ответы гостей: статистика, таблица, CSV (server)
   my/page.tsx               «Мои приглашения» (только при включённом входе)
@@ -110,7 +111,7 @@ src/app/
   forbidden.tsx             403
   api/invitations/route.ts            POST создать (body {template?})
   api/invitations/[key]/route.ts      GET/PATCH/DELETE по id
-  api/invitations/[key]/rsvp/route.ts POST по slug (гость), GET по id (организатор, token)
+  api/invitations/[key]/rsvp/route.ts POST/PATCH по slug (гость: ответ / правка своего), GET по id (организатор, token)
   api/upload/route.ts                 POST multipart file
   api/events/route.ts                 POST событие аналитики из браузера (lib/beacon.ts), 204
   stats/[key]/page.tsx                скрытая статистика (STATS_KEY): воронка, разбивка по шаблонам/событию/языку
@@ -148,6 +149,9 @@ src/lib/                    логика без UI, покрыта unit-тест
   storage.ts      Storage: LocalStorage (public/uploads) или SupabaseStorage (@supabase/storage-js) — по наличию ключей
   history.ts      история правок редактора (отменить/повторить)
   setup.ts        форма «Главное о событии» при выборе шаблона: setupSchema, applySetup
+  rsvpMemory.ts   ответ гостя в его localStorage (`rsvp:<slug>`: id, секрет, ответ); rsvpSecret.ts — секрет и его sha256 (сервер)
+  ogImage.ts      картинка превью: шрифты Google Fonts по буквам (`text=`), фото обложки (только свои файлы), кегль имён
+  siteUrl.ts      адрес сайта для метаданных: SITE_URL или хост запроса
   countdown.ts ics.ts slug.ts rsvp.ts upload.ts storage.ts rateLimit.ts invitations.ts db.ts utils.ts
 src/components/
   ui/             shadcn-компоненты (принадлежат проекту, их можно править)
@@ -354,6 +358,18 @@ InvitationData
 - Блоки: Hero (опц. фото с затемнением, рамка, кнопка календаря), Countdown (client, считает только на клиенте),
   Calendar (месяц, день в сердечке), Story, Program (таймлайн), Location (фото, «Посмотреть на карте»),
   Dresscode (кружки цветов), Rsvp (форма, степпер гостей, honeypot `website`, в превью не отправляет).
+- **Один ответ с устройства** (`RsvpBlock` + `lib/rsvpMemory.ts`): POST отдаёт `{ id, secret }`, браузер хранит их с
+  ответом в localStorage (`rsvp:<slug>`, всё в try/catch). Вернувшись, гость сразу видит «Вы уже ответили» с ответом;
+  «Изменить ответ» — форма с прежними значениями, отправка — PATCH той же записи. 404 (записи нет / чужой секрет) —
+  ответ уходит заново POST; сбой сети — ошибка, без второго POST. В превью и показе (`demo`) память не читается.
+  Личных ссылок для гостей пока нет (будут позже) — поэтому память по устройству.
+- **Превью ссылки** (WhatsApp/Telegram): `i/[slug]/layout.tsx` — title «Имена — приглашение», description «дата ·
+  место» (`linkPreview` в share.ts), `metadataBase` = `siteUrl()`; `opengraph-image.tsx` — «конверт» цветов палитры
+  (`themePalette`) поверх фото обложки: надпись капителью Tenor Sans, имена шрифтом имён темы, «19 . 06 . 2027», место
+  основным шрифтом; всё в центральном квадрате (WhatsApp иногда режет превью квадратом). Шрифты — Google Fonts только с
+  нужными буквами (как делает сам next/og для кириллицы; нет сети — запасной шрифт). Фото — `loadPhoto`: только из
+  `public/` или публичного бакета Supabase (защита от SSRF), sharp → JPEG (satori не читает WebP). Итог — JPEG
+  (~25–100 КБ; WhatsApp не берёт картинки тяжелее ~300 КБ), кэш 10 мин.
 - `DecorLayer`: canvas `fixed` (в превью `absolute`), `pointer-events: none`, частицы из `decorDrawers`,
   тип `image` рисует картинку с «переворотом» (scaleX), `prefers-reduced-motion` → статично.
 - `PageBackground`: фоновое фото страницы. `stretch` — на всю высоту приглашения, едет с ним; `fixed`/`parallax` —
@@ -532,7 +548,10 @@ InvitationData
 - Next не позволяет разные имена динамических сегментов на одном уровне → папка `api/invitations/[key]`:
   для GET/PATCH и GET rsvp это **id**, для POST rsvp — **slug**.
 - PATCH: `{ data?, slug? }`, 400 с плоским списком ошибок Zod (`formatZodErrors`), 403, 409 (slug занят).
-- RSVP POST: валидация `rsvpInputSchema`, honeypot `website` → 400, лимит 5 ответов/мин с IP (in-memory), 429.
+- RSVP POST: валидация `rsvpInputSchema`, honeypot `website` → 400, лимит 5 ответов/мин с IP (in-memory), 429;
+  201 `{ id, secret }`, в `Rsvp.editSecretHash` — sha256 секрета. PATCH (тот же адрес, slug): `{ id, secret, …ответ }`
+  (`rsvpEditSchema`), те же honeypot и лимит (общий с POST), обновляет запись этого приглашения с этим хэшем
+  (`updateMany`), иначе 404. Старые ответы без хэша не правятся. `listRsvps` хэш наружу не отдаёт (`omit`).
 - Рваный край: `GET /api/edges/torn?v=&seed=0…2147483646&side=top|bottom&layer=mask|paper` → webp. Картинка —
   чистая функция параметров: кэш в памяти (≤400, параллельные запросы одного зерна считаются один раз) и
   `Cache-Control: immutable`; первый запрос зерна ~0.1 с. Открыт без token (как upload), 400 на кривые параметры.
@@ -800,6 +819,15 @@ InvitationData
     <схема из main> --to-schema-datamodel prisma/schema.prisma --script` в новую папку `prisma/migrations/<время>_<имя>`.
 26. **Шаблон через JSON теряет `undefined`:** поле `subtitle: undefined` в `layout` значит «без подзаголовка», а после
     JSON его нет — и `sampleBlocks` подставляет пример. Шаблоны из админки — блоки с `exact: true` (собираются как есть).
+28. **Картинка превью (`opengraph-image`):** в dev Next всегда пишет в og:image `http://localhost:<порт>` (metadataBase
+    для файловых картинок там игнорируется) — проверять адрес только на сборке (`next build` + `next start`). На проде
+    действует metadataBase сегмента, поэтому метаданные — в `i/[slug]/layout.tsx`: из page.tsx он до картинки не
+    доходит. На превью-деплоях Vercel Next сам берёт `VERCEL_BRANCH_URL`. В satori (next/og) у фрагмента `<>` дети
+    встают в ряд — в колонке пиши элементы отдельно; WebP не поддерживается — фото переводи в JPEG.
+29. **Общая локальная база `wedding`** — одна на все ветки и рабочие копии: в ней применены миграции из неслитых веток
+    (`rsvp_edit_key`, `slug_alias` из `ux-quick-start-share`), и `prisma migrate dev` требует сбросить базу. Не сбрасывай:
+    новую миграцию пиши через `prisma migrate diff --from-schema-datamodel <старая схема> --to-schema-datamodel
+    prisma/schema.prisma --script` в `prisma/migrations/<время>_<имя>/migration.sql` и применяй `prisma migrate deploy`.
 
 ## 8. Тесты
 
@@ -874,7 +902,8 @@ InvitationData
 
 фикстуры реальных приглашений
 (снимки из прода в tests/fixtures/invitations), бэкапы (pg_dump по расписанию) и пинг против засыпания бесплатного Supabase, аналитика, деплой на
-Vercel (Postgres + migrate уже сделаны), rate limit в Redis, чистка неиспользуемых файлов, CAPTCHA.
+Vercel (Postgres + migrate уже сделаны; задать `SITE_URL` — адрес сайта для превью ссылок), rate limit в Redis, чистка
+неиспользуемых файлов, CAPTCHA.
 
 ## 11. История решений (кратко)
 
@@ -928,11 +957,15 @@ Vercel (Postgres + migrate уже сделаны), rate limit в Redis, чист
     Этап 5: нажатие на блок в превью открывает его, открытый блок подсвечен заливкой цвета шаблона.
     Этап 6: сводки под названиями блоков и «Что осталось заполнить». Этап 7 (на пробу): телефонный режим — превью
     на весь экран и панель-шторка. Коммит `ux-v1` (ветка `ux-v1`) — состояние до переделки.
-33. Формат 2.5.0 (этап A `product-strategy.md`): тип события (8 видов, детские тои — отдельно) и язык страницы гостя
+34. Формат 2.5.0 (этап A `product-strategy.md`): тип события (8 видов, детские тои — отдельно) и язык страницы гостя
     (ru/ky): подписи, даты, заголовки, примеры текстов и перевод примеров шаблонов; фильтр по событию на главной, событие
     и язык в форме «Главное о событии» и в «Оформлении»; 5 палитр и 5 шаблонов (Шырдак, Ала-Тоо, Түндүк, Бешик, Неон)
     на своих векторах (кочкор мүйүз, шырдак, түндүк, Ала-Тоо, ала-кийиз — категория «Кыргызские узоры»). Аналитика:
     таблица Event, `/api/events`, `/stats/<STATS_KEY>`.
+33. Анкета: один ответ с устройства — секрет правки (в базе sha256, миграция `rsvp_edit_secret`), ответ в localStorage,
+    «Изменить ответ» правит ту же запись (PATCH), «Всего гостей» больше не задваивается. Превью ссылки: картинка
+    opengraph-image (имена шрифтом темы, дата как на конверте, палитра, фото обложки), description «дата · место»,
+    metadataBase из `SITE_URL` или хоста. Формат приглашения не менялся.
 32. Формат 2.4.0: шаблон «Этно» — перенос первого сайта владельца (toigokel.kg). Палитра `burgundy`, заставка `video`
     (+ `envelope.video/poster`), обложка `scene`, анкета `choices`, фон «Карточка с узором» (`card-etno`); в библиотеке —
     угловой узор и две волны-разделителя. Переход размера 400 — во всю ширину блока. Немой ролик не глушит музыку.

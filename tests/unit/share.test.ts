@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { updateBlock } from "@/lib/blocks";
 import { createDefaultInvitation } from "@/lib/defaults";
-import { dateWords, shareMessage, slugFromNames, slugSuggestions, telegramShareUrl, transliterate, whatsappShareUrl } from "@/lib/share";
+import {
+  dateWords,
+  linkPreview,
+  shareMessage,
+  slugFromNames,
+  slugSuggestions,
+  telegramShareUrl,
+  transliterate,
+  whatsappShareUrl,
+} from "@/lib/share";
 
 /** Свои имена, дата и место — тест не зависит от текста примера шаблона. */
 const data = updateBlock(
@@ -57,5 +66,24 @@ describe("сообщение гостям", () => {
     expect(tg.searchParams.get("url")).toBe(url);
     expect(tg.searchParams.get("text")).not.toContain(url);
     expect(tg.searchParams.get("text")).toContain("Айбек & Айзада");
+  });
+});
+
+describe("linkPreview — превью ссылки в мессенджерах", () => {
+  it("заголовок из имён, описание «дата · место», дата как на конверте", () => {
+    expect(linkPreview(updateBlock(data, "hero", { photo: "/templates/lago-walk.webp" }))).toEqual({
+      title: "Айбек & Айзада — приглашение",
+      description: "19 июня 2027, 16:00 · Ресторан «Сад»",
+      label: "Приглашение на свадьбу",
+      names: ["Айбек", "Айзада"],
+      date: "19 . 06 . 2027",
+      place: "Ресторан «Сад»",
+      photo: "/templates/lago-walk.webp",
+    });
+  });
+
+  it("без места и надписи — только дата и «Приглашение»; одно имя — одной строкой", () => {
+    const p = linkPreview(updateBlock(updateBlock(data, "location", { placeName: " " }), "hero", { label: "", names: "Алия, 30 лет" }));
+    expect(p).toMatchObject({ description: "19 июня 2027, 16:00", label: "Приглашение", names: ["Алия, 30 лет"], place: undefined });
   });
 });

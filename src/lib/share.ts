@@ -54,3 +54,22 @@ export const whatsappShareUrl = (message: string) => `https://wa.me/?text=${enco
 /** Telegram сам показывает ссылку отдельно — в text она не повторяется. */
 export const telegramShareUrl = (url: string, message: string) =>
   `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(message.replace(`\n\n${url}`, ""))}`;
+
+/**
+ * Превью ссылки в WhatsApp/Telegram: заголовок, строка «дата · место» и надписи картинки (opengraph-image) —
+ * дата как на конверте, «19 . 06 . 2027».
+ */
+export function linkPreview(data: InvitationData) {
+  const hero = findBlock(data, "hero");
+  const names = hero?.names.trim() ?? "";
+  const place = findBlock(data, "location")?.placeName.trim() || undefined;
+  return {
+    title: names ? `${names} — приглашение` : "Приглашение",
+    description: [hero && dateWords(hero.date), place].filter(Boolean).join(" · ") || "Приглашение",
+    label: hero?.label?.trim() || "Приглашение",
+    names: names ? splitNames(names) : [],
+    date: hero && describeDate(hero.date).dotted,
+    place,
+    photo: hero?.photo ?? null,
+  };
+}

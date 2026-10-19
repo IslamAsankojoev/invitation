@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { guestsWord, rsvpInputSchema } from "@/lib/rsvp";
+import { loadAnswer, saveAnswer, type SavedAnswer } from "@/lib/rsvpMemory";
 import { heartBurst } from "../burst";
 import { prefersReducedMotion } from "../motion";
 import { Section } from "../Section";
@@ -19,11 +20,20 @@ const CHOICES = [
 ] as const;
 type Choice = (typeof CHOICES)[number]["id"];
 
+/** Какой из трёх ответов соответствует сохранённому; другое число гостей (ответ дан в другом виде анкеты) — никакой. */
+const choiceOf = ({ attending, guestsCount }: Pick<SavedAnswer, "attending" | "guestsCount">): Choice | null =>
+  CHOICES.find((c) => c.attending === attending && (!attending || c.guests === guestsCount))?.id ?? null;
+
 export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
   const [name, setName] = useState("");
   const [attending, setAttending] = useState(true);
   const [guests, setGuests] = useState(1);
+  const [comment, setComment] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  /** Ответ, уже отправленный с этого устройства: «Изменить ответ» обновит ту же запись, а не добавит вторую. */
+  const [saved, setSaved] = useState<SavedAnswer | null>(null);
+  /** «Спасибо» показано не после отправки, а потому что гость вернулся с готовым ответом. */
+  const [restored, setRestored] = useState(false);
   const compact = block.variant === "compact";
   /** Компактный вид: сначала только выбор «приду / не смогу», поля — после него. */
   const [chosen, setChosen] = useState(false);
@@ -33,6 +43,23 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
   const guestsRef = useRef<HTMLInputElement>(null);
   /** Куда перелистнуть цифру гостей: 1 — вверх (+), −1 — вниз (−), 0 — без анимации (ввод с клавиатуры). */
   const flip = useRef(0);
+
+  // Гость уже отвечал с этого устройства — сразу его ответ. Только после монтирования: на сервере localStorage нет.
+  // В превью редактора и показе шаблона ответов нет — там всегда пустая форма.
+  useEffect(() => {
+    if (ctx.preview || ctx.demo) return;
+    const answer = loadAnswer(ctx.slug);
+    if (!answer) return;
+    setSaved(answer);
+    setName(answer.name);
+    setAttending(answer.attending);
+    setGuests(answer.guestsCount);
+    setComment(answer.comment);
+    setChosen(true);
+    setChoice(choiceOf(answer));
+    setRestored(true);
+    setStatus({ kind: "sent" });
+  }, [ctx.preview, ctx.demo, ctx.slug]);
 
   useEffect(() => {
     const el = guestsRef.current;
@@ -57,7 +84,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
       name,
       attending,
       guestsCount: attending ? guests : 1,
-      comment: String(form.get("comment") ?? "") || undefined,
+      comment: comment.trim() || undefined,
       website: String(form.get("website") ?? "") || undefined,
     };
     const parsed = rsvpInputSchema.safeParse(input);
@@ -69,12 +96,28 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
     }
 
     setStatus({ kind: "sending" });
-    const res = await fetch(`/api/invitations/${ctx.slug}/rsvp`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(parsed.data),
-    }).catch(() => null);
+    const send = (method: "POST" | "PATCH", body: object) =>
+      fetch(`/api/invitations/${ctx.slug}/rsvp`, {
+        method,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      }).catch(() => null);
+    // Уже отвечали с этого устройства — меняем ту же запись. Её нет на сервере (404) — отправляем как новый ответ;
+    // при сбое сети новый не шлём, иначе ответ мог бы задвоиться.
+    let res = saved ? await send("PATCH", { ...parsed.data, id: saved.id, secret: saved.secret }) : null;
+    let keys = saved && { id: saved.id, secret: saved.secret };
+    if (!saved || res?.status === 404) {
+      res = await send("POST", parsed.data);
+      const body = res?.ok ? await res.json().catch(() => null) : null;
+      keys = typeof body?.id === "string" && typeof body?.secret === "string" ? { id: body.id, secret: body.secret } : null;
+    }
     if (res?.ok) {
+      if (keys) {
+        const { name, attending, guestsCount } = parsed.data;
+        const answer = { ...keys, name, attending, guestsCount, comment: parsed.data.comment ?? "" };
+        saveAnswer(ctx.slug, answer);
+        setSaved(answer);
+      }
       if (submitRef.current && !prefersReducedMotion()) heartBurst(submitRef.current);
       return setStatus({ kind: "sent" });
     }
@@ -90,15 +133,22 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
           <div className="inv-thanks-heart text-2xl text-[var(--accent)]" aria-hidden="true">
             ♡
           </div>
-          <p role="status" className="inv-script inv-thanks-title mt-2 inline-block text-4xl">
-            Спасибо!
+          <p role={restored ? undefined : "status"} className="inv-script inv-thanks-title mt-2 inline-block text-4xl">
+            {restored ? "Вы уже ответили" : "Спасибо!"}
           </p>
           <p className="inv-thanks-after mx-auto mt-3 max-w-xs text-xl leading-snug">
             {attending
               ? `${first}, мы получили ваше подтверждение: ${guests} ${guestsWord(guests)}.`
               : `${first}, жаль, что вы не сможете прийти. Ваш ответ получен.`}
           </p>
-          <button type="button" className="inv-btn-outline inv-thanks-after mt-6" onClick={() => setStatus({ kind: "idle" })}>
+          <button
+            type="button"
+            className="inv-btn-outline inv-thanks-after mt-6"
+            onClick={() => {
+              setRestored(false);
+              setStatus({ kind: "idle" });
+            }}
+          >
             Изменить ответ
           </button>
         </div>
@@ -274,7 +324,15 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
         )}
         <label className="inv-field">
           <span>Комментарий</span>
-          <textarea name="comment" rows={2} maxLength={1000} className="inv-input" placeholder="Пожелания ..." />
+          <textarea
+            name="comment"
+            rows={2}
+            maxLength={1000}
+            className="inv-input"
+            placeholder="Пожелания ..."
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+          />
         </label>
         {/* Honeypot: скрыт от людей, боты заполняют. */}
         <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
