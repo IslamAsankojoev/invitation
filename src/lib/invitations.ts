@@ -96,7 +96,8 @@ export async function deleteInvitation(id: string): Promise<boolean> {
 }
 
 export async function listRsvps(invitationId: string) {
-  return prisma.rsvp.findMany({ where: { invitationId }, orderBy: { createdAt: "desc" } });
+  // Хэш секрета гостя организатору не нужен — наружу не отдаём.
+  return prisma.rsvp.findMany({ where: { invitationId }, orderBy: { createdAt: "desc" }, omit: { editSecretHash: true } });
 }
 
 /** Публичное представление — без editToken. */

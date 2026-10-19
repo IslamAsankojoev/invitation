@@ -27,14 +27,17 @@ model Invitation {
 }
 
 model Rsvp {
-  id           String     @id @default(cuid())
-  invitationId String
-  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
-  name         String
-  attending    Boolean
-  guestsCount  Int
-  comment      String?
-  createdAt    DateTime   @default(now())
+  id             String     @id @default(cuid())
+  invitationId   String
+  invitation     Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  name           String
+  attending      Boolean
+  guestsCount    Int
+  comment        String?
+  createdAt      DateTime   @default(now())
+  /// sha256 секрета, который получил браузер гостя: по нему гость меняет свой ответ, а не добавляет новый.
+  /// Нет — ответ дан до этой возможности, изменить его нельзя.
+  editSecretHash String?
 
   @@index([invitationId])
 }
