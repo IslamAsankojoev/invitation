@@ -21,6 +21,15 @@ afterEach(() => {
 });
 
 if (typeof window !== "undefined") {
+  // Node ≥ 25 сам объявляет localStorage/sessionStorage (localStorage без --localstorage-file — undefined), и Vitest
+  // не заменяет их хранилищами jsdom. Ставим хранилища jsdom (JSDOM — глобальный `jsdom` от Vitest); на Node 20
+  // они и так те же. Геттер Node не трогаем: он печатает предупреждение.
+  const { jsdom } = globalThis as { jsdom?: { window: Window } };
+  if (jsdom) {
+    for (const key of ["localStorage", "sessionStorage"] as const) {
+      Object.defineProperty(globalThis, key, { value: jsdom.window[key], configurable: true, writable: true });
+    }
+  }
   // jsdom не умеет воспроизводить медиа и рисовать на canvas. События play/pause — как в браузере.
   window.HTMLMediaElement.prototype.play = function () {
     const wasPaused = this.paused;
