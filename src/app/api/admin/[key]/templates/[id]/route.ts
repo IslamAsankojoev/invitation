@@ -2,14 +2,19 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { currentTemplate, duplicateTemplate, resetTemplate, saveTemplate, setPublished } from "@/lib/adminFiles";
 import { deleteInvitation, getInvitationBySlug } from "@/lib/invitations";
-import { formatZodErrors, invitationDataSchema } from "@/lib/schema";
+import { EVENT_TYPES, formatZodErrors, invitationDataSchema } from "@/lib/schema";
 import { draftSlug, templateFromInvitation } from "@/lib/templateAdmin";
 import { adminGuard } from "../../guard";
 
 type Ctx = { params: Promise<{ key: string; id: string }> };
 
 const putSchema = z.object({ data: invitationDataSchema });
-const patchSchema = z.object({ name: z.string().trim().min(1).max(60), description: z.string().trim().max(300) });
+const patchSchema = z.object({
+  name: z.string().trim().min(1).max(60),
+  description: z.string().trim().max(300),
+  /** Для каких событий шаблон (фильтр на главной); первое — событие нового приглашения. */
+  events: z.array(z.enum(EVENT_TYPES)).min(1).optional(),
+});
 const publishSchema = z.object({ published: z.boolean() });
 
 /** Сохранить в шаблон приглашение из редактора (черновик). */
@@ -28,7 +33,7 @@ export async function PUT(req: Request, { params }: Ctx) {
   }
 }
 
-/** Название и описание — или публикация (`{ published }`: скрытый не виден на главной и в выборе шаблона). */
+/** Название, описание и события — или публикация (`{ published }`: скрытый не виден на главной и в выборе шаблона). */
 export async function PATCH(req: Request, { params }: Ctx) {
   const { key, id } = await params;
   const denied = adminGuard(key);

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { sendEvent, visitorId } from "@/lib/beacon";
 import { findBlock } from "@/lib/blocks";
 import { describeDate } from "@/lib/calendar";
 import type { InvitationData } from "@/lib/schema";
@@ -8,6 +9,7 @@ import { themeStyle } from "@/lib/theme";
 import { DecorLayer } from "./DecorLayer";
 import { Envelope, INTRO_LEAVE_MS } from "./Envelope";
 import { InvitationView } from "./InvitationView";
+import { GuestLanguageProvider } from "./language";
 import { prefersReducedMotion } from "./motion";
 import { MusicButton, useInvitationMusic } from "./music";
 
@@ -19,6 +21,15 @@ export function InvitationPage({ data, slug, demo = false }: { data: InvitationD
   const musicUrl = data.music.url;
   const hero = findBlock(data, "hero");
   const music = useInvitationMusic(musicUrl, data.music);
+
+  // Аналитика: гость открыл страницу. Ссылку в превью WhatsApp/Telegram их роботы не считают — JS они не выполняют.
+  // Ref — против двойного эффекта StrictMode. На показе шаблонов (demo) приглашения в базе нет.
+  const viewSent = useRef(false);
+  useEffect(() => {
+    if (demo || viewSent.current) return;
+    viewSent.current = true;
+    sendEvent({ name: "guest_view", slug, visitorId: visitorId() });
+  }, [demo, slug]);
 
   // Пока конверт не открыт, страница под ним не прокручивается.
   useEffect(() => {
@@ -32,6 +43,7 @@ export function InvitationPage({ data, slug, demo = false }: { data: InvitationD
 
   function open() {
     if (opened) return;
+    if (!demo) sendEvent({ name: "envelope_opened", slug, visitorId: visitorId() });
     // У видео-конверта музыка включилась ещё при нажатии (onStart), сейчас ролик доиграл.
     if (musicUrl && !videoIntro) music.play();
     window.scrollTo(0, 0);
@@ -40,7 +52,8 @@ export function InvitationPage({ data, slug, demo = false }: { data: InvitationD
   }
 
   return (
-    <div style={themeStyle(data.theme)} className="min-h-svh bg-[var(--bg)]">
+    <GuestLanguageProvider lang={data.language} eventType={data.eventType}>
+    <div style={themeStyle(data.theme)} lang={data.language} data-inv-lang={data.language} className="min-h-svh bg-[var(--bg)]">
       {musicUrl && (
         <audio
           {...music.audioProps}
@@ -82,5 +95,6 @@ export function InvitationPage({ data, slug, demo = false }: { data: InvitationD
         />
       )}
     </div>
+    </GuestLanguageProvider>
   );
 }

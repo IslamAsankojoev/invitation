@@ -8,6 +8,7 @@ import { darkSurfaces, isFullWidth, isPanelSurface, lightSurfaces, surfaceImages
 import { isSeam, ornamentImageStyle, ornamentMotionProps, ornamentStyle } from "@/lib/ornaments";
 import { textStyle } from "@/lib/textStyle";
 import type { Block, Ornament, OrnamentMotion } from "@/lib/schema";
+import { useGuestLanguage } from "./language";
 import { replayReveal, useMotion, useOrnamentMotion, useReveal } from "./motion";
 
 type Props = {
@@ -57,7 +58,8 @@ export function Section({ block, children, bare = false, frame = false, fill, ba
   const ref = useRef<HTMLElement>(null);
   useReveal(ref, block.entrance === "none");
   const ornamentMotion = useOrnamentMotion();
-  const title = bare ? "" : blockTitle(block);
+  const { lang, eventType } = useGuestLanguage();
+  const title = bare ? "" : blockTitle(block, { eventType, language: lang });
   const script = bare ? "" : block.scriptLine?.trim();
   const surfaceImage = surfaceImages[block.surface];
   const layer = surfaceLayer(block.surface);

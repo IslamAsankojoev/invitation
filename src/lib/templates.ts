@@ -1,6 +1,24 @@
 import { createOrnament, newBlockId } from "./blocks";
 import { library } from "./library";
-import type { Block, BlockOf, BlockType, BlockWidth, Edge, Entrance, Headings, InvitationData, Ornament, OrnamentPosition, Surface, TextIcon, Theme } from "./schema";
+import { eventCopy } from "./copy";
+import type {
+  Block,
+  BlockOf,
+  BlockType,
+  BlockWidth,
+  Edge,
+  Entrance,
+  EventType,
+  Headings,
+  InvitationData,
+  Language,
+  Ornament,
+  OrnamentPosition,
+  Surface,
+  TextIcon,
+  Theme,
+} from "./schema";
+import { EVENT_TYPES, LANGUAGES } from "./schema";
 import { SCHEMA_VERSION } from "./migrations";
 import { DEFAULT_MUSIC_URL } from "./music";
 import { DEFAULT_ORNAMENT_MOTION, invitationDataSchema } from "./schema";
@@ -74,7 +92,14 @@ export type Template = {
   heroNames?: string;
   /** Адрес в примере «Места» (по умолчанию Бишкек; у казахских пар — Алматы); у структуры `layout` — свой. */
   address?: string;
+  /** Для каких событий шаблон (фильтр на главной); первый — тип нового приглашения. Нет — свадьба. */
+  events?: EventType[];
+  /** Язык примера текстов шаблона (и нового приглашения). Нет — русский. */
+  language?: Language;
 };
+
+/** События шаблона: первое — тип нового приглашения. */
+export const templateEvents = (t: Pick<Template, "events">): EventType[] => (t.events?.length ? t.events : ["wedding"]);
 
 /** Путь картинки из библиотеки по id (webp или векторный svg). */
 const lib = (id: string) => {
@@ -101,6 +126,13 @@ const BORDO = "#4b0a12";
 const ETNO_GOLD = "#c9a063";
 /** Бордовые рукописные заголовки на креме, как на toigokel.kg. */
 const ETNO_TITLE = { title: { color: "#6d0713" } };
+/** «Шырдак»: полосы красного войлока, надписи на них — цвета шерсти. */
+const FELT = "#a3201f";
+const FELT_CREAM = "#f6eee2";
+/** «Ала-Тоо»: светло-небесные полосы с волной. */
+const SKY_STRIP = "#e3ecf4";
+/** «Бешик»: мятные полосы с фестонами. */
+const MINT = "#e4efe6";
 /** Анимация украшения «появляется как обычно, но не качается» — для переходов между блоками. */
 const STILL = { enter: "auto", enterSpeed: 1, idle: "none", idleSpeed: 1, idleAmplitude: 1 } as const;
 
@@ -1070,6 +1102,195 @@ export const baseTemplates: Template[] = [
       },
     ],
   },
+  // ---------- Кыргызские шаблоны (2.5.0): свои векторные узоры, тексты — из примеров события (lib/copy.ts) ----------
+  {
+    id: "shyrdak",
+    name: "Шырдак",
+    description:
+      "Красный войлок и кремовая шерсть: рога кочкор мүйүз в углах, полосы шырдака, зигзаг по краям. Для кыз узатуу и свадьбы.",
+    events: ["kyz-uzatuu", "wedding"],
+    theme: {
+      palette: "felt",
+      font: "yeseva",
+      bodyFont: "cormorant",
+      headings: "caps",
+      background: null,
+      texture: "paper",
+      decor: { type: "none", image: null, color: "#a3201f", density: 0, size: 1, speed: 1 },
+      envelope: { ornament: lib("kochkor-corner"), style: "seal" },
+      motion: { style: "elegant", speed: 1 },
+    },
+    blocks: {},
+    dresscodeColors: ["#a3201f", "#6e1414", "#c9a063", "#efe3cf", "#2c3a5a"],
+    music: "/music/erke-sary.mp3",
+    layout: [
+      {
+        type: "hero",
+        variant: "classic",
+        date: "2027-09-04T17:00",
+        ornaments: [
+          orn("kochkor-corner", "top-left", { size: 130 }),
+          orn("kochkor-corner", "top-right", { size: 130, flip: true }),
+          orn("kochkor-corner", "bottom-left", { size: 130, rotate: 180, flip: true }),
+          orn("kochkor-corner", "bottom-right", { size: 130, rotate: 180 }),
+        ],
+      },
+      { type: "story", ornaments: [orn("shyrdak-band", "bottom", { size: 300, motion: STILL })] },
+      {
+        type: "countdown",
+        bgColor: FELT,
+        edgeTop: "zigzag",
+        edgeBottom: "zigzag",
+        textStyles: { title: { color: FELT_CREAM } },
+      },
+      { type: "calendar", variant: "classic" },
+      { type: "program", variant: "cards", ornaments: [orn("shyrdak-band", "top", { size: 300, motion: STILL })] },
+      { type: "dresscode", variant: "chips" },
+      { type: "location", ornaments: [orn("kochkor-corner", "bottom-left", { size: 110, rotate: 180, flip: true })] },
+      {
+        type: "rsvp",
+        variant: "choices",
+        bgColor: FELT,
+        edgeTop: "zigzag",
+        textStyles: { title: { color: FELT_CREAM }, scriptLine: { color: FELT_CREAM } },
+      },
+    ],
+  },
+  {
+    id: "ala-too",
+    name: "Ала-Тоо",
+    description: "Белые вершины и небесная синева: линия гор, ала-кийиз и чистые карточки. Для дня рождения, юбилея и кыз узатуу.",
+    events: ["birthday", "jubilee", "kyz-uzatuu"],
+    theme: {
+      palette: "sky",
+      font: "philosopher",
+      bodyFont: "raleway",
+      headings: "caps",
+      background: null,
+      texture: "none",
+      decor: { type: "snow", image: null, color: "#ffffff", density: 8, size: 0.8, speed: 0.6 },
+      envelope: { ornament: lib("ala-too"), style: "veil" },
+      motion: { style: "soft", speed: 1 },
+    },
+    blocks: {},
+    dresscodeColors: ["#ffffff", "#dfe9f2", "#8fb3d6", "#2f6ea5", "#1d2f45"],
+    music: "/music/ozgocho-kun.mp3",
+    layout: [
+      {
+        type: "hero",
+        variant: "minimal",
+        date: "2027-08-14T18:00",
+        ornaments: [orn("ala-too", "bottom", { size: 400, opacity: 0.9, motion: STILL })],
+      },
+      { type: "countdown", variant: "circles" },
+      {
+        type: "story",
+        bgColor: SKY_STRIP,
+        edgeTop: "wave",
+        edgeBottom: "wave",
+        ornaments: [orn("ala-kiyiz", "bottom", { size: 260, motion: STILL })],
+      },
+      { type: "calendar", variant: "tearoff" },
+      { type: "program", variant: "cards" },
+      { type: "location", variant: "minimal", ornaments: [orn("ala-too", "bottom", { size: 400, opacity: 0.6, motion: STILL })] },
+      { type: "rsvp", bgColor: SKY_STRIP, edgeTop: "wave" },
+    ],
+  },
+  {
+    id: "tunduk",
+    name: "Түндүк",
+    description: "Золото на тёмном: венец юрты с лучами, золотые полосы шырдака и письмо с историей. Для юбилея и свадьбы.",
+    events: ["jubilee", "wedding"],
+    theme: {
+      palette: "tunduk",
+      font: "prata",
+      bodyFont: "cormorant",
+      headings: "caps",
+      background: null,
+      texture: "none",
+      decor: { type: "none", image: null, color: "#d1a656", density: 0, size: 1, speed: 1 },
+      envelope: { ornament: lib("kochkor-corner-gold"), style: "seal" },
+      motion: { style: "cinematic", speed: 1 },
+    },
+    blocks: {},
+    dresscodeColors: ["#16110d", "#5a3d22", "#d1a656", "#efe4cf", "#7a1c1c"],
+    layout: [
+      {
+        type: "hero",
+        variant: "classic",
+        date: "2027-10-02T18:00",
+        // Түндүк — крупно и едва заметно за именами, как водяной знак.
+        ornaments: [orn("tunduk", "center", { size: 340, opacity: 0.14, motion: STILL })],
+      },
+      { type: "story", variant: "letter" },
+      { type: "countdown", ornaments: [orn("shyrdak-band-gold", "top", { size: 280, motion: STILL })] },
+      { type: "calendar", variant: "date" },
+      { type: "program" },
+      { type: "dresscode", variant: "stripes" },
+      { type: "location", variant: "postcard" },
+      { type: "rsvp", variant: "choices", ornaments: [orn("shyrdak-band-gold", "top", { size: 280, motion: STILL })] },
+    ],
+  },
+  {
+    id: "beshik",
+    name: "Бешик",
+    description: "Мятный и абрикосовый, рукописные заголовки и мягкий войлок ала-кийиз. Для бешик тоя, тушоо кесүү и сүннөт тоя.",
+    events: ["beshik-toi", "tushoo-kesuu", "sunnet-toi", "birthday"],
+    theme: {
+      palette: "beshik",
+      font: "caveat",
+      bodyFont: "manrope",
+      headings: "names",
+      background: null,
+      texture: "speckle",
+      decor: { type: "confetti", image: null, color: "#cf8a5f", density: 10, size: 0.8, speed: 0.6 },
+      envelope: { ornament: lib("ala-kiyiz"), style: "flap" },
+      motion: { style: "playful", speed: 1 },
+    },
+    blocks: {},
+    dresscodeColors: ["#f5f7f1", "#cfe3d4", "#f2c9a8", "#cf8a5f", "#3e4a44"],
+    layout: [
+      {
+        type: "hero",
+        variant: "classic",
+        date: "2027-07-10T12:00",
+        ornaments: [orn("ala-kiyiz", "bottom", { size: 280, motion: STILL })],
+      },
+      { type: "story", bgColor: MINT, edgeTop: "scallop", edgeBottom: "scallop" },
+      { type: "countdown", variant: "circles" },
+      { type: "calendar", variant: "week" },
+      { type: "program", variant: "cards" },
+      { type: "location", ornaments: [orn("ala-kiyiz", "bottom", { size: 220, motion: STILL })] },
+      { type: "rsvp", variant: "compact", bgColor: MINT, edgeTop: "scallop" },
+    ],
+  },
+  {
+    id: "neon",
+    name: "Неон",
+    description: "Чёрный клуб и кислотный лайм: билет на вечеринку, перекидные часы, конфетти. Для вечеринок и дня рождения.",
+    events: ["party", "birthday"],
+    theme: {
+      palette: "neon",
+      font: "lobster",
+      bodyFont: "montserrat",
+      headings: "caps",
+      background: null,
+      texture: "grid",
+      decor: { type: "confetti", image: null, color: "#c6ff00", density: 18, size: 1, speed: 1.2 },
+      envelope: { ornament: null, style: "seal" },
+      motion: { style: "playful", speed: 1.2 },
+    },
+    blocks: {},
+    dresscodeColors: ["#07050d", "#c6ff00", "#ff2bd6", "#7b5cff", "#f4f1ff"],
+    layout: [
+      { type: "hero", variant: "ticket", date: "2027-11-06T22:00" },
+      { type: "countdown", variant: "cards" },
+      { type: "program", variant: "cards" },
+      { type: "dresscode", variant: "chips" },
+      { type: "location", variant: "minimal" },
+      { type: "rsvp", variant: "compact" },
+    ],
+  },
 ];
 
 /**
@@ -1155,45 +1376,75 @@ const themeOf = (template: Template): Theme => ({
   ...structuredClone(template.theme),
 });
 
-/** Готовые варианты блока «Текст» в окне «Добавить блок». */
-export const TEXT_PRESETS: { id: string; title: string; icon: TextIcon; text: string }[] = [
+type TextPreset = { id: string; title: string; icon: TextIcon; text: string; ky: { title: string; text: string } };
+
+/** Готовые варианты блока «Текст» в окне «Добавить блок»; `ky` — тот же текст для кыргызского приглашения. */
+export const TEXT_PRESETS: TextPreset[] = [
   {
     id: "welcome",
     title: "Дорогие гости",
     icon: "heart",
     text: "Мы рады пригласить вас на нашу свадьбу! Этот день станет для нас особенным, и мы хотим провести его с самыми близкими людьми.",
+    ky: {
+      title: "Урматтуу коноктор",
+      text: "Сиздерди тоюбузга чакырганыбызга кубанычтабыз! Бул күн биз үчүн өзгөчө, аны эң жакын адамдарыбыз менен өткөргүбүз келет.",
+    },
   },
   {
     id: "wishes",
     title: "Пожелания",
     icon: "flower",
     text: "Пожалуйста, не дарите нам цветы — букеты быстро завянут. Будем рады бутылочке вашего любимого вина: откроем её на годовщину.",
+    ky: {
+      title: "Каалоолор",
+      text: "Сураныч, гүл алып келбеңиздер — гүлдесте тез соолуп калат. Анын ордуна жылуу каалоолоруңузду жазып келсеңиздер кубанабыз.",
+    },
   },
   {
     id: "gifts",
     title: "Подарки",
     icon: "gift",
     text: "Ваше присутствие — лучший подарок. Если хотите порадовать нас ещё, будем благодарны за вклад в наше свадебное путешествие.",
+    ky: {
+      title: "Белектер",
+      text: "Сиздердин келишиңиздер — эң жакшы белек. Дагы кубантким келсе, саякатыбызга кошкон салымыңыз үчүн ыраазы болобуз.",
+    },
   },
   {
     id: "adults",
     title: "Только взрослые",
     icon: "child",
     text: "Мы очень любим ваших детей, но этот вечер хотим провести во взрослой компании. Спасибо за понимание!",
+    ky: {
+      title: "Чоңдор үчүн",
+      text: "Балдарыңыздарды абдан жакшы көрөбүз, бирок бул кечти чоңдордун чөйрөсүндө өткөргүбүз келет. Түшүнгөнүңүздөр үчүн рахмат!",
+    },
   },
   {
     id: "details",
     title: "Детали",
     icon: "info",
     text: "У ресторана есть бесплатная парковка. После 23:00 для гостей будет трансфер до центра города.",
+    ky: {
+      title: "Майда-чүйдөсү",
+      text: "Ресторандын жанында акысыз унаа токтоочу жай бар. Саат 23:00дөн кийин коноктор үчүн шаардын борборуна чейин трансфер болот.",
+    },
   },
 ];
+
+/** Пресет на языке приглашения. */
+export const textPreset = (preset: TextPreset, lang: Language = "ru") =>
+  lang === "ky" ? { id: preset.id, icon: preset.icon, ...preset.ky } : { id: preset.id, icon: preset.icon, title: preset.title, text: preset.text };
 
 /** id скрытого описания шаблона — им карточка шаблона подписывает свою кнопку или ссылку (aria-describedby). */
 export const templateDescriptionId = (template: Template) => `tpl-${template.id}-desc`;
 
-/** Пример содержимого блока каждого типа: им заполняются новое приглашение и новый блок в редакторе. */
-function sampleBlock(type: BlockType, id: string): Block {
+/**
+ * Пример содержимого блока каждого типа: им заполняются новое приглашение и новый блок в редакторе. Тексты — по типу
+ * события и языку (lib/copy.ts).
+ */
+function sampleBlock(type: BlockType, id: string, eventType: EventType = "wedding", lang: Language = "ru"): Block {
+  const copy = eventCopy[eventType][lang];
   const base = {
     id,
     visible: true,
@@ -1211,10 +1462,10 @@ function sampleBlock(type: BlockType, id: string): Block {
         type,
         ...base,
         variant: "clean",
-        names: "Айгерим & Нурлан",
+        names: copy.names,
         date: "2027-06-19T16:00",
-        label: "Приглашение на свадьбу",
-        subtitle: "Приглашаем вас разделить с нами этот день",
+        label: copy.label,
+        subtitle: copy.subtitle,
         photo: null,
       };
     case "countdown":
@@ -1225,27 +1476,25 @@ function sampleBlock(type: BlockType, id: string): Block {
         type,
         ...base,
         title: "",
-        text: "Мы познакомились весной, и с тех пор не расстаёмся. Будем счастливы видеть вас рядом в самый важный для нас день.",
+        text: copy.story,
         photo: null,
       };
     case "program":
       return {
         type,
         ...base,
-        items: [
-          { time: "16:00", title: "Сбор гостей", description: "Фуршет и приветственные напитки" },
-          { time: "16:30", title: "Церемония", description: "Торжественная регистрация" },
-          { time: "18:00", title: "Праздничный ужин", description: "Банкет и поздравления" },
-        ],
+        items: copy.program.map((item) => ({ ...item })),
       };
     case "dresscode":
-      return { type, ...base, text: "Будем рады, если вы поддержите цветовую гамму праздника", colors: [] };
+      return { type, ...base, text: copy.dresscode, colors: [] };
     case "location":
-      return { type, ...base, placeName: "Ресторан «Сад»", address: "г. Бишкек, ул. Киевская, 1", photo: null };
+      return lang === "ky"
+        ? { type, ...base, placeName: "«Сад» ресторану", address: "Бишкек ш., Киев көчөсү, 1", photo: null }
+        : { type, ...base, placeName: "Ресторан «Сад»", address: "г. Бишкек, ул. Киевская, 1", photo: null };
     case "rsvp":
-      return { type, ...base, title: "Подтвердите, пожалуйста,", scriptLine: "своё присутствие" };
+      return { type, ...base, title: copy.rsvpTitle, scriptLine: copy.rsvpScript };
     case "text": {
-      const preset = TEXT_PRESETS[1];
+      const preset = textPreset(TEXT_PRESETS[1], lang);
       return { type, ...base, title: preset.title, icon: preset.icon, text: preset.text };
     }
     case "photo":
@@ -1256,22 +1505,28 @@ function sampleBlock(type: BlockType, id: string): Block {
       return {
         type,
         ...base,
-        title: "Остались вопросы?",
-        text: "Звоните или пишите — с радостью подскажем.",
-        people: [{ name: "Айгерим", role: "Организатор", phone: "+996 555 000 000", whatsapp: true, telegram: "" }],
+        ...(lang === "ky"
+          ? { title: "Суроолоруңуз барбы?", text: "Чалыңыз же жазыңыз — кубаныч менен жардам беребиз." }
+          : { title: "Остались вопросы?", text: "Звоните или пишите — с радостью подскажем." }),
+        people: [{ name: "Айгерим", role: lang === "ky" ? "Уюштуруучу" : "Организатор", phone: "+996 555 000 000", whatsapp: true, telegram: "" }],
       };
   }
 }
 
+/** Пример содержимого блока для события и языка — им localize.ts заменяет нетронутые примеры. */
+export const sampleContent = (type: BlockType, eventType: EventType, lang: Language): Block => sampleBlock(type, "sample", eventType, lang);
+
 /** Блоки нового приглашения. Id стабильные («b-<тип>», повторы — «b-<тип>-2», как у старых приглашений). */
 function sampleBlocks(template: Template): Block[] {
+  const eventType = templateEvents(template)[0];
+  const lang = template.language ?? "ru";
   const layout: LayoutBlock[] = template.layout ?? (["hero", "countdown", "calendar", "story", "program", "dresscode", "location", "rsvp"] as const).map((type) => ({ type }));
   const count: Partial<Record<BlockType, number>> = {};
   return layout.map(({ exact, ...item }) => {
     const n = (count[item.type] = (count[item.type] ?? 0) + 1);
     const id = n === 1 ? `b-${item.type}` : `b-${item.type}-${n}`;
     // Целый блок (из админки) — как есть; остальные дополняются примером содержимого.
-    const block = (exact ? { id, ...structuredClone(item) } : { ...sampleBlock(item.type, id), ...structuredClone(item) }) as Block;
+    const block = (exact ? { id, ...structuredClone(item) } : { ...sampleBlock(item.type, id, eventType, lang), ...structuredClone(item) }) as Block;
     if (block.type === "location" && template.address && !("address" in item)) return { ...block, address: template.address };
     if (block.type !== "hero") return block;
     // Свои имена и фото обложки шаблона — если структура их не задаёт.
@@ -1289,7 +1544,10 @@ function sampleBlocks(template: Template): Block[] {
  */
 export function exampleBlocks(type: BlockType): Block[] {
   // Примеры не меняются — собираем один раз на тип (список считается при каждой правке в редакторе).
-  return (exampleCache[type] ??= [sampleBlock(type, "example"), ...templates.flatMap((t) => sampleBlocks(t).filter((b) => b.type === type))]);
+  return (exampleCache[type] ??= [
+    ...EVENT_TYPES.flatMap((e) => LANGUAGES.map((l) => sampleBlock(type, "example", e, l))),
+    ...allTemplates.flatMap((t) => sampleBlocks(t).filter((b) => b.type === type)),
+  ]);
 }
 const exampleCache: Partial<Record<BlockType, Block[]>> = {};
 
@@ -1304,12 +1562,13 @@ const designOf = (block: Block): BlockDesign => designFields(block as unknown as
  * того же типа в приглашении, иначе как в шаблоне, на который похожа тема, иначе «без оформления».
  */
 export function createBlock(data: InvitationData, type: BlockType, presetId?: string): Block {
-  const block = sampleBlock(type, newBlockId(type, data.blocks.map((b) => b.id)));
+  const block = sampleBlock(type, newBlockId(type, data.blocks.map((b) => b.id)), data.eventType, data.language);
   const same = data.blocks.find((b) => b.type === type);
   const template = guessTemplate(data.theme);
   const n = data.blocks.filter((b) => b.type === type).length;
   const design = structuredClone(same ? designOf(same) : template ? designFor(template, type, n) : plainDesignFor(type));
-  const preset = type === "text" ? TEXT_PRESETS.find((p) => p.id === presetId) : undefined;
+  const found = type === "text" ? TEXT_PRESETS.find((p) => p.id === presetId) : undefined;
+  const preset = found && textPreset(found, data.language);
   const next = { ...block, ...design, ...(preset ? { title: preset.title, icon: preset.icon, text: preset.text } : {}) } as Block;
   return next.type === "dresscode" && template ? { ...next, colors: [...template.dresscodeColors] } : next;
 }
@@ -1317,7 +1576,14 @@ export function createBlock(data: InvitationData, type: BlockType, presetId?: st
 /** Новое приглашение по шаблону — с примером текстов (и структурой шаблона, если она есть). */
 export function createFromTemplate(template: Template): InvitationData {
   return applyTemplate(
-    { schemaVersion: SCHEMA_VERSION, theme: themeOf(template), music: { url: template.music ?? DEFAULT_MUSIC_URL, loop: true, start: 0, end: null, ...template.musicFragment }, blocks: sampleBlocks(template) },
+    {
+      schemaVersion: SCHEMA_VERSION,
+      eventType: templateEvents(template)[0],
+      language: template.language ?? "ru",
+      theme: themeOf(template),
+      music: { url: template.music ?? DEFAULT_MUSIC_URL, loop: true, start: 0, end: null, ...template.musicFragment },
+      blocks: sampleBlocks(template),
+    },
     template,
   );
 }

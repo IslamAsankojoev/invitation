@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { monogram, splitNames } from "@/lib/calendar";
 import type { EnvelopeStyle } from "@/lib/schema";
+import { useGuestLanguage } from "./language";
 import { prefersReducedMotion } from "./motion";
 
 /** Ролик «Видео-конверта» по умолчанию (шаблон «Этно», toigokel.kg) — если в теме нет своего. */
@@ -51,6 +52,7 @@ export function Envelope(props: Props) {
  * ролик открытия, по его окончании приглашение открывается (заставка растворяется — .inv-intro-video).
  */
 function VideoEnvelope({ video, poster, leaving, onOpen, onStart, contained = false }: Props) {
+  const { t } = useGuestLanguage();
   const ref = useRef<HTMLVideoElement>(null);
   const [started, setStarted] = useState(false);
   const done = useRef(false);
@@ -86,14 +88,14 @@ function VideoEnvelope({ video, poster, leaving, onOpen, onStart, contained = fa
     <div
       data-testid="envelope"
       role="dialog"
-      aria-label="Приглашение"
+      aria-label={t.invitation}
       data-style="video"
       data-leaving={leaving || undefined}
       className={`inv-intro-video ${contained ? "absolute" : "fixed"} inset-0 z-30 flex justify-center overflow-hidden bg-[#171715]`}
     >
       <button
         type="button"
-        aria-label="Открыть приглашение"
+        aria-label={t.openInvitation}
         disabled={started}
         onClick={start}
         className="relative h-full w-full max-w-[35rem] cursor-pointer overflow-hidden"
@@ -113,7 +115,7 @@ function VideoEnvelope({ video, poster, leaving, onOpen, onStart, contained = fa
         {!started && (
           <span className="inv-intro-video-hint absolute inset-x-4 top-[68%] grid -translate-y-1/2 gap-1.5 text-center" style={{ fontFamily: "var(--font-body)" }}>
             <span className="text-[clamp(1rem,4.5vw,1.35rem)] font-semibold leading-tight text-[var(--accent)] [text-shadow:0_1px_0_rgb(255_250_242/.75)]">
-              Нажмите, чтобы открыть
+              {t.tapToOpen}
             </span>
           </span>
         )}
@@ -123,11 +125,12 @@ function VideoEnvelope({ video, poster, leaving, onOpen, onStart, contained = fa
 }
 
 function DrawnEnvelope({ names, label, date, ornament, hasMusic, variant = "seal", leaving, onOpen, contained = false }: Props) {
+  const { t } = useGuestLanguage();
   const parts = splitNames(names);
   const initials = monogram(names).split("&");
 
   const seal = (
-    <button type="button" aria-label="Открыть приглашение" disabled={leaving} className="inv-intro-open relative z-10 flex flex-col items-center gap-5" onClick={onOpen}>
+    <button type="button" aria-label={t.openInvitation} disabled={leaving} className="inv-intro-open relative z-10 flex flex-col items-center gap-5" onClick={onOpen}>
       <span
         className="inv-intro-seal relative flex h-24 w-24 items-center justify-center rounded-full text-3xl text-white"
         style={{
@@ -148,8 +151,8 @@ function DrawnEnvelope({ names, label, date, ornament, hasMusic, variant = "seal
           )}
         </span>
       </span>
-      <span className="inv-caps">Открыть приглашение</span>
-      {hasMusic && <span className="-mt-3 text-sm italic opacity-60">♪ включится музыка</span>}
+      <span className="inv-caps">{t.openInvitation}</span>
+      {hasMusic && <span className="-mt-3 text-sm italic opacity-60">{t.musicWillPlay}</span>}
     </button>
   );
 
@@ -179,7 +182,7 @@ function DrawnEnvelope({ names, label, date, ornament, hasMusic, variant = "seal
     <div
       data-testid="envelope"
       role="dialog"
-      aria-label={label || "Приглашение"}
+      aria-label={label || t.invitation}
       data-style={variant}
       data-leaving={leaving || undefined}
       className={`inv-intro inv-intro-${variant} ${contained ? "absolute" : "fixed"} inset-0 z-30 flex items-center justify-center overflow-hidden text-[var(--text)]`}
@@ -238,7 +241,7 @@ function DrawnEnvelope({ names, label, date, ornament, hasMusic, variant = "seal
                 </>
               )}
               <span className="relative z-10 text-[26px] leading-none" style={{ fontFamily: "var(--font-great-vibes), cursive" }}>
-                Приглашение
+                {t.invitation}
               </span>
               <span className="relative z-10 mt-1 flex items-center gap-1.5 text-[9px] opacity-60">
                 <span className="h-px w-6 bg-current" />♡<span className="h-px w-6 bg-current" />
@@ -248,7 +251,7 @@ function DrawnEnvelope({ names, label, date, ornament, hasMusic, variant = "seal
                   className="relative z-10 mt-0.5 line-clamp-2 px-6 text-center text-[17px] leading-tight text-[var(--text)] opacity-85"
                   style={{ fontFamily: "var(--font-great-vibes), cursive" }}
                 >
-                  от {names.trim()}
+                  {t.fromNames(names.trim())}
                 </span>
               )}
             </div>

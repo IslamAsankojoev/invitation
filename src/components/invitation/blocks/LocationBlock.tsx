@@ -2,15 +2,17 @@ import { MapPin } from "lucide-react";
 import { textStyle } from "@/lib/textStyle";
 import { findBlock } from "@/lib/blocks";
 import { monogram } from "@/lib/calendar";
+import { guestText } from "@/lib/i18n";
+import type { Language } from "@/lib/schema";
 import { Section } from "../Section";
 import type { BlockProps } from "./types";
 
-function MapButton({ url }: { url?: string }) {
+function MapButton({ url, lang }: { url?: string; lang: Language }) {
   if (!url) return null;
   return (
     <div className="mt-8" data-reveal="4">
       <a href={url} target="_blank" rel="noopener noreferrer" className="inv-btn-outline inv-btn-shine">
-        Посмотреть на карте
+        {guestText(lang).showOnMap}
       </a>
     </div>
   );
@@ -28,14 +30,14 @@ export function LocationBlock({ block, ctx }: BlockProps<"location">) {
               {monogram(names)}
             </span>
             <span aria-hidden="true" className="inv-postmark absolute -top-8 right-14" />
-            <p className="inv-caps text-[0.7rem] opacity-60">Ждём вас по адресу</p>
+            <p className="inv-caps text-[0.7rem] opacity-60">{guestText(ctx.data.language).waitingAt}</p>
             <p className="inv-postcard-line mt-2 text-3xl" style={{ fontFamily: "var(--font-title)", ...textStyle(block, "placeName") }}>
               {block.placeName}
             </p>
             <p className="inv-postcard-line mt-1 text-xl italic" style={textStyle(block, "address")}>{block.address}</p>
           </div>
         </div>
-        <MapButton url={block.mapUrl} />
+        <MapButton url={block.mapUrl} lang={ctx.data.language} />
       </Section>
     );
   }
@@ -51,7 +53,7 @@ export function LocationBlock({ block, ctx }: BlockProps<"location">) {
           </div>
           <p className="mt-3 text-lg leading-snug opacity-80" style={textStyle(block, "address")}>{block.address}</p>
         </div>
-        <MapButton url={block.mapUrl} />
+        <MapButton url={block.mapUrl} lang={ctx.data.language} />
       </Section>
     );
   }
@@ -68,7 +70,7 @@ export function LocationBlock({ block, ctx }: BlockProps<"location">) {
         <p className="inv-heading text-lg" style={textStyle(block, "placeName")}>{block.placeName}</p>
         <p className="mx-auto mt-3 max-w-xs text-lg leading-snug opacity-80" style={textStyle(block, "address")}>{block.address}</p>
       </div>
-      <MapButton url={block.mapUrl} />
+      <MapButton url={block.mapUrl} lang={ctx.data.language} />
     </Section>
   );
 }

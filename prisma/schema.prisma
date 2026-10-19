@@ -39,6 +39,21 @@ model Rsvp {
   @@index([invitationId])
 }
 
+/// Событие аналитики (lib/analytics.ts): воронка «создали → поделились → гость открыл». Без IP, браузера и имён гостей.
+/// Связи с Invitation нет намеренно: удалённое приглашение не должно менять прошлую воронку.
+model Event {
+  id           String   @id @default(cuid())
+  name         String
+  invitationId String?
+  /// Случайный id браузера из localStorage — считать уникальных гостей; с человеком не связан.
+  visitorId    String?
+  props        Json?
+  createdAt    DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@index([invitationId, name])
+}
+
 // ---------- Пользователи (Auth.js, @auth/prisma-adapter) ----------
 
 model User {

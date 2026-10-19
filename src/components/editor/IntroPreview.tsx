@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Envelope, INTRO_LEAVE_MS } from "@/components/invitation/Envelope";
+import { GuestLanguageProvider } from "@/components/invitation/language";
 import { prefersReducedMotion } from "@/components/invitation/motion";
 import { findBlock } from "@/lib/blocks";
 import { describeDate } from "@/lib/calendar";
@@ -18,7 +19,8 @@ export function IntroPreview({ data, onOpen, onClose }: { data: InvitationData; 
   useEffect(() => () => clearTimeout(timer.current), []);
 
   return (
-    <div className="absolute inset-0 z-30" style={themeStyle(data.theme)} data-testid="intro-preview">
+    <div className="absolute inset-0 z-30" style={themeStyle(data.theme)} data-testid="intro-preview" lang={data.language} data-inv-lang={data.language}>
+      <GuestLanguageProvider lang={data.language} eventType={data.eventType}>
       <Envelope
         contained
         names={hero?.names ?? ""}
@@ -38,6 +40,7 @@ export function IntroPreview({ data, onOpen, onClose }: { data: InvitationData; 
           timer.current = setTimeout(onClose, prefersReducedMotion() ? 0 : INTRO_LEAVE_MS[style]);
         }}
       />
+      </GuestLanguageProvider>
     </div>
   );
 }

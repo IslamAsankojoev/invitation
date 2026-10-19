@@ -7,17 +7,26 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Segmented } from "@/components/editor/controls";
 import { findBlock } from "@/lib/blocks";
+import { eventCopy, eventTypeLabels, namesLabels } from "@/lib/copy";
+import { languageLabels } from "@/lib/i18n";
 import { DEFAULT_MUSIC_URL, musicTracks } from "@/lib/music";
 import { setupSchema, type Setup } from "@/lib/setup";
-import { createFromTemplate, type Template } from "@/lib/templates";
+import { EVENT_TYPES, type EventType, type Language } from "@/lib/schema";
+import { createFromTemplate, templateEvents, type Template } from "@/lib/templates";
+
+/** Событие и язык нового приглашения (примеры текстов — под них, POST /api/invitations). */
+export type EventChoice = { eventType: EventType; language: Language };
 
 type Props = {
   /** Выбранный шаблон; null — окно закрыто. */
   template: Template | null;
   onClose: () => void;
   /** setup — ответы формы; null — «Пропустить» (приглашение с примером текстов шаблона). */
-  onCreate: (template: Template, setup: Setup | null) => void;
+  onCreate: (template: Template, setup: Setup | null, choice: EventChoice) => void;
+  /** Событие из фильтра на главной — им форма открывается (если не задано — первое событие шаблона). */
+  eventType?: EventType;
   creating: boolean;
   error: string | null;
 };
@@ -34,23 +43,32 @@ type Errors = Partial<Record<"names" | "date", string>>;
  * Главное о событии перед редактором: имена, дата, место, песня. На компьютере — окно, на телефоне — весь экран.
  * Примеры шаблона — в подсказках полей, а не в значениях: человек вписывает своё, а не стирает чужое.
  */
-export function SetupDialog({ template, onClose, onCreate, creating, error }: Props) {
+export function SetupDialog({ template, onClose, onCreate, creating, error, eventType }: Props) {
   return (
     <Dialog open={template !== null} onOpenChange={(open) => !open && !creating && onClose()}>
       <DialogContent
         className="gap-0 p-0 max-sm:inset-0 max-sm:flex max-sm:h-dvh max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:flex-col max-sm:rounded-none max-sm:ring-0 sm:max-w-lg"
       >
         {/* key: форма с нуля для каждого шаблона. */}
-        {template && <SetupForm key={template.id} template={template} onCreate={onCreate} creating={creating} error={error} />}
+        {template && (
+          <SetupForm key={template.id} template={template} onCreate={onCreate} creating={creating} error={error} eventType={eventType} />
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 
-function SetupForm({ template, onCreate, creating, error }: Omit<Props, "template" | "onClose"> & { template: Template }) {
+function SetupForm({ template, onCreate, creating, error, eventType: initialEvent }: Omit<Props, "template" | "onClose"> & { template: Template }) {
   const sample = createFromTemplate(template);
   const hero = findBlock(sample, "hero")!;
   const location = findBlock(sample, "location");
+
+  const [eventType, setEventType] = useState<EventType>(initialEvent ?? templateEvents(template)[0]);
+  const [language, setLanguage] = useState<Language>(template.language ?? "ru");
+  const choice: EventChoice = { eventType, language };
+  const wedding = eventType === "wedding";
+  // Пример имён — шаблона, если событие и язык как у него, иначе из примеров события.
+  const namesExample = eventType === sample.eventType && language === sample.language ? hero.names : eventCopy[eventType][language].names;
 
   const [names, setNames] = useState("");
   const [date, setDate] = useState("");
@@ -59,7 +77,7 @@ function SetupForm({ template, onCreate, creating, error }: Omit<Props, "templat
   const [address, setAddress] = useState("");
   const [musicUrl, setMusicUrl] = useState<string>(DEFAULT_MUSIC_URL);
   const [errors, setErrors] = useState<Errors>({});
-  const ids = { names: useId(), date: useId(), time: useId(), place: useId(), address: useId(), music: useId(), err: useId() };
+  const ids = { event: useId(), names: useId(), date: useId(), time: useId(), place: useId(), address: useId(), music: useId(), err: useId() };
   const namesRef = useRef<HTMLInputElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
 
@@ -70,7 +88,7 @@ function SetupForm({ template, onCreate, creating, error }: Omit<Props, "templat
       const next: Errors = {};
       for (const issue of parsed.error.issues) {
         const key = issue.path[0];
-        if (key === "names") next.names = "Укажите имена — например, «Анна & Иван»";
+        if (key === "names") next.names = wedding ? "Укажите имена — например, «Анна & Иван»" : "Укажите имя";
         if (key === "date") next.date = "Укажите дату события";
       }
       setErrors(next);
@@ -78,7 +96,7 @@ function SetupForm({ template, onCreate, creating, error }: Omit<Props, "templat
       (next.names ? namesRef : dateRef).current?.focus();
       return;
     }
-    onCreate(template, parsed.data);
+    onCreate(template, parsed.data, choice);
   }
 
   return (
@@ -93,16 +111,28 @@ function SetupForm({ template, onCreate, creating, error }: Omit<Props, "templat
       </DialogHeader>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-5 py-5 sm:max-h-[60vh]">
+        <Field>
+          <FieldLabel htmlFor={ids.event}>Событие</FieldLabel>
+          <NativeSelect id={ids.event} value={eventType} onChange={(e) => setEventType(e.target.value as EventType)} className="w-full">
+            {EVENT_TYPES.map((e) => (
+              <NativeSelectOption key={e} value={e}>
+                {eventTypeLabels[e]}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </Field>
+        <Segmented label="Язык приглашения" value={language} options={languageLabels} onChange={setLanguage} />
+
         <Field data-invalid={!!errors.names || undefined}>
-          <FieldLabel htmlFor={ids.names}>Имена</FieldLabel>
+          <FieldLabel htmlFor={ids.names}>{namesLabels[eventType]}</FieldLabel>
           <Input
             ref={namesRef}
             id={ids.names}
             value={names}
-            placeholder={hero.names}
+            placeholder={namesExample}
             autoComplete="off"
             aria-invalid={!!errors.names || undefined}
-            aria-describedby={`${ids.names}-d`}
+            aria-describedby={errors.names || wedding ? `${ids.names}-d` : undefined}
             onChange={(e) => {
               setNames(e.target.value);
               if (errors.names) setErrors({ ...errors, names: undefined });
@@ -111,7 +141,7 @@ function SetupForm({ template, onCreate, creating, error }: Omit<Props, "templat
           {errors.names ? (
             <FieldError id={`${ids.names}-d`}>{errors.names}</FieldError>
           ) : (
-            <FieldDescription id={`${ids.names}-d`}>Через «&» — имена встанут в две строки</FieldDescription>
+            wedding && <FieldDescription id={`${ids.names}-d`}>Через «&» — имена встанут в две строки</FieldDescription>
           )}
         </Field>
 
@@ -184,7 +214,7 @@ function SetupForm({ template, onCreate, creating, error }: Omit<Props, "templat
         </Field>
 
         <div className="flex-col-reverse gap-2 max-sm:pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-row sm:justify-between w-full flex">
-        <Button type="button" variant="ghost" disabled={creating} onClick={() => onCreate(template, null)} className="pointer-coarse:h-11">
+        <Button type="button" variant="ghost" disabled={creating} onClick={() => onCreate(template, null, choice)} className="pointer-coarse:h-11">
           Пропустить — заполню потом
         </Button>
         <Button type="submit" disabled={creating} aria-busy={creating} className="pointer-coarse:h-11">

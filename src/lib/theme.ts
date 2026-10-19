@@ -18,6 +18,12 @@ export const palettes: Record<Palette, { label: string; bg: string; text: string
   sand: { label: "Песочная", bg: "#f2eadd", text: "#4a3c2f", accent: "#a2835c" },
   forest: { label: "Изумрудная ночь", bg: "#141c19", text: "#ece5d8", accent: "#c9a862", dark: true },
   burgundy: { label: "Бордо", bg: "#fbf2e4", text: "#3a2a26", accent: "#6d0713" },
+  // Кыргызские шаблоны (2.5.0): войлок шырдака, небо Ала-Тоо, золото түндүка, нежный бешик; неон — вечеринки.
+  felt: { label: "Войлок", bg: "#f6eee2", text: "#3b2420", accent: "#a3201f" },
+  sky: { label: "Ала-Тоо", bg: "#f1f5f8", text: "#1d2f45", accent: "#2f6ea5" },
+  tunduk: { label: "Түндүк", bg: "#16110d", text: "#efe4cf", accent: "#d1a656", dark: true },
+  beshik: { label: "Бешик", bg: "#f5f7f1", text: "#3e4a44", accent: "#cf8a5f" },
+  neon: { label: "Неон", bg: "#07050d", text: "#f4f1ff", accent: "#c6ff00", dark: true },
 };
 
 const stack = (variable: string, fallback: string) => `var(${variable}), ${fallback}`;

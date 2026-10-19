@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { fadeOutVolume, fragmentOf, fragmentStep } from "@/lib/musicFragment";
+import { useGuestLanguage } from "./language";
 
 /** Нарастание громкости при включении и при повторе фрагмента, секунды. */
 const FADE_IN = 2;
@@ -175,11 +176,12 @@ export function useInvitationMusic(url: string | null, fragment: Fragment = {}) 
 
 /** Кнопка-эквалайзер «музыка вкл/выкл»; место на экране задаёт className. */
 export function MusicButton({ playing, onClick, className = "" }: { playing: boolean; onClick: () => void; className?: string }) {
+  const { t } = useGuestLanguage();
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={playing ? "Выключить музыку" : "Включить музыку"}
+      aria-label={playing ? t.musicOff : t.musicOn}
       aria-pressed={playing}
       className={`inv-music z-20 flex h-12 w-12 items-center justify-center gap-[3px] rounded-full border border-[var(--accent)]/60 bg-white/80 text-[var(--accent)] shadow-md backdrop-blur ${playing ? "inv-music-on" : ""} ${className}`}
     >

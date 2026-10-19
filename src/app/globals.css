@@ -270,6 +270,12 @@ body {
   background-size: 100% 100%;
 }
 
+/* ---------- Кыргызское приглашение (data.language = "ky", атрибут data-inv-lang на корне) ----------
+   В Tenor Sans нет букв ү, ө, ң — капитель заголовков и подписей набирается Raleway (в нём они есть). */
+[data-inv-lang="ky"] {
+  --font-heading: var(--font-raleway), var(--font-cormorant), serif;
+}
+
 /* ---------- Заголовки блоков шрифтом имён (theme.headings = "names", атрибут data-headings на корне) ----------
    serif — капитель шрифтом имён; script — рукописный строчными и крупно, строка под ним — капителью. */
 [data-headings="serif"] .inv-title {

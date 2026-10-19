@@ -5,6 +5,7 @@ import type { Block, InvitationData } from "@/lib/schema";
 import { headingsMode, themePalette, themeStyle } from "@/lib/theme";
 import { blockComponents } from "./blocks/registry";
 import type { BlockContext } from "./blocks/types";
+import { GuestLanguageProvider } from "./language";
 import { MotionContext, OrnamentMotionContext, type Motion } from "./motion";
 import { PageBackground } from "./PageBackground";
 import { SeamOrnaments } from "./Section";
@@ -35,6 +36,9 @@ export function InvitationView({ data, slug, preview = false, demo = false, moti
       data-motion={motion}
       data-style={style}
       data-headings={headingsMode(data.theme)}
+      // Язык подписей; data-inv-lang — для CSS (капитель заголовков на кыргызском — шрифт с буквами ү, ө, ң).
+      lang={data.language}
+      data-inv-lang={data.language}
       // overflow-clip, а не hidden: hidden делает корень скролл-контейнером, и sticky-фон (PageBackground) не прилипал бы.
       className={`relative min-h-full overflow-clip bg-[var(--bg)] text-[var(--text)] ${motion === "off" ? "" : "inv-motion"}`}
       style={{
@@ -43,6 +47,7 @@ export function InvitationView({ data, slug, preview = false, demo = false, moti
         fontFamily: "var(--font-body)",
       }}
     >
+      <GuestLanguageProvider lang={data.language} eventType={data.eventType}>
       <MotionContext.Provider value={motion}>
       <OrnamentMotionContext.Provider value={data.theme.ornamentMotion}>
         <PageBackground theme={data.theme} />
@@ -71,6 +76,7 @@ export function InvitationView({ data, slug, preview = false, demo = false, moti
         </main>
       </OrnamentMotionContext.Provider>
       </MotionContext.Provider>
+      </GuestLanguageProvider>
     </div>
   );
 }

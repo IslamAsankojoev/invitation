@@ -1,7 +1,8 @@
 import { findBlock } from "./blocks";
 import { describeDate, splitNames } from "./calendar";
-import type { InvitationData } from "./schema";
+import type { InvitationData, Language } from "./schema";
 import { isValidSlug } from "./slug";
+import { guestText } from "./i18n";
 
 /** Русские и кыргызские буквы → латиница (для ссылки из имён: «Айбек & Айзада» → aibek-aizada). */
 const LATIN: Record<string, string> = {
@@ -33,17 +34,18 @@ export function slugSuggestions(data: InvitationData): string[] {
   return [base, withYear].filter((s, i, all) => isValidSlug(s) && all.indexOf(s) === i);
 }
 
-/** «19 июня 2027, 16:00» */
-export function dateWords(local: string): string {
-  const d = describeDate(local);
-  return `${d.day} ${d.monthGenitive} ${d.year}${d.time ? `, ${d.time}` : ""}`;
+/** «19 июня 2027, 16:00» / «2027-ж. 19-июнь, 16:00» */
+export function dateWords(local: string, lang: Language = "ru"): string {
+  const d = describeDate(local, lang);
+  return `${d.short}${d.time ? `, ${d.time}` : ""}`;
 }
 
-/** Текст сообщения гостям: надпись, имена, дата, место и ссылка. */
+/** Текст сообщения гостям на языке приглашения: надпись, имена, дата, место и ссылка. */
 export function shareMessage(data: InvitationData, url: string): string {
   const hero = findBlock(data, "hero");
   const place = findBlock(data, "location")?.placeName.trim();
-  const lines = hero ? [hero.label?.trim() || "Приглашение", hero.names, dateWords(hero.date), place] : ["Приглашение"];
+  const fallback = guestText(data.language).invitation;
+  const lines = hero ? [hero.label?.trim() || fallback, hero.names, dateWords(hero.date, data.language), place] : [fallback];
   return `${lines.filter(Boolean).join("\n")}\n\n${url}`;
 }
 

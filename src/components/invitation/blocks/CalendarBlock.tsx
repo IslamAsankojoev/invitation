@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { findBlock } from "@/lib/blocks";
-import { buildMonthGrid, buildWeek, describeDate, parseLocalDate, WEEKDAYS_SHORT } from "@/lib/calendar";
+import { buildMonthGrid, buildWeek, describeDate, parseLocalDate, weekdaysShort } from "@/lib/calendar";
+import { guestText } from "@/lib/i18n";
 import { Section } from "../Section";
 import type { BlockProps } from "./types";
 
@@ -31,7 +32,9 @@ export function CalendarBlock({ block, ctx }: BlockProps<"calendar">) {
   const date = findBlock(ctx.data, "hero")?.date;
   if (!date) return null;
   const { year, month, day } = parseLocalDate(date);
-  const info = describeDate(date);
+  const lang = ctx.data.language;
+  const t = guestText(lang);
+  const info = describeDate(date, lang);
 
   if (block.variant === "date") {
     return (
@@ -47,7 +50,7 @@ export function CalendarBlock({ block, ctx }: BlockProps<"calendar">) {
           {year}
         </p>
         <p className="mt-3 text-lg opacity-70" data-reveal="4">
-          в {info.time}
+          {t.at(info.time)}
         </p>
       </Section>
     );
@@ -60,16 +63,16 @@ export function CalendarBlock({ block, ctx }: BlockProps<"calendar">) {
         <p className="inv-caps opacity-70" data-reveal="2">
           {info.monthName} {year}
         </p>
-        <div className="inv-calendar mx-auto mt-6 grid max-w-sm grid-cols-7 gap-1" data-reveal="3" data-anim="fade" aria-label={`Неделя ${info.day} ${info.monthGenitive}`}>
+        <div className="inv-calendar mx-auto mt-6 grid max-w-sm grid-cols-7 gap-1" data-reveal="3" data-anim="fade" aria-label={t.weekOf(info.dayMonth)}>
           {week.map((d, i) => (
             <div key={i} className="inv-cal-day flex flex-col items-center gap-2" style={{ "--w": i } as CSSProperties}>
-              <span className={`inv-caps text-[0.55rem] ${d.isEvent ? "text-[var(--accent)]" : "opacity-60"}`}>{WEEKDAYS_SHORT[i]}</span>
+              <span className={`inv-caps text-[0.55rem] ${d.isEvent ? "text-[var(--accent)]" : "opacity-60"}`}>{weekdaysShort(lang)[i]}</span>
               {d.isEvent ? <EventDay day={d.day} /> : <span className="flex h-9 items-center text-lg opacity-80">{d.day}</span>}
             </div>
           ))}
         </div>
         <p className="mt-6 text-lg" data-reveal="4">
-          {info.weekday}, {info.day} {info.monthGenitive} · {info.time}
+          {info.weekday}, {info.dayMonth} · {info.time}
         </p>
       </Section>
     );
@@ -88,7 +91,7 @@ export function CalendarBlock({ block, ctx }: BlockProps<"calendar">) {
             <p className="inv-caps text-[0.65rem] opacity-60">{year}</p>
             <CountingDay day={day} className="my-2 block text-[6rem] leading-[1.1] font-light" />
             <p className="inv-caps text-[0.7rem]">{info.weekday}</p>
-            <p className="inv-script mt-2 text-3xl">в {info.time}</p>
+            <p className="inv-script mt-2 text-3xl">{t.at(info.time)}</p>
           </div>
         </div>
       </Section>
@@ -104,13 +107,13 @@ export function CalendarBlock({ block, ctx }: BlockProps<"calendar">) {
         <span className="inv-caps inv-date-tag flex-1 py-2">{info.monthGenitive}</span>
       </div>
       <p className="mt-4 text-lg tracking-widest opacity-70" data-reveal="3">
-        {year} год
+        {t.year(year)}
       </p>
 
       <table className="inv-calendar mx-auto mt-8 w-full max-w-xs text-lg" aria-label={`${info.monthName} ${year}`} data-reveal="3" data-anim="fade">
         <thead>
           <tr>
-            {WEEKDAYS_SHORT.map((d) => (
+            {weekdaysShort(lang).map((d) => (
               <th key={d} className="inv-caps pb-3 text-[0.6rem] font-normal opacity-60">
                 {d}
               </th>

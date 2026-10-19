@@ -335,5 +335,113 @@ files["wax-seal"] = svg(
     `<filter id="wsh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#3b2a1f" flood-opacity=".35"/></filter>`,
 );
 
+// ---------- Кыргызские узоры (шаблоны «Шырдак», «Ала-Тоо», «Түндүк», «Бешик») ----------
+// Без rnd(): новые файлы не должны сдвигать случайную последовательность файлов выше.
+const FELT_RED = "#a3201f";
+const FELT_GOLD = "#c9a063";
+const SKY_NAVY = "#24486e";
+
+/**
+ * Кочкор мүйүз (бараньи рога): из основания в (0, 0) стебель вверх и два рога, закрученные наружу. Высота ≈ 100.
+ * Рисуется толстой линией — как аппликация шырдака.
+ */
+const hornPath = (m = 1) =>
+  `M0 0 L0 -40 C0 -62 ${20 * m} -86 ${45 * m} -86 C${70 * m} -86 ${82 * m} -62 ${72 * m} -46 ` +
+  `C${64 * m} -33 ${44 * m} -34 ${41 * m} -48 C${39 * m} -58 ${50 * m} -64 ${57 * m} -56`;
+function kochkor(x, y, rot, scale, color, sw = 9, inner = null) {
+  const paths = [hornPath(1), hornPath(-1)];
+  // Нижние рожки поменьше — мотив читается со всех сторон, как в войлоке.
+  const low = (m) => `M0 0 C0 12 ${-14 * m} 18 ${-24 * m} 12 C${-32 * m} 7 ${-28 * m} -4 ${-20 * m} -3`;
+  paths.push(low(1), low(-1));
+  const draw = (stroke, width) =>
+    paths.map((d) => `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"/>`).join("");
+  return `<g transform="translate(${f(x)} ${f(y)}) rotate(${f(rot)}) scale(${scale})">${draw(color, sw)}${inner ? draw(inner, sw * 0.28) : ""}</g>`;
+}
+
+/** Угол: двойная рамка буквой Г, рога в углу смотрят внутрь, на концах рамки — точки. */
+function kochkorCorner(color, inner) {
+  return svg(
+    300,
+    300,
+    `<path d="M22 286 L22 22 L286 22" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>` +
+      `<path d="M38 286 L38 38 L286 38" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>` +
+      kochkor(62, 62, 135, 1, color, 9, inner) +
+      `<circle cx="22" cy="290" r="6" fill="${color}"/><circle cx="290" cy="22" r="6" fill="${color}"/>`,
+  );
+}
+files["kochkor-corner"] = kochkorCorner(FELT_RED, FELT_GOLD);
+files["kochkor-corner-gold"] = kochkorCorner(FELT_GOLD, null);
+
+/** Полоса шырдака: две линии и рога по очереди вверх и вниз — край войлочного ковра. */
+function shyrdakBand(color) {
+  const motifs = Array.from({ length: 7 }, (_, i) => {
+    const x = 45 + i * 85;
+    return i % 2 ? kochkor(x, 30, 180, 0.42, color, 10) : kochkor(x, 60, 0, 0.42, color, 10);
+  }).join("");
+  return svg(
+    600,
+    90,
+    `<path d="M4 8 H596 M4 82 H596" stroke="${color}" stroke-width="4" stroke-linecap="round"/>` +
+      `<path d="M4 16 H596 M4 74 H596" stroke="${color}" stroke-width="1.2" stroke-linecap="round" opacity=".7"/>` +
+      motifs,
+  );
+}
+files["shyrdak-band"] = shyrdakBand(FELT_RED);
+files["shyrdak-band-gold"] = shyrdakBand(FELT_GOLD);
+
+/** Түндүк — венец юрты, как на флаге: двойное кольцо и по три перекрещенных жерди, вокруг — лучи. */
+files.tunduk = svg(
+  240,
+  240,
+  `<g transform="translate(120 120)">` +
+    Array.from({ length: 40 }, (_, i) => {
+      const a = (i * 9 * Math.PI) / 180;
+      const [r1, r2] = [86, i % 2 ? 100 : 108];
+      return `<path d="M${f(Math.cos(a) * r1)} ${f(Math.sin(a) * r1)} L${f(Math.cos(a) * r2)} ${f(Math.sin(a) * r2)}" stroke="url(#tdg)" stroke-width="3" stroke-linecap="round"/>`;
+    }).join("") +
+    `<circle r="72" fill="none" stroke="url(#tdg)" stroke-width="9"/>` +
+    `<circle r="58" fill="none" stroke="url(#tdg)" stroke-width="2.5"/>` +
+    `<g clip-path="url(#tdc)" stroke="url(#tdg)" stroke-width="6" stroke-linecap="round" fill="none">` +
+    [-20, 0, 20].map((o) => `<path d="M${o - 34} -70 Q${o} 0 ${o - 34} 70"/><path d="M${-o + 34} -70 Q${-o} 0 ${-o + 34} 70"/>`).join("") +
+    `</g></g>`,
+  `<linearGradient id="tdg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8cf96"/><stop offset=".5" stop-color="${FELT_GOLD}"/><stop offset="1" stop-color="#9c7637"/></linearGradient>` +
+    `<clipPath id="tdc"><circle r="57"/></clipPath>`,
+);
+
+/** Ала-Тоо: линия хребта с белыми шапками — разделитель и украшение снизу. */
+function alaToo(color, snow) {
+  const ridge = [[0, 70], [40, 58], [70, 64], [110, 34], [128, 44], [160, 18], [196, 46], [222, 38], [262, 60], [300, 26], [324, 40], [352, 12], [386, 44], [410, 36], [452, 58], [488, 30], [516, 46], [552, 40], [600, 66]];
+  const back = [[0, 78], [60, 60], [120, 66], [190, 48], [250, 64], [330, 50], [420, 62], [500, 52], [600, 74]];
+  const line = (pts) => `M${pts.map(([x, y]) => `${x} ${y}`).join(" L")}`;
+  // Шапки — короткие ломаные чуть ниже самых высоких вершин.
+  const caps = ridge
+    .filter(([, y], i) => y < 36 && i > 0 && i < ridge.length - 1)
+    .map(([x, y]) => `<path d="M${x - 11} ${y + 9} L${x - 4} ${y + 5} L${x} ${y + 9} L${x + 5} ${y + 4} L${x + 11} ${y + 9}" fill="none" stroke="${snow}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`)
+    .join("");
+  return svg(
+    600,
+    90,
+    `<path d="${line(back)}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" opacity=".35"/>` +
+      `<path d="${line(ridge)}" fill="none" stroke="${color}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>` +
+      caps,
+  );
+}
+files["ala-too"] = alaToo(SKY_NAVY, "#8fb3d6");
+files["ala-too-white"] = alaToo("#f4f1ea", "#ffffff");
+
+/** Ала-кийиз: мягкий валяный узор — размытые края и неровность войлока, рога по центру и «волна» по бокам. */
+files["ala-kiyiz"] = svg(
+  600,
+  110,
+  `<g filter="url(#akf)">` +
+    `<path d="M20 55 C80 30 120 80 180 55 S280 30 300 55 S420 80 480 55 S560 30 580 55" fill="none" stroke="#3a4f8a" stroke-width="7" stroke-linecap="round" opacity=".85"/>` +
+    kochkor(300, 80, 0, 0.62, "#b23a3a", 13) +
+    kochkor(150, 55, 90, 0.3, "#b23a3a", 12) +
+    kochkor(450, 55, -90, 0.3, "#b23a3a", 12) +
+    `</g>`,
+  `<filter id="akf" x="-5%" y="-30%" width="110%" height="160%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="5"/>` +
+    `<feDisplacementMap in="SourceGraphic" scale="3"/><feGaussianBlur stdDeviation=".7"/></filter>`,
+);
+
 for (const [name, content] of Object.entries(files)) writeFileSync(join(out, `${name}.svg`), content);
 console.log(`Сгенерировано ${Object.keys(files).length} файлов в ${out}`);

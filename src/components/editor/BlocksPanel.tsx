@@ -45,7 +45,7 @@ import {
   updateBlock,
   updateOrnament,
 } from "@/lib/blocks";
-import type { Block, BlockType, InvitationData, Ornament } from "@/lib/schema";
+import type { Block, BlockType, EventType, InvitationData, Ornament } from "@/lib/schema";
 import { checklist, type ChecklistItem } from "@/lib/checklist";
 import { createBlock } from "@/lib/templates";
 import { cn } from "@/lib/utils";
@@ -228,7 +228,7 @@ function BlockItem({ block, name, summary, data, expanded, onExpand, onToggle, o
   });
   const label = name;
   const summaryId = useId();
-  const Fields = blockFields[block.type] as ComponentType<{ block: Block; onChange: (patch: Partial<Block>) => void }>;
+  const Fields = blockFields[block.type] as ComponentType<{ block: Block; onChange: (patch: Partial<Block>) => void; eventType?: EventType }>;
 
   return (
     <li
@@ -315,8 +315,8 @@ function BlockItem({ block, name, summary, data, expanded, onExpand, onToggle, o
             </TabsList>
           </div>
           <TabsContent value="content" className="flex flex-col gap-4 p-4">
-            <BlockTitleFields block={block} onChange={onFieldsChange} />
-            <Fields block={block} onChange={onFieldsChange} />
+            <BlockTitleFields block={block} onChange={onFieldsChange} lang={data} />
+            <Fields block={block} onChange={onFieldsChange} eventType={data.eventType} />
           </TabsContent>
           <TabsContent value="view" className="flex flex-col gap-4 p-4">
             <VariantPicker data={data} block={block} onChange={(variant) => onFieldsChange({ variant } as Partial<Block>)} />

@@ -1,5 +1,16 @@
 import { describeDate } from "./calendar";
-import { MAX_BLOCKS, SINGLE_BLOCK_TYPES, type Block, type BlockOf, type BlockType, type InvitationData, type Ornament } from "./schema";
+import { defaultTitle } from "./copy";
+import {
+  MAX_BLOCKS,
+  SINGLE_BLOCK_TYPES,
+  type Block,
+  type BlockOf,
+  type BlockType,
+  type EventType,
+  type InvitationData,
+  type Language,
+  type Ornament,
+} from "./schema";
 
 /**
  * Чистые функции над блоками: всегда возвращают новый объект, исходный не мутируют.
@@ -162,22 +173,16 @@ export function blockName(data: InvitationData, block: Block): string {
 }
 
 /** Заголовок блока на странице, если организатор не задал свой. */
-export const defaultTitles: Record<BlockType, string> = {
-  hero: "",
-  countdown: "До события",
-  calendar: "Дата свадьбы",
-  story: "Наша история",
-  program: "Программа дня",
-  location: "Место проведения",
-  dresscode: "Дресс-код",
-  rsvp: "Подтвердите присутствие",
-  text: "",
-  photo: "",
-  gallery: "Наши моменты",
-  contacts: "Контакты",
-};
+/** Заголовки по умолчанию русской свадьбы (исходные). Для других событий и языков — defaultTitle в lib/copy.ts. */
+export const defaultTitles: Record<BlockType, string> = Object.fromEntries(
+  (Object.keys(blockLabels) as BlockType[]).map((type) => [type, defaultTitle(type)]),
+) as Record<BlockType, string>;
 
-export const blockTitle = (block: { type: BlockType; title?: string }) => block.title ?? defaultTitles[block.type];
+/** Заголовок блока: свой, иначе по умолчанию для типа события и языка приглашения. */
+export const blockTitle = (
+  block: { type: BlockType; title?: string },
+  lang: { eventType?: EventType; language?: Language } = {},
+) => block.title ?? defaultTitle(block.type, lang.eventType, lang.language);
 
 /** «1 пункт», «3 пункта», «5 пунктов». */
 export function plural(n: number, [one, few, many]: [string, string, string]): string {

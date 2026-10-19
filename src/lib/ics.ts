@@ -1,4 +1,5 @@
 import { findBlock } from "./blocks";
+import { guestText } from "./i18n";
 import type { InvitationData } from "./schema";
 
 export type IcsEvent = {
@@ -100,6 +101,6 @@ export function invitationEvent(data: InvitationData, inviteUrl?: string): IcsEv
     title: hero.names,
     start: hero.date,
     location: place || undefined,
-    description: inviteUrl ? `Приглашение: ${inviteUrl}` : undefined,
+    description: inviteUrl ? `${guestText(data.language).invitation}: ${inviteUrl}` : undefined,
   };
 }

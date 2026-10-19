@@ -1,0 +1,351 @@
+{
+  "schemaVersion": "2.5.0",
+  "eventType": "kyz-uzatuu",
+  "language": "ky",
+  "theme": {
+    "headings": "names",
+    "backgroundMode": "stretch",
+    "backgroundDim": 0.7,
+    "backgroundColor": null,
+    "textureStains": false,
+    "ornamentMotion": {
+      "enter": "auto",
+      "enterSpeed": 1,
+      "idle": "auto",
+      "idleSpeed": 1,
+      "idleAmplitude": 1
+    },
+    "palette": "burgundy",
+    "font": "script",
+    "bodyFont": "cormorant",
+    "background": null,
+    "texture": "none",
+    "decor": {
+      "type": "none",
+      "image": null,
+      "color": "#c9a063",
+      "density": 0,
+      "size": 1,
+      "speed": 1
+    },
+    "envelope": {
+      "ornament": "/library/etno-corner.webp",
+      "style": "video",
+      "video": "/templates/etno-envelope.mp4",
+      "poster": "/templates/etno-envelope.webp"
+    },
+    "motion": {
+      "style": "elegant",
+      "speed": 1
+    }
+  },
+  "music": {
+    "url": null,
+    "loop": true,
+    "start": 0,
+    "end": null
+  },
+  "blocks": [
+    {
+      "id": "b-hero",
+      "type": "hero",
+      "visible": true,
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "bgColor": null,
+      "textStyles": {},
+      "variant": "scene",
+      "names": "Нуркыз",
+      "date": "2027-09-04T17:00",
+      "label": "Кыз узатууга чакыруу",
+      "photo": "/templates/etno-hero.webp"
+    },
+    {
+      "id": "b-text",
+      "type": "text",
+      "visible": true,
+      "title": "Кадырлуу коноктор!",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/etno-corner.webp",
+          "position": "top-left",
+          "size": 96,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1
+        },
+        {
+          "src": "/library/etno-corner.webp",
+          "position": "top-right",
+          "size": 96,
+          "rotate": 0,
+          "flip": true,
+          "opacity": 1
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "bgColor": null,
+      "textStyles": {
+        "title": {
+          "color": "#6d0713"
+        }
+      },
+      "variant": "classic",
+      "text": "Балдарыбыз Азамат менен Бегайымдын үйлөнүү тоюна арналган майрамдык дасторконго чакырабыз — ак батаңызды берип, бул маанилүү күндү биз менен бөлүшүңүздөр!\n\nЖаштардын бактысына сиздер менен бирге күбө болуу биз үчүн чоң урмат."
+    },
+    {
+      "id": "b-text-2",
+      "type": "text",
+      "visible": true,
+      "title": "Нурбек жана Венера",
+      "scriptLine": "Урмат менен, той ээлери",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "bgColor": null,
+      "textStyles": {},
+      "variant": "classic",
+      "text": ""
+    },
+    {
+      "id": "b-calendar",
+      "type": "calendar",
+      "visible": true,
+      "title": "",
+      "surface": "card-etno",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "bgColor": null,
+      "textStyles": {},
+      "variant": "week"
+    },
+    {
+      "id": "b-photo",
+      "type": "photo",
+      "visible": true,
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/etno-divider-cream.webp",
+          "position": "top",
+          "size": 400,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1,
+          "motion": {
+            "enter": "auto",
+            "enterSpeed": 1,
+            "idle": "none",
+            "idleSpeed": 1,
+            "idleAmplitude": 1
+          },
+          "seam": true
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "bgColor": null,
+      "textStyles": {},
+      "variant": "classic",
+      "photo": "/templates/etno-hands.webp",
+      "height": "square"
+    },
+    {
+      "id": "b-countdown",
+      "type": "countdown",
+      "visible": true,
+      "title": "Калды",
+      "scriptLine": "Тойго чейин",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/etno-divider-burgundy.webp",
+          "position": "top",
+          "size": 400,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1,
+          "motion": {
+            "enter": "auto",
+            "enterSpeed": 1,
+            "idle": "none",
+            "idleSpeed": 1,
+            "idleAmplitude": 1
+          },
+          "seam": true
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "bgColor": "#4b0a12",
+      "textStyles": {
+        "title": {
+          "color": "#c9a063"
+        }
+      },
+      "variant": "classic"
+    },
+    {
+      "id": "b-location",
+      "type": "location",
+      "visible": true,
+      "title": "Сиздерди бул жерде күтөбүз",
+      "scriptLine": "Жолугуу жери",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "bgColor": null,
+      "textStyles": {
+        "title": {
+          "color": "#6d0713"
+        }
+      },
+      "variant": "classic",
+      "placeName": "«Ала-Тоо» ресторан",
+      "address": "Бишкек ш., Чүй пр., 100",
+      "mapUrl": "https://go.2gis.com/F1MTV",
+      "photo": "/templates/etno-4c9ed344.webp"
+    },
+    {
+      "id": "b-rsvp",
+      "type": "rsvp",
+      "visible": true,
+      "title": "Сураныч, келериңизди",
+      "scriptLine": "ырастап коюңуз",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/etno-divider-burgundy.webp",
+          "position": "top",
+          "size": 400,
+          "rotate": 0,
+          "flip": false,
+          "opacity": 1,
+          "motion": {
+            "enter": "auto",
+            "enterSpeed": 1,
+            "idle": "none",
+            "idleSpeed": 1,
+            "idleAmplitude": 1
+          },
+          "seam": true
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgImage": null,
+      "bgDim": 0.35,
+      "bgBlur": 0,
+      "bgDarken": 0,
+      "bgColor": "#4b0a12",
+      "textStyles": {
+        "title": {
+          "color": "#c9a063"
+        }
+      },
+      "variant": "choices"
+    },
+    {
+      "id": "b-text-3",
+      "type": "text",
+      "visible": true,
+      "title": "Сиздерди чыдамсыздык менен күтөбүз!",
+      "scriptLine": "Көрүшкөнчө",
+      "surface": "plain",
+      "surfaceOpacity": 1,
+      "ornaments": [
+        {
+          "src": "/library/etno-divider-burgundy.webp",
+          "position": "top",
+          "size": 400,
+          "rotate": 180,
+          "flip": false,
+          "opacity": 1,
+          "motion": {
+            "enter": "auto",
+            "enterSpeed": 1,
+            "idle": "none",
+            "idleSpeed": 1,
+            "idleAmplitude": 1
+          },
+          "seam": true
+        }
+      ],
+      "entrance": "auto",
+      "edgeTop": "none",
+      "edgeBottom": "none",
+      "width": "content",
+      "bgImage": "/templates/etno-rings.webp",
+      "bgDim": 0,
+      "bgBlur": 0,
+      "bgDarken": 0.5,
+      "bgColor": null,
+      "textStyles": {
+        "title": {
+          "color": "#fbf2e4"
+        }
+      },
+      "variant": "classic",
+      "text": "Сиздердин келишиңиздер — биз үчүн эң баалуу белек."
+    }
+  ]
+}

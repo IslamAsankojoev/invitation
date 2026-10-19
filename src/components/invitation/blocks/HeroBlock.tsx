@@ -6,6 +6,7 @@ import { textStyle } from "@/lib/textStyle";
 import { findBlock } from "@/lib/blocks";
 import { describeDate, monogram, splitNames } from "@/lib/calendar";
 import { CalendarButton } from "../CalendarButton";
+import { useGuestLanguage } from "../language";
 import { prefersReducedMotion, useMotion } from "../motion";
 import { Section } from "../Section";
 import type { BlockContext, BlockProps } from "./types";
@@ -102,11 +103,12 @@ function HeroNames({
 /** Стрелка «листайте»: по линии бежит капля, нажатие прокручивает к следующему блоку. */
 function ScrollHint() {
   const ref = useRef<HTMLButtonElement>(null);
+  const { t } = useGuestLanguage();
   return (
     <button
       ref={ref}
       type="button"
-      aria-label="Листать вниз"
+      aria-label={t.scrollDown}
       onClick={() => {
         // Блоки лежат в обёртках ширины — следующий ищем среди секций приглашения.
         const section = ref.current?.closest("section");
@@ -252,7 +254,8 @@ function HeroClassic({ block, ctx, frame = true, calendar = true }: HeroProps & 
 function HeroScene({ block, ctx }: HeroProps) {
   const onPhoto = !!block.photo;
   const photoRef = usePhotoParallax(ctx, onPhoto);
-  const { day, monthGenitive, year } = describeDate(block.date);
+  const { lang } = useGuestLanguage();
+  const { long } = describeDate(block.date, lang);
   return (
     <Section
       block={block}
@@ -276,7 +279,7 @@ function HeroScene({ block, ctx }: HeroProps) {
       <span aria-hidden="true" className="mx-auto mt-5 mb-7 block h-px w-14 bg-[var(--accent)] opacity-40" data-reveal="1" data-anim="spread" data-delay="0.6" />
       <HeroNames style={textStyle(block, "names")} names={block.names} color="var(--accent)" />
       <p className="mt-7 font-[family-name:var(--font-heading)] text-base tracking-[0.18em] text-[var(--accent)]" data-reveal="3" data-anim="spread" data-delay="2.8">
-        {day} {monthGenitive} {year} г.
+        {long}
       </p>
       {block.subtitle && (
         <p className="mx-auto mt-4 max-w-xs text-xl italic leading-snug opacity-90" data-reveal="4" data-anim="blur" data-delay="3.2" style={textStyle(block, "subtitle")}>
@@ -474,7 +477,8 @@ const SPRIG = Array.from({ length: 6 }, (_, k) => {
 /** Монограмма в тонком кольце с веточкой, имена от руки, дата и место; внизу — фото, проявляющееся из фона. */
 function HeroMonogram({ block, ctx }: HeroProps) {
   const [first, second] = monogram(block.names).split("&");
-  const { day, monthGenitive, year, time } = describeDate(block.date);
+  const { lang } = useGuestLanguage();
+  const { short, time } = describeDate(block.date, lang);
   return (
     <Section
       block={block}
@@ -513,7 +517,7 @@ function HeroMonogram({ block, ctx }: HeroProps) {
         <HeroNames style={textStyle(block, "names")} names={block.names} color="var(--text)" size="calc(clamp(2.8rem, 13vw, 3.8rem) * var(--title-scale, 1))" />
       </div>
       <p className="inv-caps mt-7 text-[0.78rem]" data-reveal="3" data-anim="spread" data-delay="2.6">
-        {day} {monthGenitive} {year} · {time}
+        {short} · {time}
       </p>
       {block.subtitle && (
         <p className="inv-caps mt-2 opacity-70" data-reveal="3" data-delay="2.9" style={textStyle(block, "subtitle")}>
@@ -568,6 +572,7 @@ function Postmark({ names, date }: { names: string; date: string }) {
 /** Посадочный талон: кремовый билет с перфорацией, глобусом, именами, датой, местом и штемпелем. */
 function HeroTicket({ block, ctx }: HeroProps) {
   const parts = splitNames(block.names);
+  const { t } = useGuestLanguage();
   const { dotted, time } = describeDate(block.date);
   const place = findBlock(ctx.data, "location")?.placeName;
   return (
@@ -575,10 +580,10 @@ function HeroTicket({ block, ctx }: HeroProps) {
       <div className="inv-ticket-wrap w-full max-w-[370px]" data-reveal="1" data-anim="drop" data-delay="0.2">
         <div className="inv-ticket relative px-7 pt-6 pb-4 text-center">
           <span aria-hidden="true" className="inv-caps absolute top-1/2 left-2.5 -translate-y-1/2 rotate-180 text-[0.55rem] opacity-70 [writing-mode:vertical-rl]">
-            ▲ Вылет
+            {t.ticket.departure}
           </span>
           <p className="inv-caps pb-3 text-[0.62rem]" style={textStyle(block, "label")}>
-            {block.label || "Свадебный билет"}
+            {block.label || t.ticket.label}
           </p>
           <div className="inv-ticket-rule" />
           <Plane aria-hidden="true" strokeWidth={1.3} className="mx-auto mt-3 size-5" />
@@ -588,7 +593,7 @@ function HeroTicket({ block, ctx }: HeroProps) {
           <h1 data-testid="hero-names" className="inv-ticket-names mt-3" style={{ fontFamily: "var(--font-title)", ...textStyle(block, "names") }}>
             {parts.length === 2 ? (
               <>
-                <span className="block">{parts[0]}</span> <span className="inv-amp block text-[1.9rem] leading-[0.9] normal-case">и</span>{" "}
+                <span className="block">{parts[0]}</span> <span className="inv-amp block text-[1.9rem] leading-[0.9] normal-case">{t.and}</span>{" "}
                 <span className="block">{parts[1]}</span>
               </>
             ) : (
@@ -597,16 +602,16 @@ function HeroTicket({ block, ctx }: HeroProps) {
           </h1>
           <dl className="inv-ticket-grid mt-5 grid grid-cols-2 text-left">
             <div>
-              <dt>Дата</dt>
+              <dt>{t.ticket.date}</dt>
               <dd>{dotted.replace(/ /g, "")}</dd>
             </div>
             <div>
-              <dt>Время</dt>
+              <dt>{t.ticket.time}</dt>
               <dd>{time}</dd>
             </div>
             {place && (
               <div className="col-span-2">
-                <dt>Место</dt>
+                <dt>{t.ticket.place}</dt>
                 <dd>{place}</dd>
               </div>
             )}
@@ -616,7 +621,7 @@ function HeroTicket({ block, ctx }: HeroProps) {
           </div>
           <div className="inv-ticket-rule mt-3" />
           <p className="inv-caps pt-3 text-[0.62rem]" style={textStyle(block, "subtitle")}>
-            {block.subtitle || "Посадка на любовь"}
+            {block.subtitle || t.ticket.boarding}
           </p>
         </div>
       </div>

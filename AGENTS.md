@@ -62,10 +62,15 @@ build`, регион функций `dub1` (vercel.json) — рядом с ба�
 `NEXT_DIST_DIR=.next-build npx next build` (отдельная папка, чтобы не мешать запущенному dev-серверу; после сборки
 верни `tsconfig.json`/`next-env.d.ts`, Next дописывает туда `.next-build/types`).
 
-Текущее состояние: **478 тестов Vitest, E2E и `next build` проходят** (после порядка и публикации шаблонов). Края, фоновые
+Текущее состояние: **521 тест Vitest, 2 сценария E2E и `next build` проходят** (после этапа A `product-strategy.md`). Края, фоновые
 картинки, ширина и стиль текста всё ещё без своих тестов — см. «Долг по тестам» в `next-blocks.md`.
 
 Если порт 3000 занят другим dev-сервером — в `.claude/launch.json` есть `dev-3200` (своя папка `.next-3200`).
+
+**Node ≥ 25** (на машине владельца — 26): встроенный в Node `localStorage` перекрывает jsdom — тесты с localStorage
+падают «Cannot read properties of undefined». Пока нет фикса в конфиге, запускай `NODE_OPTIONS=--no-experimental-webstorage
+npm test` (на Node 20 флага нет — не добавляй его в package.json). Тестовая база `wedding_test` общая: две сессии,
+запустившие `npm test` одновременно, стирают друг другу данные — случайные 404/«No record was found» в API-тестах.
 
 ## 3. Карта кода
 
@@ -107,6 +112,8 @@ src/app/
   api/invitations/[key]/route.ts      GET/PATCH/DELETE по id
   api/invitations/[key]/rsvp/route.ts POST по slug (гость), GET по id (организатор, token)
   api/upload/route.ts                 POST multipart file
+  api/events/route.ts                 POST событие аналитики из браузера (lib/beacon.ts), 204
+  stats/[key]/page.tsx                скрытая статистика (STATS_KEY): воронка, разбивка по шаблонам/событию/языку
   api/edges/torn/route.ts             GET полоса рваного края по зерну (webp, кэш в памяти + вечный HTTP-кэш)
 src/lib/                    логика без UI, покрыта unit-тестами
   schema.ts       ★ Zod-схема InvitationData — единственный источник типов и валидации
@@ -115,7 +122,7 @@ src/lib/                    логика без UI, покрыта unit-тест
   schema-history/ слепки формата по версиям (1.0.0.json…) — не редактировать руками, только npm run schema:snapshot
   variants.ts     подписи видов блоков, появления, стилей анимаций, видов заставки, иконок программы
   premium.ts      какие элементы платные (PRO) и premiumUsage(data) — список использованных
-  templates.ts    ★ 13 шаблонов (у новых — своя структура layout), createFromTemplate, applyTemplate, createBlock;
+  templates.ts    ★ 18 шаблонов (у новых — своя структура layout), createFromTemplate, applyTemplate, createBlock;
                   `templates` = baseTemplates (код) + правки из template-overrides.json (mergeTemplates)
   template-overrides.json  правки шаблонов из админки (пишет adminFiles.ts, руками не править) — коммитить
   admin.ts adminFiles.ts templateAdmin.ts templateDrafts.ts videoJobs.ts — скрытая админка (§5.2.2)
@@ -130,6 +137,11 @@ src/lib/                    логика без UI, покрыта unit-тест
   calendar.ts     сетка месяца, «07 . 11 . 2026», монограмма, splitNames
   session.ts      authEnabled() (заданы AUTH_GOOGLE_ID/SECRET), currentUser() — в тестах подменяется
   access.ts       canEdit (token или владелец), ownershipOf, claimDecision, accountGate/shareGate — чистые правила доступа
+  i18n.ts         ★ подписи страницы гостя на ru/ky (guestText), FONTS_WITHOUT_KYRGYZ — см. §5.8
+  copy.ts         примеры текстов по событию и языку (eventCopy), заголовки по умолчанию (defaultTitle), подписи событий
+  localize.ts     applyCopy — смена события/языка: нетронутые примеры заменяются или переводятся
+  templateCopyKy.ts  кыргызские версии примеров текстов шаблонов (новый пример в шаблоне — строка сюда, тест сверит)
+  analytics.ts    события и воронка (чистые функции); track.ts — запись в Event и loadStats; beacon.ts — отправка из браузера
   share.ts        ссылка из имён (транслит рус./кырг., slugSuggestions), текст сообщения гостям, ссылки WhatsApp/Telegram
   music.ts        встроенные песни, DEFAULT_MUSIC_URL, findTrack, флаг CUSTOM_MUSIC_ENABLED (своя музыка выключена)
   images.ts       optimizeImage: sharp → поворот по EXIF, ≤ 1600 px, WebP, без метаданных (GIF — анимированный WebP)
@@ -158,8 +170,11 @@ tests/fixtures/invitations/ замороженные приглашения пр
 
 ```
 InvitationData
+├─ eventType: wedding | kyz-uzatuu | birthday | jubilee | beshik-toi | tushoo-kesuu | sunnet-toi | party  (2.5.0, §5.8)
+├─ language: ru | ky   язык страницы гостя (2.5.0); редактор всегда русский
 ├─ theme
 │  ├─ palette: cream | blush | emerald | ivory | autumn | night | lavender | noir | navy | mocha | pearl | sand | forest | burgundy
+│  │           | felt | sky | tunduk | beshik | neon
 │  ├─ font: 17 шрифтов имён (script=Great Vibes, serif=Cormorant, sans=Inter, marck, bad-script, caveat, lobster,
 │  │        pacifico, amatic, playfair, prata, forum, yeseva, cormorant-sc, oranienbaum, poiret, comfortaa)
 │  ├─ bodyFont: auto | cormorant | lora | eb-garamond | playfair | old-standard | pt-serif | montserrat | raleway | manrope | inter
@@ -263,7 +278,10 @@ InvitationData
 ## 5. Функционал и реализация
 
 ### 5.1 Шаблоны (`lib/templates.ts`, `components/templates/*`, `editor/TemplatePicker.tsx`)
-- 13 шаблонов. Первые четыре — только тема и украшения: `cream-classic` (Кремовая классика), `rose-garden` (Розовый сад), `golden-autumn` (Золотая осень),
+- 18 шаблонов; у шаблона `events` (для каких событий — фильтр на главной, первое — событие нового приглашения; нет —
+  свадьба) и `language`. Пять кыргызских и праздничных (2.5.0, свои векторы, без фото): `shyrdak` (Шырдак: войлок,
+  кыз узатуу/свадьба), `ala-too` (Ала-Тоо: день рождения/юбилей/кыз узатуу), `tunduk` (Түндүк: золото на тёмном,
+  юбилей/свадьба), `beshik` (Бешик: детские тои), `neon` (Неон: вечеринки, билет-обложка). Первые четыре — только тема и украшения: `cream-classic` (Кремовая классика), `rose-garden` (Розовый сад), `golden-autumn` (Золотая осень),
   `starry-night` (Звёздная ночь). Следующие три собраны на новых возможностях (виды блоков, заставки, векторные
   ассеты, CSS-фоны, PRO-шрифты): `eucalyptus` (Эвкалипт), `art-deco` (Великий Гэтсби, палитра `noir`),
   `lavender-provence` (Лавандовый Прованс, палитра `lavender`); `marble-olive` (Мрамор и олива) удалён (его фикстура
@@ -667,6 +685,32 @@ InvitationData
   Playfair SC, Gabriela, Pattaya, Bellota) и +6 основных (Literata, Spectral, Vollkorn, Alegreya, Jost, Arsenal) —
   все Google Fonts (OFL) с кириллицей. Рукописных с кириллицей в Google мало — дальше только платные с SaaS-лицензией.
 
+### 5.8 Событие и язык гостя (формат 2.5.0)
+- `data.eventType` и `data.language`. Подписи страницы гостя — только через `guestText(lang)` (lib/i18n.ts): в блоках —
+  `guestText(ctx.data.language)`, в `Section`/`Envelope`/`MusicButton` — `useGuestLanguage()` (контекст в
+  `invitation/language.tsx`, ставят `InvitationView`, `InvitationPage`, `IntroPreview`). Новая подпись — в оба языка
+  (тип `GuestText` не даст забыть). Даты — `describeDate(local, lang)`: готовые `dayMonth/short/long` (в кыргызском
+  другой порядок слов — «2027-жылдын 19-июну»), из частей не собирать.
+- Заголовки по умолчанию — `defaultTitle(type, eventType, lang)` (lib/copy.ts); `blockTitle(block, data)`.
+- Примеры текстов — `eventCopy[event][lang]` (sampleBlock в templates.ts берёт их по событию и языку приглашения).
+  Смена события/языка (форма на главной, «Оформление» → «Событие и язык») — `applyCopy`: при смене события нетронутые
+  примеры (совпадают с любым примером, как в checklist) → примеры нового события; при смене только языка — перевод
+  по словарю (templateCopyKy + пары eventCopy/заголовков/TEXT_PRESETS). Своё организатора не трогается.
+- Шрифты: Google `subsets` в next/font — только предзагрузка, `cyrillic-ext` (ү, ө, ң) подгружается сам. Без этих букв
+  12 шрифтов (`FONTS_WITHOUT_KYRGYZ`, в т.ч. Tenor Sans): в кыргызском приглашении капитель заголовков — Raleway
+  (`[data-inv-lang="ky"]` в globals.css), в выборе шрифта — пометка «нет ү, ө, ң».
+- Ещё не переведено: форма ответа (`RsvpBlock` — ждёт слияния ветки с исправлением дублей ответов) и `<title>` страницы
+  гостя (`i/[slug]/page.tsx`, там же — картинка превью в той ветке).
+
+### 5.9 Аналитика (без внешних сервисов)
+- Таблица `Event` (миграция `analytics_events`): `invitation_created` (сервер, props: template, eventType, lang, setup),
+  `share_clicked` (props.channel: copy/whatsapp/telegram/native/qr — кнопки «Ссылки»), `guest_view` и `envelope_opened`
+  (страница гостя, `sendBeacon`; превью ссылок мессенджерами JS не выполняют — их нет в счёте). Ответ гостя — из `Rsvp`.
+  Хранится анонимный `visitorId` (localStorage `inv-visitor`), ни IP, ни браузера, ни имён. Показ шаблонов (demo) и
+  превью редактора не считаются.
+- `/stats/<STATS_KEY>` — воронка по приглашениям, созданным за 7/30/90 дней (когорта), разбивки, среднее число гостей.
+  Только чтение — работает и на Vercel. Ключ ≥ 16 символов, как у показа.
+
 ## 6. Соглашения
 
 - Логика — в `src/lib` чистыми функциями, **не мутирующими** вход; на каждую — unit-тест.
@@ -751,6 +795,9 @@ InvitationData
     `min-w-0` — кнопки уезжали за панель. У `nav` шапки `lg:min-w-0`, у текста — `min-w-0 truncate`.
 27. **Предохранитель-таймер в скрипте видео снимай** (`clearTimeout` после `Promise.race`): пока висит `setTimeout`,
     Node не завершается — после последнего ролика процесс ждал ещё до 3 минут, а админка показывала «Склеиваю видео…».
+28. **Миграции при грязной локальной базе:** в `wedding` бывают применены миграции других веток — `prisma migrate dev`
+    тогда требует сброса (агентам нельзя). Новую миграцию пиши через `prisma migrate diff --from-schema-datamodel
+    <схема из main> --to-schema-datamodel prisma/schema.prisma --script` в новую папку `prisma/migrations/<время>_<имя>`.
 26. **Шаблон через JSON теряет `undefined`:** поле `subtitle: undefined` в `layout` значит «без подзаголовка», а после
     JSON его нет — и `sampleBlocks` подставляет пример. Шаблоны из админки — блоки с `exact: true` (собираются как есть).
 
@@ -804,6 +851,10 @@ InvitationData
   `node scripts/botanical-cutout.mjs скан.jpg public/library/bot-<id>.webp` (параметры CROP/BOTTOM/FILL — в шапке
   скрипта), смотри результат на светлом и тёмном фоне. Wikimedia отдаёт превью только стандартных размеров (1280px —
   да, 1600px — 400). Белые лепестки становятся прозрачными: на светлых палитрах это выглядит естественно, на тёмных — нет.
+- **Новая подпись на странице гостя:** поле в `GuestText` (lib/i18n.ts) на обоих языках → `guestText(...)` в компоненте.
+- **Новый пример текста в шаблоне:** кыргызская версия — строка в `templateCopyKy.ts` (тест «у каждого примера текста
+  есть кыргызская версия» напомнит). Новый тип события — `EVENT_TYPES` + `eventCopy`, `eventTypeLabels`, `namesLabels`,
+  при желании `titleOverrides` и `EVENT_FILTERS` (это формат — минорная версия).
 - **Шрифт:** проверь кириллицу (`node_modules/next/dist/compiled/@next/font/dist/google/font-data.json`) →
   `fonts.ts` (литералы, `preload: false`) → ключ в `FONTS`/`BODY_FONTS` → `titleFonts`/`bodyFonts`.
 - **Текстура:** ключ в `TEXTURES` + запись в `textures` (`svgTile(size, "<svg…>")`, рисуй чёрным).
@@ -877,6 +928,11 @@ Vercel (Postgres + migrate уже сделаны), rate limit в Redis, чист
     Этап 5: нажатие на блок в превью открывает его, открытый блок подсвечен заливкой цвета шаблона.
     Этап 6: сводки под названиями блоков и «Что осталось заполнить». Этап 7 (на пробу): телефонный режим — превью
     на весь экран и панель-шторка. Коммит `ux-v1` (ветка `ux-v1`) — состояние до переделки.
+33. Формат 2.5.0 (этап A `product-strategy.md`): тип события (8 видов, детские тои — отдельно) и язык страницы гостя
+    (ru/ky): подписи, даты, заголовки, примеры текстов и перевод примеров шаблонов; фильтр по событию на главной, событие
+    и язык в форме «Главное о событии» и в «Оформлении»; 5 палитр и 5 шаблонов (Шырдак, Ала-Тоо, Түндүк, Бешик, Неон)
+    на своих векторах (кочкор мүйүз, шырдак, түндүк, Ала-Тоо, ала-кийиз — категория «Кыргызские узоры»). Аналитика:
+    таблица Event, `/api/events`, `/stats/<STATS_KEY>`.
 32. Формат 2.4.0: шаблон «Этно» — перенос первого сайта владельца (toigokel.kg). Палитра `burgundy`, заставка `video`
     (+ `envelope.video/poster`), обложка `scene`, анкета `choices`, фон «Карточка с узором» (`card-etno`); в библиотеке —
     угловой узор и две волны-разделителя. Переход размера 400 — во всю ширину блока. Немой ролик не глушит музыку.

@@ -11,7 +11,8 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { blockLabels, createOrnament, defaultTitles, MAX_ORNAMENTS } from "@/lib/blocks";
+import { blockLabels, blockTitle, createOrnament, MAX_ORNAMENTS } from "@/lib/blocks";
+import { defaultTitle } from "@/lib/copy";
 import { blockEdges, edgeLabels, edgeMaskStyle, edgesVisible, newEdgeSeed, tornPaperStyle, type EdgeSide } from "@/lib/edges";
 import { BLOCK_STYLES, blockStyleLabels, blockStylePatch, blockStyleSpec, matchBlockStyle, type BlockStyleId } from "@/lib/blockStyles";
 import { isDarkColor, mixHex } from "@/lib/color";
@@ -25,6 +26,8 @@ import {
   type Block,
   type Edge,
   type Entrance,
+  type EventType,
+  type Language,
   type Ornament,
   type OrnamentPosition,
   type PhotoHeight,
@@ -398,7 +401,16 @@ const isTitled = (block: Block) => block.type !== "hero" && !(block.type === "ph
  * Заголовок блока и строка под ним — это текст, поэтому они первыми в «Тексте и фото».
  * Пустая строка под заголовком свёрнута в кнопку «＋», чтобы не занимать место.
  */
-export function BlockTitleFields({ block, onChange }: { block: Block; onChange: (patch: Partial<Block>) => void }) {
+export function BlockTitleFields({
+  block,
+  onChange,
+  lang = {},
+}: {
+  block: Block;
+  onChange: (patch: Partial<Block>) => void;
+  /** Событие и язык приглашения — от них заголовок по умолчанию. */
+  lang?: { eventType?: EventType; language?: Language };
+}) {
   const titleId = useId();
   const scriptId = useId();
   const [showScript, setShowScript] = useState(false);
@@ -414,11 +426,11 @@ export function BlockTitleFields({ block, onChange }: { block: Block; onChange: 
         <div className="flex gap-2">
           <Input
             id={titleId}
-            value={block.title ?? defaultTitles[block.type]}
+            value={blockTitle(block, lang)}
             placeholder="Без заголовка"
             onChange={(e) => onChange({ title: e.target.value })}
           />
-          {block.title !== undefined && block.title !== defaultTitles[block.type] && (
+          {block.title !== undefined && block.title !== defaultTitle(block.type, lang.eventType, lang.language) && (
             <Button type="button" variant="ghost" size="icon" aria-label="Сбросить заголовок" title="Сбросить" onClick={() => onChange({ title: undefined })}>
               <RotateCcw />
             </Button>
