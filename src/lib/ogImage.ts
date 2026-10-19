@@ -11,13 +11,16 @@ export const OG_SIZE = { width: 1200, height: 630 };
 const GOOGLE_NAMES: Record<string, string> = { Cormorant: "Cormorant Garamond", "Old Standard": "Old Standard TT" };
 const googleName = (label: string) => GOOGLE_NAMES[label] ?? label;
 
-/** Шрифты картинки: имена — шрифтом имён темы, место — основным, дата и надпись — капителью Tenor Sans, как на конверте. */
-export function ogFontFamilies(theme: InvitationData["theme"]) {
+/**
+ * Шрифты картинки: имена — шрифтом имён темы, место — основным, дата и надпись — капителью Tenor Sans, как на конверте.
+ * В Tenor Sans нет ү, ө, ң — на кыргызском капитель Raleway, как на странице (globals.css, `[data-inv-lang="ky"]`).
+ */
+export function ogFontFamilies(theme: InvitationData["theme"], lang: InvitationData["language"] = "ru") {
   return {
     title: googleName(titleFonts[theme.font].label),
     titleScale: titleFonts[theme.font].scale ?? 1,
     body: googleName(bodyFonts[resolveBodyFont(theme)].label),
-    heading: "Tenor Sans",
+    heading: lang === "ky" ? "Raleway" : "Tenor Sans",
   };
 }
 

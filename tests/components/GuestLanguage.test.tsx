@@ -31,6 +31,23 @@ describe("страница гостя на кыргызском", () => {
   });
 });
 
+describe("анкета на кыргызском", () => {
+  it("три ответа, отправка и благодарность — по-кыргызски", async () => {
+    const user = userEvent.setup();
+    const data = updateBlock(kyrgyz(), "rsvp", { variant: "choices" });
+    render(<InvitationPage data={data} slug="demo" demo />);
+    await user.click(screen.getByRole("button", { name: "Чакырууну ачуу" }));
+    await user.click(screen.getByRole("button", { name: "Жоопту жөнөтүү" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Атыңызды жазып, жоопту тандаңыз.");
+    await user.type(screen.getByLabelText("Коноктун же коноктордун аты"), "Айжан");
+    await user.click(screen.getByLabelText("Жубайым менен келем"));
+    await user.click(screen.getByRole("button", { name: "Жоопту жөнөтүү" }));
+    expect(await screen.findByText("Рахмат!")).toBeInTheDocument();
+    expect(screen.getByText("Айжан, жообуңуз кабыл алынды: 2 конок.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Жоопту өзгөртүү" })).toBeInTheDocument();
+  });
+});
+
 describe("аналитика страницы гостя", () => {
   it("открытие страницы и конверта уходят событиями; на показе шаблона — нет", async () => {
     const sendBeacon = vi.fn().mockReturnValue(true);

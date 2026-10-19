@@ -56,17 +56,18 @@ export const telegramShareUrl = (url: string, message: string) =>
   `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(message.replace(`\n\n${url}`, ""))}`;
 
 /**
- * Превью ссылки в WhatsApp/Telegram: заголовок, строка «дата · место» и надписи картинки (opengraph-image) —
- * дата как на конверте, «19 . 06 . 2027».
+ * Превью ссылки в WhatsApp/Telegram на языке приглашения: заголовок, строка «дата · место» и надписи картинки
+ * (opengraph-image) — дата как на конверте, «19 . 06 . 2027».
  */
 export function linkPreview(data: InvitationData) {
   const hero = findBlock(data, "hero");
   const names = hero?.names.trim() ?? "";
   const place = findBlock(data, "location")?.placeName.trim() || undefined;
+  const invitation = guestText(data.language).invitation;
   return {
-    title: names ? `${names} — приглашение` : "Приглашение",
-    description: [hero && dateWords(hero.date), place].filter(Boolean).join(" · ") || "Приглашение",
-    label: hero?.label?.trim() || "Приглашение",
+    title: names ? `${names} — ${invitation.toLowerCase()}` : invitation,
+    description: [hero && dateWords(hero.date, data.language), place].filter(Boolean).join(" · ") || invitation,
+    label: hero?.label?.trim() || invitation,
     names: names ? splitNames(names) : [],
     date: hero && describeDate(hero.date).dotted,
     place,

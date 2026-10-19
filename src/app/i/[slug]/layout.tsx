@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     metadataBase: await siteUrl(),
     title,
     description,
-    openGraph: { type: "website", locale: "ru_RU", url: `/i/${inv.slug}`, title, description },
+    openGraph: { type: "website", locale: inv.data.language === "ky" ? "ky_KG" : "ru_RU", url: `/i/${inv.slug}`, title, description },
   };
 }
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { guestsWord, rsvpInputSchema } from "@/lib/rsvp";
+import { guestText, type GuestText } from "@/lib/i18n";
+import { rsvpInputSchema } from "@/lib/rsvp";
 import { loadAnswer, saveAnswer, type SavedAnswer } from "@/lib/rsvpMemory";
 import { heartBurst } from "../burst";
 import { prefersReducedMotion } from "../motion";
@@ -12,11 +13,11 @@ type Status = { kind: "idle" } | { kind: "sending" } | { kind: "sent" } | { kind
 
 const formatDeadline = (d: string) => d.split("-").reverse().join(".");
 
-/** Вид «Три ответа» (как на toigokel.kg): ответ сразу задаёт, придёт ли гость и сколько их. */
+/** Вид «Три ответа» (как на toigokel.kg): ответ сразу задаёт, придёт ли гость и сколько их. Подпись — `label(t)`. */
 const CHOICES = [
-  { id: "alone", label: "Конечно, приду", attending: true, guests: 1 },
-  { id: "spouse", label: "Приду с супругом / супругой", attending: true, guests: 2 },
-  { id: "declined", label: "Не смогу прийти", attending: false, guests: 1 },
+  { id: "alone", label: (t: GuestText["rsvp"]) => t.choiceAlone, attending: true, guests: 1 },
+  { id: "spouse", label: (t: GuestText["rsvp"]) => t.choiceSpouse, attending: true, guests: 2 },
+  { id: "declined", label: (t: GuestText["rsvp"]) => t.choiceDeclined, attending: false, guests: 1 },
 ] as const;
 type Choice = (typeof CHOICES)[number]["id"];
 
@@ -25,6 +26,8 @@ const choiceOf = ({ attending, guestsCount }: Pick<SavedAnswer, "attending" | "g
   CHOICES.find((c) => c.attending === attending && (!attending || c.guests === guestsCount))?.id ?? null;
 
 export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
+  const lang = ctx.data.language;
+  const t = guestText(lang).rsvp;
   const [name, setName] = useState("");
   const [attending, setAttending] = useState(true);
   const [guests, setGuests] = useState(1);
@@ -79,7 +82,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
     e.preventDefault();
     if (ctx.preview) return;
     const form = new FormData(e.currentTarget);
-    if (choices && (!choice || !name.trim())) return setStatus({ kind: "error", message: "Укажите имя и выберите ответ." });
+    if (choices && (!choice || !name.trim())) return setStatus({ kind: "error", message: t.pickNameAndAnswer });
     const input = {
       name,
       attending,
@@ -88,7 +91,8 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
       website: String(form.get("website") ?? "") || undefined,
     };
     const parsed = rsvpInputSchema.safeParse(input);
-    if (!parsed.success) return setStatus({ kind: "error", message: parsed.error.issues[0].message });
+    // Тексты ошибок схемы — русские; на кыргызском — общая подсказка.
+    if (!parsed.success) return setStatus({ kind: "error", message: lang === "ru" ? parsed.error.issues[0].message : t.checkForm });
     if (ctx.demo) {
       // Показ шаблона: приглашения в базе нет — показываем, как гостя поблагодарят.
       if (submitRef.current && !prefersReducedMotion()) heartBurst(submitRef.current);
@@ -122,7 +126,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
       return setStatus({ kind: "sent" });
     }
     const body = await res?.json().catch(() => null);
-    setStatus({ kind: "error", message: body?.error ?? "Не удалось отправить ответ" });
+    setStatus({ kind: "error", message: (lang === "ru" && body?.error) || t.sendFailed });
   }
 
   if (status.kind === "sent") {
@@ -134,12 +138,10 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
             ♡
           </div>
           <p role={restored ? undefined : "status"} className="inv-script inv-thanks-title mt-2 inline-block text-4xl">
-            {restored ? "Вы уже ответили" : "Спасибо!"}
+            {restored ? t.alreadyAnswered : t.thanks}
           </p>
           <p className="inv-thanks-after mx-auto mt-3 max-w-xs text-xl leading-snug">
-            {attending
-              ? `${first}, мы получили ваше подтверждение: ${guests} ${guestsWord(guests)}.`
-              : `${first}, жаль, что вы не сможете прийти. Ваш ответ получен.`}
+            {attending ? t.thanksAttending(first, guests) : t.thanksDeclined(first)}
           </p>
           <button
             type="button"
@@ -149,7 +151,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
               setStatus({ kind: "idle" });
             }}
           >
-            Изменить ответ
+            {t.changeAnswer}
           </button>
         </div>
       </Section>
@@ -164,7 +166,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
 
   const deadline = block.deadline && (
     <p className="inv-caps -mt-4 mb-8 opacity-70" data-reveal="2">
-      до {formatDeadline(block.deadline)}
+      {t.until(formatDeadline(block.deadline))}
     </p>
   );
 
@@ -174,13 +176,13 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
         {deadline}
         <form onSubmit={submit} noValidate className="inv-rsvp-card mx-auto flex max-w-sm flex-col gap-5 rounded-3xl px-6 py-7 text-left" data-reveal="3" data-anim="fade">
           <label className="inv-field">
-            <span>Имя или имена гостей</span>
+            <span>{t.namesLabel}</span>
             <input
               name="name"
               required
               maxLength={100}
               className="inv-input"
-              placeholder="Например, Айжан или Айжан и Бакыт"
+              placeholder={t.namesPlaceholder}
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -189,7 +191,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
             />
           </label>
           <fieldset className="flex flex-col gap-2.5">
-            <legend className="mb-2.5 pl-1 text-lg opacity-80">Ваш ответ</legend>
+            <legend className="mb-2.5 pl-1 text-lg opacity-80">{t.yourAnswer}</legend>
             {CHOICES.map((c) => (
               <label key={c.id} className="inv-option" data-checked={choice === c.id || undefined}>
                 <input
@@ -205,7 +207,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
                   }}
                 />
                 <span aria-hidden="true" className="inv-option-dot" />
-                {c.label}
+                {c.label(t)}
               </label>
             ))}
           </fieldset>
@@ -216,7 +218,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
             </p>
           )}
           <button ref={submitRef} type="submit" className="inv-btn inv-btn-lift mt-1" disabled={ctx.preview || status.kind === "sending"}>
-            {status.kind === "sending" ? "Отправляю…" : "Отправить ответ"}
+            {status.kind === "sending" ? t.sending : t.send}
           </button>
           {ctx.preview && <p className="text-center text-sm opacity-60">В превью ответы не отправляются</p>}
         </form>
@@ -234,10 +236,10 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
         {deadline}
         <div className="mx-auto flex max-w-xs flex-col gap-3" data-reveal="3">
           <button type="button" className="inv-btn inv-btn-lift py-4" onClick={() => choose(true)}>
-            С радостью приду
+            {t.gladlyCome}
           </button>
           <button type="button" className="inv-btn-outline justify-center rounded-full py-4" onClick={() => choose(false)}>
-            К сожалению, не смогу
+            {t.sadlyNot}
           </button>
         </div>
       </Section>
@@ -250,20 +252,20 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
       <form onSubmit={submit} noValidate className={`mx-auto flex max-w-xs flex-col gap-4 text-left ${compact ? "inv-fade-up" : ""}`} data-reveal="3">
         {compact && (
           <p className="text-center text-lg">
-            {attending ? "Вы придёте — ура! ♡" : "Жаль, что не получится."}{" "}
+            {attending ? t.youCome : t.sorry}{" "}
             <button type="button" className="underline decoration-[var(--accent)] underline-offset-4 opacity-70" onClick={() => setChosen(false)}>
-              изменить
+              {t.change}
             </button>
           </p>
         )}
         <label className="inv-field">
-          <span>Ваше имя</span>
+          <span>{t.nameLabel}</span>
           <input
             name="name"
             required
             maxLength={100}
             className="inv-input"
-            placeholder="Имя и фамилия"
+            placeholder={t.namePlaceholder}
             value={name}
             onChange={(e) => {
               setName(e.target.value);
@@ -272,10 +274,10 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
           />
         </label>
         <fieldset className={`flex gap-2 ${compact ? "hidden" : ""}`}>
-          <legend className="sr-only">Придёте?</legend>
+          <legend className="sr-only">{t.willYouCome}</legend>
           {[
-            [true, "Приду"],
-            [false, "Не смогу"],
+            [true, t.yes],
+            [false, t.no],
           ].map(([value, label]) => (
             <label key={String(value)} className={`inv-choice ${attending === value ? "inv-choice-active" : ""}`}>
               <input
@@ -291,11 +293,11 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
         </fieldset>
         {attending && (
           <div className="flex items-center justify-between pl-5">
-            <span className="text-lg">Сколько вас будет</span>
+            <span className="text-lg">{t.howMany}</span>
             <div className="flex items-center overflow-hidden rounded-full border border-[var(--accent)]/40 bg-[var(--field)]">
               <button
                 type="button"
-                aria-label="Убрать гостя"
+                aria-label={t.lessGuests}
                 className="inv-counter-btn h-11 w-11 text-xl disabled:opacity-30"
                 disabled={guests <= 1}
                 onClick={() => step(-1)}
@@ -304,7 +306,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
               </button>
               <input
                 ref={guestsRef}
-                aria-label="Количество гостей"
+                aria-label={t.guestsCount}
                 inputMode="numeric"
                 className="w-8 bg-transparent text-center text-xl tabular-nums outline-none"
                 value={guests}
@@ -312,7 +314,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
               />
               <button
                 type="button"
-                aria-label="Добавить гостя"
+                aria-label={t.moreGuests}
                 className="inv-counter-btn h-11 w-11 text-xl disabled:opacity-30"
                 disabled={guests >= 10}
                 onClick={() => step(1)}
@@ -323,13 +325,13 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
           </div>
         )}
         <label className="inv-field">
-          <span>Комментарий</span>
+          <span>{t.comment}</span>
           <textarea
             name="comment"
             rows={2}
             maxLength={1000}
             className="inv-input"
-            placeholder="Пожелания ..."
+            placeholder={t.commentPlaceholder}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
@@ -342,7 +344,7 @@ export function RsvpBlock({ block, ctx }: BlockProps<"rsvp">) {
           </p>
         )}
         <button ref={submitRef} type="submit" className="inv-btn inv-btn-lift mt-2" disabled={ctx.preview || status.kind === "sending"}>
-          {status.kind === "sending" ? "Отправляю…" : "Подтвердить"}
+          {status.kind === "sending" ? t.sending : t.confirm}
         </button>
         {ctx.preview && <p className="text-center text-sm opacity-60">В превью ответы не отправляются</p>}
       </form>

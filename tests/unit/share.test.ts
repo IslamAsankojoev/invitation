@@ -86,4 +86,9 @@ describe("linkPreview — превью ссылки в мессенджерах"
     const p = linkPreview(updateBlock(updateBlock(data, "location", { placeName: " " }), "hero", { label: "", names: "Алия, 30 лет" }));
     expect(p).toMatchObject({ description: "19 июня 2027, 16:00", label: "Приглашение", names: ["Алия, 30 лет"], place: undefined });
   });
+
+  it("на кыргызском: заголовок, дата и запасная надпись — по-кыргызски", () => {
+    const ky = updateBlock(updateBlock({ ...data, language: "ky" as const }, "hero", { label: "" }), "location", { placeName: " " });
+    expect(linkPreview(ky)).toMatchObject({ title: "Айбек & Айзада — чакыруу", description: "2027-ж. 19-июнь, 16:00", label: "Чакыруу" });
+  });
 });

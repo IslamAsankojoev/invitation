@@ -38,7 +38,11 @@ export type GuestText = {
     choiceDeclined: string;
     pickNameAndAnswer: string;
     sendFailed: string;
+    /** Ошибка проверки формы (на русском показывается текст ошибки схемы). */
+    checkForm: string;
     thanks: string;
+    /** Гость вернулся на страницу, а ответ с этого устройства уже есть. */
+    alreadyAnswered: string;
     thanksAttending: (first: string, guests: number) => string;
     thanksDeclined: (first: string) => string;
     changeAnswer: string;
@@ -102,7 +106,9 @@ const ru: GuestText = {
     choiceDeclined: "Не смогу прийти",
     pickNameAndAnswer: "Укажите имя и выберите ответ.",
     sendFailed: "Не удалось отправить ответ",
+    checkForm: "Проверьте имя и число гостей.",
     thanks: "Спасибо!",
+    alreadyAnswered: "Вы уже ответили",
     thanksAttending: (first, guests) => `${first}, мы получили ваше подтверждение: ${guests} ${guestsWord(guests)}.`,
     thanksDeclined: (first) => `${first}, жаль, что вы не сможете прийти. Ваш ответ получен.`,
     changeAnswer: "Изменить ответ",
@@ -166,7 +172,9 @@ const ky: GuestText = {
     choiceDeclined: "Келе албайм",
     pickNameAndAnswer: "Атыңызды жазып, жоопту тандаңыз.",
     sendFailed: "Жоопту жөнөтүү мүмкүн болгон жок",
+    checkForm: "Атыңызды жана коноктордун санын текшериңиз.",
     thanks: "Рахмат!",
+    alreadyAnswered: "Сиз жооп бергенсиз",
     thanksAttending: (first, guests) => `${first}, жообуңуз кабыл алынды: ${guests} конок.`,
     thanksDeclined: (first) => `${first}, келе албай турганыңызга өкүнүчтүү. Жообуңуз кабыл алынды.`,
     changeAnswer: "Жоопту өзгөртүү",

@@ -10,6 +10,10 @@ describe("ogFontFamilies — шрифты картинки превью как �
     expect(ogFontFamilies({ ...theme, font: "script", bodyFont: "auto" })).toMatchObject({ title: "Great Vibes", body: "Cormorant Garamond", heading: "Tenor Sans" });
     expect(ogFontFamilies({ ...theme, font: "oranienbaum", bodyFont: "auto" })).toMatchObject({ title: "Oranienbaum", body: "Old Standard TT", titleScale: 0.85 });
   });
+
+  it("на кыргызском капитель — Raleway: в Tenor Sans нет ү, ө, ң", () => {
+    expect(ogFontFamilies(createDefaultInvitation().theme, "ky").heading).toBe("Raleway");
+  });
 });
 
 describe("namesFontSize", () => {

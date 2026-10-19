@@ -21,9 +21,9 @@ export default async function Image({ params }: { params: { slug: string } }) {
 
   const p = linkPreview(inv.data);
   const colors = themePalette(inv.data.theme);
-  const families = ogFontFamilies(inv.data.theme);
+  const families = ogFontFamilies(inv.data.theme, inv.data.language);
   const label = p.label.toUpperCase();
-  const names = p.names.length ? p.names : ["Приглашение"];
+  const names = p.names.length ? p.names : [p.label];
   const [photo, title, body, heading] = await Promise.all([
     loadPhoto(p.photo),
     loadGoogleFont(families.title, names.join("")),
