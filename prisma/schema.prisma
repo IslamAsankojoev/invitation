@@ -27,16 +27,34 @@ model Invitation {
 }
 
 model Rsvp {
-  id           String     @id @default(cuid())
-  invitationId String
-  invitation   Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
-  name         String
-  attending    Boolean
-  guestsCount  Int
-  comment      String?
-  createdAt    DateTime   @default(now())
+  id             String     @id @default(cuid())
+  invitationId   String
+  invitation     Invitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  name           String
+  attending      Boolean
+  guestsCount    Int
+  comment        String?
+  createdAt      DateTime   @default(now())
+  /// sha256 секрета, который получил браузер гостя: по нему гость меняет свой ответ, а не добавляет новый.
+  /// Нет — ответ дан до этой возможности, изменить его нельзя.
+  editSecretHash String?
 
   @@index([invitationId])
+}
+
+/// Событие аналитики (lib/analytics.ts): воронка «создали → поделились → гость открыл». Без IP, браузера и имён гостей.
+/// Связи с Invitation нет намеренно: удалённое приглашение не должно менять прошлую воронку.
+model Event {
+  id           String   @id @default(cuid())
+  name         String
+  invitationId String?
+  /// Случайный id браузера из localStorage — считать уникальных гостей; с человеком не связан.
+  visitorId    String?
+  props        Json?
+  createdAt    DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@index([invitationId, name])
 }
 
 // ---------- Пользователи (Auth.js, @auth/prisma-adapter) ----------

@@ -5,7 +5,18 @@ import type { Block, Surface, Texture } from "./schema";
  * Встроенная библиотека картинок (public/library). Чтобы добавить картинку — положите
  * прозрачный PNG/WebP в public/library и допишите строку сюда: она появится в выборе украшений/декора.
  */
-export type LibraryCategory = "flowers" | "botanical" | "leaves" | "wreaths" | "frames" | "dividers" | "watercolor" | "accents" | "particles" | "foliage";
+export type LibraryCategory =
+  | "flowers"
+  | "botanical"
+  | "leaves"
+  | "wreaths"
+  | "frames"
+  | "dividers"
+  | "national"
+  | "watercolor"
+  | "accents"
+  | "particles"
+  | "foliage";
 
 export type LibraryAsset = {
   id: string;
@@ -99,6 +110,15 @@ export const library: LibraryAsset[] = [
   // Шаблон «Этно» (toigokel.kg — сайт владельца): переходы между полосами бордо и крема, угловой узор.
   asset("etno-divider-burgundy", "Переход в бордо", "dividers"),
   asset("etno-divider-cream", "Переход в крем", "dividers"),
+  // Кыргызские узоры — свои векторы (scripts/library-svg.mjs): шаблоны «Шырдак», «Ала-Тоо», «Түндүк», «Бешик».
+  vector("kochkor-corner", "Кочкор мүйүз в угол", "national"),
+  vector("kochkor-corner-gold", "Кочкор мүйүз, золото", "national"),
+  vector("shyrdak-band", "Полоса шырдака", "national"),
+  vector("shyrdak-band-gold", "Полоса шырдака, золото", "national"),
+  vector("tunduk", "Түндүк", "national"),
+  vector("ala-too", "Ала-Тоо", "national"),
+  vector("ala-too-white", "Ала-Тоо, светлые горы", "national"),
+  vector("ala-kiyiz", "Ала-кийиз", "national"),
   vector("wc-blush", "Пудровая акварель", "watercolor"),
   vector("wc-sage", "Шалфей", "watercolor"),
   vector("wc-lavender", "Лаванда", "watercolor", true),
@@ -187,6 +207,7 @@ export const categoryLabels: Record<LibraryCategory, string> = {
   wreaths: "Венки",
   frames: "Рамки и арки",
   dividers: "Разделители",
+  national: "Кыргызские узоры",
   watercolor: "Акварель",
   accents: "Акценты",
   particles: "Частицы",
@@ -264,7 +285,19 @@ export const surfaceGroups: { label: string; items: Surface[] }[] = [
 ];
 
 /** Все категории украшений (для окна выбора в «Оформлении блока»). */
-export const ORNAMENT_CATEGORIES: LibraryCategory[] = ["flowers", "botanical", "leaves", "wreaths", "frames", "dividers", "watercolor", "accents", "particles", "foliage"];
+export const ORNAMENT_CATEGORIES: LibraryCategory[] = [
+  "flowers",
+  "national",
+  "botanical",
+  "leaves",
+  "wreaths",
+  "frames",
+  "dividers",
+  "watercolor",
+  "accents",
+  "particles",
+  "foliage",
+];
 
 const noise = (freq: string, alpha: number, size = 220) =>
   `url("data:image/svg+xml,${encodeURIComponent(

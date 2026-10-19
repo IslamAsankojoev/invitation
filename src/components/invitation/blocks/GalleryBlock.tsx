@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { guestText, type GuestText } from "@/lib/i18n";
 import { Section } from "../Section";
 import { EmptyPhotos } from "./PhotoBlock";
 import type { BlockProps } from "./types";
@@ -28,7 +29,8 @@ export function GalleryBlock({ block, ctx }: BlockProps<"gallery">) {
   }
   // В превью редактора фото не открываются: окно во весь экран закрыло бы редактор.
   const show = (i: number) => () => !ctx.preview && setOpen(i);
-  const label = (i: number) => `Открыть фото ${i + 1} из ${photos.length}`;
+  const t = guestText(ctx.data.language);
+  const label = (i: number) => t.gallery.open(i + 1, photos.length);
 
   let body;
   if (block.variant === "collage") {
@@ -97,13 +99,25 @@ export function GalleryBlock({ block, ctx }: BlockProps<"gallery">) {
   return (
     <Section block={block}>
       {body}
-      {open !== null && <Lightbox photos={photos} index={open} onIndex={setOpen} onClose={() => setOpen(null)} />}
+      {open !== null && <Lightbox photos={photos} index={open} onIndex={setOpen} onClose={() => setOpen(null)} t={t.gallery} />}
     </Section>
   );
 }
 
 /** Фото во весь экран: стрелки, Escape, нажатие на фон закрывает. */
-function Lightbox({ photos, index, onIndex, onClose }: { photos: string[]; index: number; onIndex: (i: number) => void; onClose: () => void }) {
+function Lightbox({
+  photos,
+  index,
+  onIndex,
+  onClose,
+  t,
+}: {
+  photos: string[];
+  index: number;
+  onIndex: (i: number) => void;
+  onClose: () => void;
+  t: GuestText["gallery"];
+}) {
   const go = (d: number) => onIndex((index + d + photos.length) % photos.length);
 
   useEffect(() => {
@@ -127,20 +141,20 @@ function Lightbox({ photos, index, onIndex, onClose }: { photos: string[]; index
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`Фото ${index + 1} из ${photos.length}`}
+      aria-label={t.photo(index + 1, photos.length)}
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
       onClick={onClose}
     >
       <img src={photos[index]} alt="" className="max-h-full max-w-full object-contain" onClick={(e) => e.stopPropagation()} />
-      <button type="button" aria-label="Закрыть" autoFocus onClick={onClose} className="absolute top-4 right-4 flex size-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20">
+      <button type="button" aria-label={t.close} autoFocus onClick={onClose} className="absolute top-4 right-4 flex size-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20">
         <X />
       </button>
       {photos.length > 1 && (
         <>
-          <button type="button" aria-label="Предыдущее фото" className={`${arrow} left-3`} onClick={(e) => (e.stopPropagation(), go(-1))}>
+          <button type="button" aria-label={t.prev} className={`${arrow} left-3`} onClick={(e) => (e.stopPropagation(), go(-1))}>
             <ChevronLeft />
           </button>
-          <button type="button" aria-label="Следующее фото" className={`${arrow} right-3`} onClick={(e) => (e.stopPropagation(), go(1))}>
+          <button type="button" aria-label={t.next} className={`${arrow} right-3`} onClick={(e) => (e.stopPropagation(), go(1))}>
             <ChevronRight />
           </button>
         </>

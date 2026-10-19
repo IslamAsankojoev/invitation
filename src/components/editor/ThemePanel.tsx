@@ -6,21 +6,27 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { TextureLayer } from "@/components/invitation/TextureLayer";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { findBlock } from "@/lib/blocks";
 import { splitNames } from "@/lib/calendar";
+import { eventTypeLabels } from "@/lib/copy";
 import { decorShortLabels, densityLevel, densityLevelLabels, densityOf, type DensityLevel } from "@/lib/decor";
+import { FONTS_WITHOUT_KYRGYZ, languageLabels } from "@/lib/i18n";
 import { textureLabels, textures } from "@/lib/library";
+import { applyCopy } from "@/lib/localize";
 import {
   BODY_FONTS,
   DECOR_TYPES,
   ENVELOPE_STYLES,
+  EVENT_TYPES,
   FONTS,
   HEADINGS,
   MOTION_STYLES,
   PALETTES,
   TEXTURES,
   type DecorType,
+  type EventType,
   type InvitationData,
   type Theme,
 } from "@/lib/schema";
@@ -104,12 +110,45 @@ export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
   // Образец для шрифтов — первое имя из приглашения.
   const sampleName = splitNames(findBlock(data, "hero")?.names ?? "Анна")[0].split(" ")[0] || "Анна";
   const colorId = useId();
+  const eventId = useId();
+  // Шрифт без кыргызских букв на кыргызском приглашении — с пометкой: ү, ө, ң подставятся из другого шрифта.
+  const noKyrgyz = (font: string) => (data.language === "ky" && FONTS_WITHOUT_KYRGYZ.has(font) ? " · нет ү, ө, ң" : "");
   const stainsId = useId();
   const popId = useId();
   const decorOn = theme.decor.type !== "none";
 
   return (
     <Accordion type="single" collapsible className="rounded-xl border bg-card px-4">
+      <AccordionItem value="event">
+        <SectionTrigger title="Событие и язык" summary={`${eventTypeLabels[data.eventType]} · ${languageLabels[data.language]}`} />
+        <AccordionContent className="flex flex-col gap-4">
+          <Field>
+            <FieldLabel htmlFor={eventId}>Событие</FieldLabel>
+            <NativeSelect
+              id={eventId}
+              className="w-full"
+              value={data.eventType}
+              onChange={(e) => onChange(applyCopy(data, e.target.value as EventType, data.language))}
+            >
+              {EVENT_TYPES.map((e) => (
+                <NativeSelectOption key={e} value={e}>
+                  {eventTypeLabels[e]}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </Field>
+          <Segmented
+            label="Язык приглашения"
+            value={data.language}
+            options={languageLabels}
+            onChange={(language) => onChange(applyCopy(data, data.eventType, language))}
+          />
+          <FieldDescription className="-mt-2">
+            Подписи приглашения, даты и примеры текстов меняются сами. То, что вы написали, остаётся как есть.
+          </FieldDescription>
+        </AccordionContent>
+      </AccordionItem>
+
       <AccordionItem value="template">
         <SectionTrigger title="Шаблон" summary={guessTemplate(theme)?.name ?? "Свой"} />
         <AccordionContent>
@@ -153,7 +192,13 @@ export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
             ariaPrefix="Шрифт имён"
             sample={sampleName}
             value={theme.font}
-            options={FONTS.map((f) => ({ value: f, label: titleFonts[f].label, css: titleFonts[f].css, scale: titleFonts[f].scale, premium: premiumFonts.includes(f) }))}
+            options={FONTS.map((f) => ({
+              value: f,
+              label: titleFonts[f].label + noKyrgyz(f),
+              css: titleFonts[f].css,
+              scale: titleFonts[f].scale,
+              premium: premiumFonts.includes(f),
+            }))}
             onChange={(font) => set({ font })}
           />
           <FieldDescription className="-mt-2">Шрифт текста подбирается к нему сам — поменять можно в «Тонкой настройке».</FieldDescription>
@@ -166,7 +211,8 @@ export function ThemePanel({ data, onChange, onPreviewIntro }: Props) {
               options={BODY_FONTS.map((f) => {
                 // «Авто» показывает, какой шрифт подобран к шрифту имён.
                 const key = f === "auto" ? titleFonts[theme.font].pair : f;
-                return { value: f, label: f === "auto" ? `Авто · ${bodyFonts[key].label}` : bodyFonts[key].label, css: bodyFonts[key].css };
+                const label = (f === "auto" ? `Авто · ${bodyFonts[key].label}` : bodyFonts[key].label) + noKyrgyz(key);
+                return { value: f, label, css: bodyFonts[key].css };
               })}
               onChange={(bodyFont) => set({ bodyFont })}
             />

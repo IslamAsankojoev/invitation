@@ -57,6 +57,8 @@ describe("«Выбрать» → форма «Главное о событии»
     await u.click(within(dialog).getByRole("button", { name: "Создать приглашение" }));
     expect(body(fetchMock)).toEqual({
       template: "rose-garden",
+      eventType: "wedding",
+      language: "ru",
       setup: { names: "Мария & Пётр", date: "2027-08-20T16:00", placeName: "Шале", address: "", musicUrl: null },
     });
     await waitFor(() => expect(assign).toHaveBeenCalledWith("/edit/x?token=t"));
@@ -68,6 +70,23 @@ describe("«Выбрать» → форма «Главное о событии»
     render(<TemplateGallery />);
     await u.click(screen.getByRole("button", { name: "Выбрать шаблон «Звёздная ночь»" }));
     await u.click(screen.getByRole("button", { name: "Пропустить — заполню потом" }));
-    expect(body(fetchMock)).toEqual({ template: "starry-night" });
+    expect(body(fetchMock)).toEqual({ template: "starry-night", eventType: "wedding", language: "ru" });
+  });
+
+  it("событие и язык: фильтр на главной выбирает событие, «Кыргызча» уходит в API, подпись имён — по событию", async () => {
+    const u = user();
+    const { fetchMock } = stubCreate();
+    render(<TemplateGallery />);
+    const filters = screen.getByRole("group", { name: "Событие" });
+    await u.click(within(filters).getByRole("button", { name: "Кыз узатуу" }));
+    expect(within(filters).getByRole("button", { name: "Кыз узатуу" })).toHaveAttribute("aria-pressed", "true");
+    await u.click(screen.getAllByRole("button", { name: /^Выбрать шаблон/ })[0]);
+    const dialog = screen.getByRole("dialog", { name: "Главное о событии" });
+    expect(within(dialog).getByLabelText("Событие")).toHaveValue("kyz-uzatuu");
+    await u.click(within(dialog).getByRole("radio", { name: "Кыргызча" }));
+    await u.type(within(dialog).getByLabelText("Имя невесты"), "Нуркыз");
+    fireEvent.change(within(dialog).getByLabelText("Дата"), { target: { value: "2027-08-20" } });
+    await u.click(within(dialog).getByRole("button", { name: "Создать приглашение" }));
+    expect(body(fetchMock)).toMatchObject({ eventType: "kyz-uzatuu", language: "ky", setup: { names: "Нуркыз" } });
   });
 });

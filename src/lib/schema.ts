@@ -14,7 +14,18 @@ const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Неверный фо
 /** URL картинки: файл из библиотеки (/library/…) или загруженный (/uploads/…, позже — S3). */
 const imageUrl = z.string().min(1).max(500);
 
-export const PALETTES = ["cream", "blush", "emerald", "ivory", "autumn", "night", "lavender", "noir", "navy", "mocha", "pearl", "sand", "forest", "burgundy"] as const;
+/**
+ * Тип события (формат 2.5.0): от него — подписи и примеры текстов (lib/copy.ts), заголовки блоков по умолчанию и
+ * фильтр шаблонов на главной. Детские тои — три отдельных типа: обряды и подписи у них разные.
+ */
+export const EVENT_TYPES = ["wedding", "kyz-uzatuu", "birthday", "jubilee", "beshik-toi", "tushoo-kesuu", "sunnet-toi", "party"] as const;
+export type EventType = (typeof EVENT_TYPES)[number];
+
+/** Язык страницы гостя (формат 2.5.0): подписи приглашения, даты, заголовки по умолчанию. Редактор — всегда русский. */
+export const LANGUAGES = ["ru", "ky"] as const;
+export type Language = (typeof LANGUAGES)[number];
+
+export const PALETTES = ["cream", "blush", "emerald", "ivory", "autumn", "night", "lavender", "noir", "navy", "mocha", "pearl", "sand", "forest", "burgundy", "felt", "sky", "tunduk", "beshik", "neon"] as const;
 /** Шрифт имён и акцентных надписей. Первые три — исходные ключи, их значения не меняются. */
 export const FONTS = [
   "script",
@@ -514,6 +525,8 @@ export const invitationDataObject = z.object({
   // По умолчанию — постоянное 1.0.0 (данные без версии), а не SCHEMA_VERSION: иначе слепок менялся бы при каждом
   // поднятии версии. Текущую версию проставляет migrateInvitation до проверки.
   schemaVersion: z.string().regex(SEMVER, "Неверная версия формата").default(INITIAL_SCHEMA_VERSION),
+  eventType: z.enum(EVENT_TYPES).default("wedding"),
+  language: z.enum(LANGUAGES).default("ru"),
   theme: themeSchema,
   music: musicSchema,
   blocks: z.preprocess(

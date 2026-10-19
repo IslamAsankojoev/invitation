@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { findBlock } from "@/lib/blocks";
-import { EVENT_PASSED_TEXT, getCountdown } from "@/lib/countdown";
+import { getCountdown } from "@/lib/countdown";
+import { guestText } from "@/lib/i18n";
 import { prefersReducedMotion, useMotion } from "../motion";
 import { Section } from "../Section";
 import type { BlockProps } from "./types";
@@ -11,6 +12,7 @@ type Unit = { value: number | undefined; label: string; /** Доля для ко
 
 export function CountdownBlock({ block, ctx }: BlockProps<"countdown">) {
   const date = findBlock(ctx.data, "hero")?.date;
+  const t = guestText(ctx.data.language);
   // Время считаем только на клиенте, чтобы не было расхождения с серверным HTML.
   const [now, setNow] = useState<Date | null>(null);
 
@@ -24,10 +26,10 @@ export function CountdownBlock({ block, ctx }: BlockProps<"countdown">) {
   const cd = now ? getCountdown(new Date(date), now) : null;
   const left = cd && !cd.done ? cd : undefined;
   const units: Unit[] = [
-    { value: left?.days, label: "дней", max: 365 },
-    { value: left?.hours, label: "часов", max: 24 },
-    { value: left?.minutes, label: "минут", max: 60 },
-    { value: left?.seconds, label: "секунд", max: 60 },
+    { value: left?.days, label: t.countdown.days, max: 365 },
+    { value: left?.hours, label: t.countdown.hours, max: 24 },
+    { value: left?.minutes, label: t.countdown.minutes, max: 60 },
+    { value: left?.seconds, label: t.countdown.seconds, max: 60 },
   ];
   const text = (v: number | undefined) => (v === undefined ? "–" : String(v).padStart(2, "0"));
 
@@ -35,7 +37,7 @@ export function CountdownBlock({ block, ctx }: BlockProps<"countdown">) {
     <Section block={block}>
       {cd?.done ? (
         <p className="inv-script text-4xl" data-reveal="2" data-anim="blur">
-          {EVENT_PASSED_TEXT}
+          {t.countdown.passed}
         </p>
       ) : block.variant === "circles" ? (
         <div className="mx-auto grid max-w-xs grid-cols-4 gap-2">

@@ -1,7 +1,7 @@
 /** Правка шаблонов в скрытой админке — чистые функции (файлы пишет lib/adminFiles.ts). */
 import { findBlock } from "./blocks";
 import type { InvitationData } from "./schema";
-import { createFromTemplate, type LayoutBlock, type Template } from "./templates";
+import { createFromTemplate, templateEvents, type LayoutBlock, type Template } from "./templates";
 
 /** id шаблона — часть адресов (/showcase/…/<id>, черновик tpl-<id>) и имён файлов: латиница, цифры, дефис. */
 export const TEMPLATE_ID = /^[a-z0-9][a-z0-9-]{1,35}$/;
@@ -18,10 +18,15 @@ export function templateFromInvitation(base: Template, data: InvitationData): Te
   // exact: блок целиком — пустые поля так и остаются пустыми (см. LayoutBlock).
   const layout = data.blocks.map(({ id: _id, ...block }) => ({ ...structuredClone(block), exact: true })) as LayoutBlock[];
   const dresscode = findBlock(data, "dresscode");
+  // Событие черновика — первое (тип нового приглашения), остальные события шаблона остаются. Как у шаблона в коде
+  // (свадьба, русский) — поля не пишем, иначе «как в коде» перестало бы совпадать.
+  const events = [data.eventType, ...templateEvents(base).filter((e) => e !== data.eventType)];
   return {
     id: base.id,
     name: base.name,
     description: base.description,
+    ...((base.events || events.join() !== "wedding") && { events }),
+    ...((base.language || data.language !== "ru") && { language: data.language }),
     theme: structuredClone(data.theme),
     blocks: structuredClone(base.blocks),
     dresscodeColors: dresscode?.colors.length ? [...dresscode.colors] : [...base.dresscodeColors],

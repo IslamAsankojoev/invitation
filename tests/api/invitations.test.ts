@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { GET, PATCH } from "@/app/api/invitations/[key]/route";
 import { POST as CREATE } from "@/app/api/invitations/route";
 import { findBlock, updateBlock } from "@/lib/blocks";
+import { prisma } from "@/lib/db";
 import { createDefaultInvitation } from "@/lib/defaults";
 import { createInvitation, getInvitationById } from "@/lib/invitations";
 import { createFromTemplate, findTemplate, templates } from "@/lib/templates";
@@ -25,6 +26,28 @@ describe("POST /api/invitations", () => {
     const saved = await getInvitationById((await res.json()).id);
     expect(saved?.data).toEqual(createFromTemplate(findTemplate("starry-night")!));
     expect(saved?.data.theme.palette).toBe("night");
+  });
+
+  it("событие и язык: примеры текстов — под них, событие и язык — в аналитике; неизвестный язык → 400", async () => {
+    const res = await CREATE(jsonRequest("/api/invitations", "POST", { template: "rose-garden", eventType: "birthday", language: "ky" }));
+    expect(res.status).toBe(201);
+    const { id } = await res.json();
+    const saved = await getInvitationById(id);
+    expect(saved?.data).toMatchObject({ eventType: "birthday", language: "ky" });
+    expect(findBlock(saved!.data, "hero")?.label).toBe("Туулган күнгө чакыруу");
+    expect(await prisma.event.findFirst({ where: { invitationId: id } })).toMatchObject({ props: { eventType: "birthday", lang: "ky" } });
+    expect((await CREATE(jsonRequest("/api/invitations", "POST", { template: "rose-garden", language: "en" }))).status).toBe(400);
+  });
+
+  it("пишет событие аналитики invitation_created с шаблоном", async () => {
+    const res = await CREATE(jsonRequest("/api/invitations", "POST", { template: "starry-night" }));
+    const { id } = await res.json();
+    const events = await prisma.event.findMany({ where: { invitationId: id } });
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      name: "invitation_created",
+      props: { template: "starry-night", setup: false, eventType: "wedding", lang: "ru" },
+    });
   });
 
   it("с формой «главное о событии»: имена, дата, место и песня сразу в приглашении; кривая форма → 400", async () => {

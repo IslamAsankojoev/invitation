@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { textStyle } from "@/lib/textStyle";
 import { blockTitle, findBlock } from "@/lib/blocks";
+import { guestText } from "@/lib/i18n";
 import { Section } from "../Section";
 import type { BlockProps } from "./types";
 
@@ -69,7 +70,7 @@ export function StoryBlock({ block, ctx }: BlockProps<"story">) {
           </p>
           {names && (
             <p className="mt-6 text-right">
-              <span className="block text-sm italic opacity-70">С любовью,</span>
+              <span className="block text-sm italic opacity-70">{guestText(ctx.data.language).withLove}</span>
               <span className="inv-script inline-block text-3xl" data-reveal="3" data-anim="write" data-delay="1.4">
                 {names}
               </span>
@@ -80,7 +81,7 @@ export function StoryBlock({ block, ctx }: BlockProps<"story">) {
     );
   }
 
-  const quote = !blockTitle(block) && !block.scriptLine;
+  const quote = !blockTitle(block, ctx.data) && !block.scriptLine;
   return (
     <Section block={block}>
       {quote ? (

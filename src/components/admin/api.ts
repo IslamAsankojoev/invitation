@@ -2,6 +2,7 @@
 
 import type { AdminTemplate, VideoFile } from "@/lib/adminFiles";
 import type { VideoJob } from "@/lib/videoJobs";
+import type { EventType } from "@/lib/schema";
 
 export type { AdminTemplate, VideoFile, VideoJob };
 
@@ -25,7 +26,8 @@ export function adminApi(adminKey: string) {
       call<{ jobs: VideoJob[] }>("/videos", { method: "POST", json: { templates, ...options } }),
     cancelJob: (id: string) => call<null>(`/jobs/${id}`, { method: "DELETE" }),
     deleteVideo: (name: string) => call<null>(`/videos/${encodeURIComponent(name)}`, { method: "DELETE" }),
-    rename: (id: string, name: string, description: string) => call(`/templates/${id}`, { method: "PATCH", json: { name, description } }),
+    rename: (id: string, name: string, description: string, events: EventType[]) =>
+      call(`/templates/${id}`, { method: "PATCH", json: { name, description, events } }),
     duplicate: (id: string) => call<{ template: { id: string } }>(`/templates/${id}`, { method: "POST" }),
     reset: (id: string) => call<null>(`/templates/${id}`, { method: "DELETE" }),
     setPublished: (id: string, published: boolean) => call<{ published: boolean }>(`/templates/${id}`, { method: "PATCH", json: { published } }),

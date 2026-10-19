@@ -11,6 +11,12 @@ export const rsvpInputSchema = z.object({
 
 export type RsvpInput = z.infer<typeof rsvpInputSchema>;
 
+/** Гость меняет свой ответ: id записи и секрет, которые его браузер получил при первом ответе. */
+export const rsvpEditSchema = rsvpInputSchema.extend({
+  id: z.string().min(1).max(64),
+  secret: z.string().min(16).max(128),
+});
+
 export type RsvpRecord = {
   id: string;
   name: string;

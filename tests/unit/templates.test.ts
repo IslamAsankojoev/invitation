@@ -3,8 +3,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { findBlock, moveBlock, toggleBlock, updateBlock } from "@/lib/blocks";
 import { createDefaultInvitation } from "@/lib/defaults";
-import { invitationDataSchema, type InvitationData } from "@/lib/schema";
-import { allTemplates, applyTemplate, baseTemplates, createBlock, createFromTemplate, findTemplate, templates } from "@/lib/templates";
+import { EVENT_TYPES, invitationDataSchema, type InvitationData } from "@/lib/schema";
+import { allTemplates, applyTemplate, baseTemplates, createBlock, createFromTemplate, findTemplate, templateEvents, templates } from "@/lib/templates";
 
 /** Все URL картинок, на которые ссылается приглашение: украшения, фоны блоков и фото-примеры. */
 function imageUrls(data: InvitationData): string[] {
@@ -22,11 +22,15 @@ function imageUrls(data: InvitationData): string[] {
 
 describe("шаблоны", () => {
   // Порядок и публикацию меняют в админке (template-overrides.json) — тесты не завязаны на них.
-  it("их тринадцать, id уникальны; опубликованные — из них", () => {
-    expect(allTemplates).toHaveLength(13);
-    expect(new Set(allTemplates.map((t) => t.id)).size).toBe(13);
+  it("их восемнадцать, id уникальны; опубликованные — из них", () => {
+    expect(allTemplates).toHaveLength(18);
+    expect(new Set(allTemplates.map((t) => t.id)).size).toBe(18);
     expect(templates.length).toBeGreaterThan(0);
     expect(templates.every((t) => allTemplates.includes(t))).toBe(true);
+  });
+
+  it("у каждого события есть хотя бы один шаблон (фильтр на главной не пустой)", () => {
+    for (const e of EVENT_TYPES) expect(allTemplates.some((t) => templateEvents(t).includes(e)), e).toBe(true);
   });
 
   it.each(allTemplates.map((t) => [t.name, t] as const))("«%s» проходит схему и ссылается только на существующие картинки", (_, t) => {
@@ -99,7 +103,21 @@ describe("applyTemplate", () => {
   });
 
   it("шаблоны со своим видом главного экрана его сохраняют, остальные — «Без рамки»", () => {
-    const own: Record<string, string> = { eucalyptus: "arch", "art-deco": "minimal", "lavender-provence": "polaroid", "boarding-pass": "ticket", mocha: "monogram", seaside: "cover", etno: "scene" };
+    const own: Record<string, string> = {
+      eucalyptus: "arch",
+      "art-deco": "minimal",
+      "lavender-provence": "polaroid",
+      "boarding-pass": "ticket",
+      mocha: "monogram",
+      seaside: "cover",
+      etno: "scene",
+      // Кыргызские: рамка «Классики» с рогами в углах, горы под «Минимализмом», билет на вечеринку.
+      shyrdak: "classic",
+      "ala-too": "minimal",
+      tunduk: "classic",
+      beshik: "classic",
+      neon: "ticket",
+    };
     for (const t of allTemplates) expect(findBlock(createFromTemplate(t), "hero")!.variant, t.id).toBe(own[t.id] ?? "clean");
   });
 

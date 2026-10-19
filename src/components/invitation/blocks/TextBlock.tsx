@@ -1,5 +1,6 @@
 import { Baby, Flower2, Gift, Globe, Info, Mail, Plane, Star, type LucideIcon } from "lucide-react";
 import type { TextIcon } from "@/lib/schema";
+import { guestText } from "@/lib/i18n";
 import { textStyle } from "@/lib/textStyle";
 import { Section } from "../Section";
 import { programIcons } from "./ProgramBlock";
@@ -18,7 +19,7 @@ export const textIcons: Record<TextIcon, LucideIcon> = {
 };
 
 /** Универсальный текст: пожелания, подарки, детали. Значок и кнопка-ссылка — по желанию. */
-export function TextBlock({ block }: BlockProps<"text">) {
+export function TextBlock({ block, ctx }: BlockProps<"text">) {
   const Icon = block.icon ? textIcons[block.icon] : null;
   const icon = Icon && (
     <div className="mb-6 flex justify-center" data-reveal="1" data-anim="pop">
@@ -36,7 +37,7 @@ export function TextBlock({ block }: BlockProps<"text">) {
         className="inv-btn-outline inv-btn-shine"
         style={textStyle(block, "button")}
       >
-        {block.buttonLabel || "Подробнее"}
+        {block.buttonLabel || guestText(ctx.data.language).more}
       </a>
     </div>
   );

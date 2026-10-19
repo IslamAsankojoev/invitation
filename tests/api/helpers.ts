@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/db";
-import { rsvpRateLimiter } from "@/lib/rateLimit";
+import { eventsRateLimiter, rsvpRateLimiter } from "@/lib/rateLimit";
 
 export async function resetDb() {
+  await prisma.event.deleteMany();
   await prisma.rsvp.deleteMany();
   await prisma.invitation.deleteMany();
   await prisma.user.deleteMany();
   rsvpRateLimiter.reset();
+  eventsRateLimiter.reset();
 }
 
 export const ctx = (key: string) => ({ params: Promise.resolve({ key }) });

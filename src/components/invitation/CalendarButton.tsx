@@ -1,6 +1,7 @@
 "use client";
 
 import type { MouseEvent } from "react";
+import { guestText } from "@/lib/i18n";
 import { googleCalendarUrl, invitationEvent } from "@/lib/ics";
 import type { BlockContext } from "./blocks/types";
 
@@ -35,7 +36,7 @@ export function CalendarButton({ ctx, light = false }: Props) {
       className="inv-btn-outline mt-10"
       style={light ? { borderColor: "rgba(255,255,255,.6)", color: "#fff" } : undefined}
     >
-      Добавить в календарь
+      {guestText(ctx.data.language).addToCalendar}
     </a>
   );
 }

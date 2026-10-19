@@ -34,9 +34,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import type { Template } from "@/lib/templates";
+import { templateEvents, type Template } from "@/lib/templates";
 import { cn } from "@/lib/utils";
 import type { AdminApi, AdminTemplate } from "./api";
+import { eventTypeLabels } from "@/lib/copy";
+import { EVENT_TYPES, type EventType } from "@/lib/schema";
 
 type Props = {
   api: AdminApi;
@@ -176,7 +178,7 @@ export function AdminTemplates({ api, adminKey, templates, videoCount, showcaseK
         </SortableContext>
       </DndContext>
 
-      <RenameDialog template={renaming} onClose={() => setRenaming(null)} onSave={(name, description) => api.rename(renaming!.id, name, description).then(onChanged)} />
+      <RenameDialog template={renaming} onClose={() => setRenaming(null)} onSave={(name, description, events) => api.rename(renaming!.id, name, description, events).then(onChanged)} />
 
       <AlertDialog open={!!resetting} onOpenChange={(open) => !open && setResetting(null)}>
         <AlertDialogContent>
@@ -346,9 +348,18 @@ function TemplateItem({ template: t, status, published, onPublish, adminKey, vid
   );
 }
 
-function RenameDialog({ template, onClose, onSave }: { template: Template | null; onClose: () => void; onSave: (name: string, description: string) => Promise<void> }) {
+function RenameDialog({
+  template,
+  onClose,
+  onSave,
+}: {
+  template: Template | null;
+  onClose: () => void;
+  onSave: (name: string, description: string, events: EventType[]) => Promise<void>;
+}) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [events, setEvents] = useState<EventType[]>(["wedding"]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shownFor, setShownFor] = useState<string | null>(null);
@@ -357,6 +368,7 @@ function RenameDialog({ template, onClose, onSave }: { template: Template | null
     setShownFor(template.id);
     setName(template.name);
     setDescription(template.description);
+    setEvents(templateEvents(template));
     setError(null);
   }
 
@@ -365,7 +377,7 @@ function RenameDialog({ template, onClose, onSave }: { template: Template | null
     setBusy(true);
     setError(null);
     try {
-      await onSave(name, description);
+      await onSave(name, description, events);
       setShownFor(null);
       onClose();
     } catch (err) {
@@ -398,6 +410,29 @@ function RenameDialog({ template, onClose, onSave }: { template: Template | null
             <Label htmlFor="tpl-description">Описание</Label>
             <Textarea id="tpl-description" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={300} rows={3} className="text-base sm:text-sm" />
           </div>
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-2 text-sm font-medium">События</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {EVENT_TYPES.map((e) => {
+                const on = events.includes(e);
+                return (
+                  <Button
+                    key={e}
+                    type="button"
+                    size="sm"
+                    variant={on ? "default" : "outline"}
+                    aria-pressed={on}
+                    className="rounded-full"
+                    // Хотя бы одно событие остаётся отмеченным.
+                    onClick={() => setEvents(on ? (events.length > 1 ? events.filter((x) => x !== e) : events) : [...events, e])}
+                  >
+                    {eventTypeLabels[e]}
+                  </Button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">Фильтр на главной. Первое отмеченное — событие нового приглашения по шаблону.</p>
+          </fieldset>
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}

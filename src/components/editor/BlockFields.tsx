@@ -19,15 +19,19 @@ import {
   type ProgramIcon,
   type TextIcon,
   type TextStyle,
+  type EventType,
 } from "@/lib/schema";
 import { withTextStyle, type TextKey } from "@/lib/textStyle";
 import { programIconLabels, textIconLabels } from "@/lib/variants";
 import { AddFieldButton, PhotoListField, UploadField } from "./controls";
 import { TextStylePicker } from "./TextStylePicker";
+import { namesLabels } from "@/lib/copy";
 
 type FieldsProps<T extends BlockType> = {
   block: BlockOf<T>;
   onChange: (patch: Partial<Omit<BlockOf<T>, "type">>) => void;
+  /** Тип события приглашения: от него подпись поля имён («Имя невесты», «Кто празднует»…). */
+  eventType?: EventType;
 };
 
 type ProgramItem = BlockOf<"program">["items"][number];
@@ -78,15 +82,15 @@ function TextField({
 const Hint = ({ children }: { children: string }) => <p className="text-sm text-muted-foreground">{children}</p>;
 
 function HeroFields(props: FieldsProps<"hero">) {
-  const { block, onChange } = props;
+  const { block, onChange, eventType = "wedding" } = props;
   return (
     <>
       <TextField
         textStyle={styleOf(props, "names")}
-        label="Имена"
+        label={namesLabels[eventType]}
         value={block.names}
         onChange={(names) => onChange({ names })}
-        description="Через «&» — имена встанут в две строки"
+        description={eventType === "wedding" ? "Через «&» — имена встанут в две строки" : undefined}
       />
       <TextField
         label="Дата и время"

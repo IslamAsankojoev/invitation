@@ -12,8 +12,12 @@ export function CopyButton({
   text,
   label,
   children,
+  onCopied,
   ...props
-}: { text: string; label: string; children?: React.ReactNode } & Omit<React.ComponentProps<typeof Button>, "onClick" | "children">) {
+}: { text: string; label: string; children?: React.ReactNode; onCopied?: () => void } & Omit<
+  React.ComponentProps<typeof Button>,
+  "onClick" | "children"
+>) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
   return (
     <>
@@ -27,6 +31,7 @@ export function CopyButton({
           try {
             await navigator.clipboard.writeText(text);
             setState("copied");
+            onCopied?.();
           } catch {
             setState("failed");
           }

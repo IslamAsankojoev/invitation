@@ -18,6 +18,8 @@ export function createRateLimiter(limit: number, windowMs: number) {
 }
 
 export const rsvpRateLimiter = createRateLimiter(5, 60_000);
+/** События аналитики: гость шлёт два события на открытие, а за одним IP мобильного оператора — много людей. */
+export const eventsRateLimiter = createRateLimiter(60, 60_000);
 
 export function clientIp(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for");

@@ -10,6 +10,8 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { shareGate } from "@/lib/access";
 import type { InvitationData } from "@/lib/schema";
+import type { ShareChannel } from "@/lib/analytics";
+import { sendEvent } from "@/lib/beacon";
 import { shareMessage, slugSuggestions, telegramShareUrl, whatsappShareUrl } from "@/lib/share";
 import { slugSchema } from "@/lib/slug";
 import { patchInvitation } from "./api";
@@ -69,6 +71,8 @@ export function LinkPanel({ id, token, slug, onSlugChange, account, lanOrigin, d
 
   const text = shareMessage(data, publicUrl);
   const suggestions = slugSuggestions(data).filter((s) => s !== slug);
+  // Аналитика: шаг воронки «поделились ссылкой» (lib/analytics.ts).
+  const shared = (channel: ShareChannel) => sendEvent({ name: "share_clicked", slug, channel });
 
   return (
     <div className="flex flex-col gap-4">
@@ -81,18 +85,36 @@ export function LinkPanel({ id, token, slug, onSlugChange, account, lanOrigin, d
           </a>
         </div>
         <div className="flex flex-wrap gap-2">
-          <CopyButton text={publicUrl} label="Скопировать ссылку для гостей" variant="default" className="flex-1 pointer-coarse:h-10">
+          <CopyButton
+            text={publicUrl}
+            label="Скопировать ссылку для гостей"
+            variant="default"
+            className="flex-1 pointer-coarse:h-10"
+            onCopied={() => shared("copy")}
+          >
             Скопировать ссылку для гостей
           </CopyButton>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <Button asChild size="lg" className="bg-[#25d366] text-white hover:bg-[#1ebe5b]">
-            <a href={whatsappShareUrl(text)} target="_blank" rel="noopener noreferrer" aria-label="Отправить в WhatsApp">
+            <a
+              href={whatsappShareUrl(text)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Отправить в WhatsApp"
+              onClick={() => shared("whatsapp")}
+            >
               <Send /> WhatsApp
             </a>
           </Button>
           <Button asChild size="lg" className="bg-[#2aabee] text-white hover:bg-[#1e96d4]">
-            <a href={telegramShareUrl(publicUrl, text)} target="_blank" rel="noopener noreferrer" aria-label="Отправить в Telegram">
+            <a
+              href={telegramShareUrl(publicUrl, text)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Отправить в Telegram"
+              onClick={() => shared("telegram")}
+            >
               <Send /> Telegram
             </a>
           </Button>
@@ -102,7 +124,12 @@ export function LinkPanel({ id, token, slug, onSlugChange, account, lanOrigin, d
               size="lg"
               variant="outline"
               className="col-span-2"
-              onClick={() => navigator.share({ text: text.replace(`\n\n${publicUrl}`, ""), url: publicUrl }).catch(() => {})}
+              onClick={() =>
+                navigator
+                  .share({ text: text.replace(`\n\n${publicUrl}`, ""), url: publicUrl })
+                  .then(() => shared("native"))
+                  .catch(() => {})
+              }
             >
               <Share2 /> Другое приложение…
             </Button>
@@ -129,7 +156,7 @@ export function LinkPanel({ id, token, slug, onSlugChange, account, lanOrigin, d
         {/* QR — навести камеру телефона и сразу открыть; адрес сайта известен только после гидратации. */}
         {origin && (
           <div className={`grid gap-3 ${lanOrigin ? "grid-cols-2" : "grid-cols-1 justify-items-center"}`}>
-            <QrTile url={publicUrl} caption="Ссылка для гостей" label="QR-код ссылки для гостей" />
+            <QrTile url={publicUrl} caption="Ссылка для гостей" label="QR-код ссылки для гостей" onDownload={() => shared("qr")} />
             {lanOrigin && <QrTile url={`${lanOrigin}/i/${slug}`} caption="По Wi-Fi (разработка)" label="QR-код ссылки для телефона в Wi-Fi сети" />}
           </div>
         )}
@@ -204,7 +231,7 @@ export function LinkPanel({ id, token, slug, onSlugChange, account, lanOrigin, d
 }
 
 /** QR-код ссылки: тёмный на белом квадрате — камера читает его при любой теме; подпись — что откроется. */
-function QrTile({ url, caption, label }: { url: string; caption: string; label: string }) {
+function QrTile({ url, caption, label, onDownload }: { url: string; caption: string; label: string; onDownload?: () => void }) {
   const boxRef = useRef<HTMLDivElement>(null);
   return (
     <figure className="flex w-full max-w-[200px] flex-col items-center gap-2 rounded-lg border p-3">
@@ -219,7 +246,9 @@ function QrTile({ url, caption, label }: { url: string; caption: string; label: 
         aria-label={`Скачать PNG: ${label}`}
         onClick={() => {
           const svg = boxRef.current?.querySelector("svg");
-          if (svg) downloadQrPng(svg, `qr-${new URL(url).pathname.split("/").pop() || "invitation"}.png`);
+          if (!svg) return;
+          downloadQrPng(svg, `qr-${new URL(url).pathname.split("/").pop() || "invitation"}.png`);
+          onDownload?.();
         }}
       >
         <Download /> Скачать PNG

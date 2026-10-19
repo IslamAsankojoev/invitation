@@ -1,5 +1,6 @@
 import { MessageCircle, Phone, Send, type LucideIcon } from "lucide-react";
 import { telegramUrl, telUrl, whatsappUrl } from "@/lib/contacts";
+import { guestText } from "@/lib/i18n";
 import type { Contact } from "@/lib/schema";
 import { textStyle } from "@/lib/textStyle";
 import { Section } from "../Section";
@@ -8,13 +9,13 @@ import type { BlockProps } from "./types";
 type Link = { href: string; label: string; icon: LucideIcon };
 
 /** Кнопки человека: позвонить, WhatsApp (по тому же номеру), Telegram (ник или номер). */
-function linksOf(p: Contact): Link[] {
+function linksOf(p: Contact, call: string): Link[] {
   const name = p.name.trim() ? ` — ${p.name.trim()}` : "";
   const tel = telUrl(p.phone);
   const wa = p.whatsapp ? whatsappUrl(p.phone) : null;
   const tg = telegramUrl(p.telegram);
   const links: (Link | null)[] = [
-    tel ? { href: tel, label: `Позвонить${name}`, icon: Phone } : null,
+    tel ? { href: tel, label: `${call}${name}`, icon: Phone } : null,
     wa ? { href: wa, label: `WhatsApp${name}`, icon: MessageCircle } : null,
     tg ? { href: tg, label: `Telegram${name}`, icon: Send } : null,
   ];
@@ -22,7 +23,7 @@ function linksOf(p: Contact): Link[] {
 }
 
 /** Контакты организаторов: имя, роль, телефон и круглые кнопки связи. */
-export function ContactsBlock({ block }: BlockProps<"contacts">) {
+export function ContactsBlock({ block, ctx }: BlockProps<"contacts">) {
   const cards = block.variant === "cards";
   return (
     <Section block={block}>
@@ -49,7 +50,7 @@ export function ContactsBlock({ block }: BlockProps<"contacts">) {
             </p>
             {p.phone && <p className="mt-1 text-lg opacity-80">{p.phone}</p>}
             <div className="mt-3 flex justify-center gap-3">
-              {linksOf(p).map(({ href, label, icon: Icon }) => (
+              {linksOf(p, guestText(ctx.data.language).call).map(({ href, label, icon: Icon }) => (
                 <a
                   key={href}
                   href={href}
