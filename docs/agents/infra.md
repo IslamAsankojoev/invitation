@@ -11,7 +11,20 @@
 тесты **никогда** не ходят в Supabase (тесты чистят таблицы). Vercel: `vercel-build` = `prisma migrate deploy && next
 build`, регион функций `dub1` (vercel.json) — рядом с базой. Старый `prisma/dev.db` (SQLite) больше не используется.
 
-## Для продакшена
+## CI (GitHub Actions)
+
+- Файл — `.github/workflows/ci.yml`, запуск на каждый `push` и `pull_request`. Деплой остаётся на Vercel
+  (`vercel-build`), CI его не трогает. E2E (Playwright) в CI пока нет — следующий шаг.
+- Джоб `typecheck + tests` (ubuntu-latest, Node 20, кэш npm): `npm ci` (postinstall — `prisma generate`) →
+  `npm run typecheck` → `npm test`. Postgres 16 — service-контейнер на `localhost:5433`, `postgres/postgres`, база
+  `wedding_test` (как ждут `vitest.config.ts` и `tests/global-setup.ts`, он же применяет миграции).
+- В `env` — только строки подключения к этой тестовой базе. Секретов и строк Supabase в workflow нет и не должно быть.
+  Ключи (`ADMIN_KEY`, `SHOWCASE_KEY`, `SITE_URL`, `VERCEL`) тесты задают сами; `AUTH_GOOGLE_*` в CI не задавать —
+  включится вход, и сценарии по token упрутся в «Войдите».
+- Ничего, кроме Postgres, тестам не нужно: сеть мокается (шрифты Google для превью — с запасным путём без сети),
+  ffmpeg и браузер не запускаются (очередь видео — с подменённым запуском), файлы вне git не читаются.
+- Защита ветки `main` (настраивается в GitHub руками): обязательные статусы `typecheck + tests` и Vercel.
+- CI красный — как воспроизвести и что делать: `docs/agents/tests.md`, «CI».
 
 **Уже сделано:** деплой на Vercel (`vercel-build` = `prisma generate && prisma migrate deploy && next build`, регион
 `dub1`), аналитика (`/stats`, `docs/agents/analytics.md`). Проверь, что в переменных Vercel задан `SITE_URL` — адрес
