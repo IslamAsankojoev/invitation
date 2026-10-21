@@ -75,3 +75,14 @@
   не автосохранением; 409 если занят); ссылка на редактор.
 - Все изменения — через чистые функции `lib/blocks.ts` (`toggleBlock`, `moveBlock`, `updateBlock`, `addOrnament`,
   `updateOrnament`, `removeOrnament`) или `applyTemplate`; состояние — один `useState<InvitationData>`.
+
+## Тема сайта (не приглашения)
+
+- `next-themes` (`components/theme/ThemeProvider`, класс `dark`/`light` на <html>, выбор
+  в localStorage; до первого нажатия — как в системе). Кнопка `ThemeToggle` в шапках главной, «Моих приглашений»,
+  редактора, ответов гостей и админки — как на max-green-api-client.onrender.com: круглая 40 px, одно нажатие
+  переключает светлую/тёмную (в тёмной — солнце, в светлой — луна, подпись — следующая тема), смена «волной»:
+  `switchThemeWithWave` — View Transition, новая тема расходится кругом от центра кнопки до дальнего угла экрана
+  (маска radial-gradient с краем 90 px, 0,9 с, CSS «Волна темы» в конце globals.css, только при классе `theme-wave`);
+  без View Transitions и при «Уменьшить движение» — сразу. Значок — CSS по `dark:` (верный с первого кадра); тёмные токены — `.dark` в globals.css (нейтральный графит без подтона, primary — яркий лайм oklch(0.9 0.2 125)). В редакторе не пиши
+  жёсткие светлые цвета (`bg-white`, `text-emerald-700`) без `dark:`-пары; QR — на белом специально.
