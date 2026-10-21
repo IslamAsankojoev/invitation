@@ -1,0 +1,54 @@
+# Проверки на каждый push и pull request: типы и тесты Vitest (unit, компоненты, API).
+# Деплой — на Vercel (vercel-build), здесь его нет. E2E (Playwright) — следующим шагом.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: typecheck + tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      # Как локальный Docker (docker-compose.yml): тесты ждут wedding_test на localhost:5433
+      # (vitest.config.ts, tests/global-setup.ts — он же применяет миграции).
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: wedding_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d wedding_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Только тестовая база в контейнере раннера. Ключи (ADMIN_KEY, SHOWCASE_KEY, SITE_URL…) тесты задают сами;
+    # AUTH_GOOGLE_* не задавать — включится вход, и сценарии по token упрутся в «Войдите». Секретов тут нет.
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5433/wedding_test
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5433/wedding_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # postinstall делает prisma generate.
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm test

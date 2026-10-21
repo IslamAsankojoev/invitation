@@ -69,7 +69,7 @@ npm run typecheck
 | [`invitation.md`](docs/agents/invitation.md) | страница гостя, конверт, блоки, темы, шрифты, анимации, виды блоков, фоны, края, PRO, событие и язык гостя | всё, что видит гость (и превью), переводы |
 | [`editor.md`](docs/agents/editor.md) | редактор: панели, превью, автосохранение, телефонный режим | правки редактора |
 | [`admin.md`](docs/agents/admin.md) | скрытый показ `/showcase`, админка: правка, порядок и публикация шаблонов, видео | показ, админка, ролики |
-| [`infra.md`](docs/agents/infra.md) | базы (Supabase/Docker), Vercel, что осталось до продакшена, лицензии | базы, деплой, переменные окружения, перед релизом |
+| [`infra.md`](docs/agents/infra.md) | базы (Supabase/Docker), Vercel, CI (GitHub Actions), что осталось до продакшена, лицензии | базы, деплой, переменные окружения, перед релизом |
 | [`api.md`](docs/agents/api.md) | доступ по token и аккаунту, API, upload, RSVP | API, права, загрузки |
 | [`analytics.md`](docs/agents/analytics.md) | таблица `Event`, события воронки, `/stats` | аналитика, статистика |
 | [`pitfalls.md`](docs/agents/pitfalls.md) | грабли, на которые уже наступали | непонятное поведение, перед крупной правкой |

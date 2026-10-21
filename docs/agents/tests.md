@@ -24,6 +24,21 @@
 - **E2E — Playwright** (`playwright.config.ts`): Pixel 7, свой dev-сервер на :3100 с базой `wedding_e2e` и сборкой в
   `.next-e2e`, `AUTH_GOOGLE_*` пустые (иначе сценарий по token упрётся во вход).
 
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`, подробно — `docs/agents/infra.md`) на каждый push и PR запускает
+`npm run typecheck` и `npm test` с Postgres 16 в контейнере. E2E в CI пока нет — гоняй `npm run test:e2e` локально.
+
+**CI красный — что делать:**
+1. Посмотреть упавший шаг: `gh run list --branch <ветка>`, затем `gh run view <id> --log-failed`.
+2. Воспроизвести как на раннере — без `.env`, в UTC, из чистой копии (там нет `public/uploads` и прочего локального):
+   `git clone . /tmp/ci && cd /tmp/ci && npm ci && env -i HOME="$HOME" PATH="$PATH" CI=true TZ=UTC npm test`
+   (локальный Postgres — `npm run db:up`, та же база `wedding_test` на 5433).
+3. Частые причины: новая миграция не закоммичена (падает `prisma migrate deploy` в global-setup), тест зависит от
+   локального файла или переменной из `.env`, от часового пояса или от порядка шаблонов из админки.
+4. **Не ослабляй и не пропускай тесты**, чтобы получить зелёный: чини причину. Если тесту нужно то, чего нет на
+   раннере (сеть, ffmpeg, браузер), — сначала обсуди с владельцем.
+
 ## Правила
 
 - Ищи элементы по ролям и подписям (`getByRole`, `getByLabelText`) — доступность часть контракта; не ослабляй проверки,
