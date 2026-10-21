@@ -42,7 +42,7 @@
 | P8 | **No analytics.** We don't know how many people go from template to editor, to shared, to first guest open, to RSVP. | We can't tell which of the 45 backgrounds matter, where people drop out, or whether a feature worked. |
 | P9 | **Option overload in the editor.** Even after the `editor-ux.md` work, the product's surface area keeps growing (motion idle amplitude, texture stains, background blur…). | Every option costs decision fatigue for users and maintenance for us. The target user said the editor felt "too difficult". |
 | P10 | **The party prototype is a parallel universe.** It has its own canvas scenes, its own data in `lib/party.ts` and no link to the invitation format or RSVP. | Good idea, but there's a risk of building and maintaining two products. |
-| P11 | **Ops basics.** Rate limiting is in memory, there are no scheduled backups, the free Supabase tier sleeps, and the admin is local-only. | Fine for a demo, risky once real weddings depend on us (already listed in AGENTS §10). |
+| P11 | **Ops basics.** Rate limiting is in memory, there are no scheduled backups, the free Supabase tier sleeps, and the admin is local-only. | Fine for a demo, risky once real weddings depend on us (already listed in AGENTS.md, «Для продакшена»). |
 
 ## 3. Market research
 
@@ -194,7 +194,7 @@ remote greetings from relatives abroad. Guests return to it, which means more br
 ### 5.5 Refactor or change (enablers)
 - **Data model**: add `Guest` (invitationId, name, greeting, seats, side, tags, phone, code, openedAt, sentAt) and
   link `Rsvp` to it. Add `eventType` and optionally `events[]` to the invitation format (a minor `SCHEMA_VERSION`
-  bump per AGENTS §4.1).
+  bump per `docs/agents/data-model.md`).
 - **i18n for the guest page** (ky/ru): one dictionary per language, with block components reading strings from it.
 - **Analytics** (privacy-friendly, e.g. PostHog or Umami): template chosen → editor → first share → first guest
   open → first RSVP → paid. Also track guest opens per invitation.

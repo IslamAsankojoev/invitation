@@ -49,7 +49,7 @@
   - Отступы содержимого под края предмета — класс `.surface-<id>` в `src/app/globals.css`.
   - Светлые предметы (текст принудительно тёмный) — `lightSurfaces`.
   - Плитка в редакторе показывает `surfaceThumb(id)` (= `src` предмета).
-- **Рецепт «Фон-предмет»** и «Картинка в библиотеку» — в `AGENTS.md` §9.
+- **Рецепт «Фон-предмет»** и «Картинка в библиотеку» — в `docs/agents/recipes.md`.
 
 ## 2. Лицензии — ВАЖНО
 
@@ -141,9 +141,9 @@ pngwing.com сам ничего не лицензирует: у картинок
      блоке;
    - скриншоты в панели браузера запаздывают — после прокрутки менять размер окна (`resize_window` 430↔431),
      анимации дожимать `document.getAnimations().forEach(a => a.finish())` и ставить `data-revealed`.
-7. **Перед сдачей:** `npx tsc --noEmit`, `npm test`, `npm run test:e2e`; обновить `AGENTS.md` (§5.7, §9, §11) и
+7. **Перед сдачей:** `npx tsc --noEmit`, `npm test`, `npm run test:e2e`; обновить `docs/agents/` (`invitation.md`, `recipes.md`, `history.md`) и
    `CREDITS.md`. Проект не под git — перед большой переделкой архив (`tar czf before-new-sources.tgz …`, см.
-   AGENTS.md §7 п.14). Не запускать `prettier --write` (нет конфига, переформатирует под 80 символов).
+   `docs/agents/pitfalls.md` п.14). Не запускать `prettier --write` (нет конфига, переформатирует под 80 символов).
 
 ## 5. Что НЕ делать
 

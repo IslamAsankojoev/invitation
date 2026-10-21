@@ -521,7 +521,7 @@ export function withBlockIds(blocks: unknown): unknown {
 
 /** Формат приглашения без миграций — для слепка схемы (schemaDiff) и типов. */
 export const invitationDataObject = z.object({
-  /** Версия формата (semver) — см. lib/migrations.ts и правило в AGENTS.md. */
+  /** Версия формата (semver) — см. lib/migrations.ts и правило в docs/agents/data-model.md. */
   // По умолчанию — постоянное 1.0.0 (данные без версии), а не SCHEMA_VERSION: иначе слепок менялся бы при каждом
   // поднятии версии. Текущую версию проставляет migrateInvitation до проверки.
   schemaVersion: z.string().regex(SEMVER, "Неверная версия формата").default(INITIAL_SCHEMA_VERSION),
