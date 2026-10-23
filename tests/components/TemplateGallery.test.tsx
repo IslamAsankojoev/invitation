@@ -59,9 +59,29 @@ describe("«Выбрать» → форма «Главное о событии»
       template: "rose-garden",
       eventType: "wedding",
       language: "ru",
-      setup: { names: "Мария & Пётр", date: "2027-08-20T16:00", placeName: "Шале", address: "", musicUrl: null },
+      setup: { names: "Мария & Пётр", date: "2027-08-20T16:00", hosts: "", placeName: "Шале", address: "", musicUrl: null },
     });
     await waitFor(() => expect(assign).toHaveBeenCalledWith("/edit/x?token=t"));
+  });
+
+  it("«Этно»: «От кого приглашение» с хозяевами из примера в подсказке уходит в API; у шаблона без хозяев поля нет", async () => {
+    const u = user();
+    const { fetchMock } = stubCreate();
+    render(<TemplateGallery />);
+    await u.click(screen.getByRole("button", { name: "Выбрать шаблон «Розовый сад»" }));
+    expect(within(screen.getByRole("dialog", { name: "Главное о событии" })).queryByLabelText("От кого приглашение")).toBeNull();
+    await u.keyboard("{Escape}");
+    await u.click(screen.getByRole("button", { name: "Выбрать шаблон «Этно»" }));
+    const dialog = screen.getByRole("dialog", { name: "Главное о событии" });
+    const hosts = within(dialog).getByLabelText("От кого приглашение");
+    expect(hosts).toHaveAttribute("placeholder", "Нурбек и Венера");
+    await u.click(within(dialog).getByRole("radio", { name: "Кыргызча" }));
+    expect(hosts).toHaveAttribute("placeholder", "Нурбек жана Венера");
+    await u.type(within(dialog).getByLabelText("Имена"), "Айбек & Сезим");
+    fireEvent.change(within(dialog).getByLabelText("Дата"), { target: { value: "2027-08-20" } });
+    await u.type(hosts, "Тилековдор үй-бүлөсү");
+    await u.click(within(dialog).getByRole("button", { name: "Создать приглашение" }));
+    expect(body(fetchMock)).toMatchObject({ template: "etno", setup: { names: "Айбек & Сезим", hosts: "Тилековдор үй-бүлөсү" } });
   });
 
   it("«Пропустить» создаёт приглашение с примером текстов (без setup)", async () => {

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { blockSummary, plural, updateBlock } from "@/lib/blocks";
-import { checklist } from "@/lib/checklist";
+import { checklist, sampleLeftovers } from "@/lib/checklist";
 import { createDefaultInvitation } from "@/lib/defaults";
-import { createFromTemplate, templates } from "@/lib/templates";
+import { applySetup, setupSchema } from "@/lib/setup";
+import { createFromTemplate, findTemplate, templates } from "@/lib/templates";
 import type { Block, InvitationData } from "@/lib/schema";
 
 const block = (data: InvitationData, type: Block["type"]) => data.blocks.find((b) => b.type === type)!;
@@ -57,3 +58,59 @@ describe("«Что осталось заполнить»", () => {
     expect(checklist(data).map((i) => i.key)).not.toContain("program");
   });
 });
+
+describe("фото из примера в сводке блока", () => {
+  it("«фото из примера» вместо «фото загружено»; в галерее — сколько из примера", () => {
+    const data = createFromTemplate(findTemplate("mocha")!);
+    expect(blockSummary(data, block(data, "photo"))).toBe("фото из примера");
+    expect(blockSummary(data, block(data, "gallery"))).toBe("6 фото из примера");
+    const gallery = block(data, "gallery") as Extract<Block, { type: "gallery" }>;
+    const mixed = updateBlock(data, gallery.id, { photos: ["/uploads/inv/x/1.webp", ...gallery.photos.slice(1)] });
+    expect(blockSummary(mixed, block(mixed, "gallery"))).toBe("6 фото, 5 из примера");
+    const own = updateBlock(data, block(data, "photo").id, { photo: "/uploads/inv/x/2.webp" });
+    expect(blockSummary(own, block(own, "photo"))).toBe("фото загружено");
+  });
+});
+
+describe("проверка перед отправкой: что осталось из примера", () => {
+  const etno = findTemplate("etno")!;
+  const setup = (patch = {}) =>
+    setupSchema.parse({ names: "Айбек & Сезим", date: "2028-08-14T17:00", placeName: "Ала-Тоо", address: "Бишкек, Чүй 1", musicUrl: null, ...patch });
+  const what = (data: InvitationData) => Object.fromEntries(sampleLeftovers(data).map((l) => [l.name, l.what]));
+
+  it("новое приглашение из любого шаблона — имена и дата из примера", () => {
+    for (const t of templates) expect(what(createFromTemplate(t))["Главный экран"], t.id).toEqual(expect.arrayContaining(["имена", "дата"]));
+  });
+
+  it("«Этно» после формы без хозяев — их имена в тексте, фото; с хозяевами — только фото", () => {
+    const noHosts = what(applySetup(createFromTemplate(etno), setup(), etno));
+    expect(noHosts).toEqual({
+      "Главный экран": ["фото"],
+      "Текст 2": ["имена Нурбек, Венера"],
+      Фото: ["фото"],
+      Место: ["фото"],
+    });
+    expect(what(applySetup(createFromTemplate(etno), setup({ hosts: "Тилековдор үй-бүлөсү" }), etno))["Текст 2"]).toBeUndefined();
+  });
+
+  it("адрес, ссылка на карту, телефон, срок ответа, программа — пока как в примере", () => {
+    const lago = what(createFromTemplate(findTemplate("lago")!));
+    expect(lago).toMatchObject({
+      Место: ["адрес", "ссылка на карту", "фото"],
+      Контакты: ["телефон"],
+      "Анкета гостя": ["срок ответа"],
+      Программа: ["время и пункты"],
+    });
+  });
+
+  it("своё не отмечается: свой текст с именем из примеров, свои данные; скрытый блок не проверяется", () => {
+    let data = applySetup(createFromTemplate(etno), setup({ hosts: "Нурбек и Айгуль" }), etno);
+    // Хозяева — свои, хотя «Нурбек» есть среди примеров: текст уже не пример.
+    expect(what(data)["Текст 2"]).toBeUndefined();
+    data = updateBlock(data, "photo", { visible: false });
+    expect(what(data)["Фото"]).toBeUndefined();
+    const plain = updateBlock(createDefaultInvitation(), "hero", { names: "Мария & Пётр", date: "2028-08-20T17:30" });
+    expect(what(plain)["Главный экран"]).toBeUndefined();
+  });
+});
+

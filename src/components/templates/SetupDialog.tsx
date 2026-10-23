@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { Textarea } from "@/components/ui/textarea";
 import { Segmented } from "@/components/editor/controls";
 import { findBlock } from "@/lib/blocks";
 import { eventCopy, eventTypeLabels, namesLabels } from "@/lib/copy";
@@ -14,6 +15,7 @@ import { languageLabels } from "@/lib/i18n";
 import { DEFAULT_MUSIC_URL, musicTracks } from "@/lib/music";
 import { setupSchema, type Setup } from "@/lib/setup";
 import { EVENT_TYPES, type EventType, type Language } from "@/lib/schema";
+import { templateCopyKy } from "@/lib/templateCopyKy";
 import { createFromTemplate, templateEvents, type Template } from "@/lib/templates";
 
 /** Событие и язык нового приглашения (примеры текстов — под них, POST /api/invitations). */
@@ -40,7 +42,8 @@ const dateInput = "min-w-0 appearance-none [&::-webkit-date-and-time-value]:text
 type Errors = Partial<Record<"names" | "date", string>>;
 
 /**
- * Главное о событии перед редактором: имена, дата, место, песня. На компьютере — окно, на телефоне — весь экран.
+ * Главное о событии перед редактором: имена, хозяева (если они есть в примере шаблона), дата, место, песня. На
+ * компьютере — окно, на телефоне — весь экран.
  * Примеры шаблона — в подсказках полей, а не в значениях: человек вписывает своё, а не стирает чужое.
  */
 export function SetupDialog({ template, onClose, onCreate, creating, error, eventType }: Props) {
@@ -71,19 +74,20 @@ function SetupForm({ template, onCreate, creating, error, eventType: initialEven
   const namesExample = eventType === sample.eventType && language === sample.language ? hero.names : eventCopy[eventType][language].names;
 
   const [names, setNames] = useState("");
+  const [hosts, setHosts] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("16:00");
   const [placeName, setPlaceName] = useState("");
   const [address, setAddress] = useState("");
   const [musicUrl, setMusicUrl] = useState<string>(DEFAULT_MUSIC_URL);
   const [errors, setErrors] = useState<Errors>({});
-  const ids = { event: useId(), names: useId(), date: useId(), time: useId(), place: useId(), address: useId(), music: useId(), err: useId() };
+  const ids = { event: useId(), names: useId(), hosts: useId(), date: useId(), time: useId(), place: useId(), address: useId(), music: useId(), err: useId() };
   const namesRef = useRef<HTMLInputElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    const parsed = setupSchema.safeParse({ names, date: date ? `${date}T${time || "00:00"}` : "", placeName, address, musicUrl: musicUrl || null });
+    const parsed = setupSchema.safeParse({ names, date: date ? `${date}T${time || "00:00"}` : "", hosts, placeName, address, musicUrl: musicUrl || null });
     if (!parsed.success) {
       const next: Errors = {};
       for (const issue of parsed.error.issues) {
@@ -144,6 +148,24 @@ function SetupForm({ template, onCreate, creating, error, eventType: initialEven
             wedding && <FieldDescription id={`${ids.names}-d`}>Через «&» — имена встанут в две строки</FieldDescription>
           )}
         </Field>
+
+        {/* Подпись хозяев есть не в каждом шаблоне — спрашиваем, только если её нужно заменить (иначе гости увидят
+            хозяев из примера). */}
+        {template.hosts && (
+          <Field>
+            <FieldLabel htmlFor={ids.hosts}>От кого приглашение</FieldLabel>
+            <Textarea
+              id={ids.hosts}
+              value={hosts}
+              rows={2}
+              placeholder={language === "ky" ? (templateCopyKy[template.hosts] ?? template.hosts) : template.hosts}
+              aria-describedby={`${ids.hosts}-d`}
+              className="min-h-0"
+              onChange={(e) => setHosts(e.target.value)}
+            />
+            <FieldDescription id={`${ids.hosts}-d`}>Хозяева тоя — так подпишем приглашение</FieldDescription>
+          </Field>
+        )}
 
         <div className="grid grid-cols-[1fr_8.5rem] gap-3">
           <Field data-invalid={!!errors.date || undefined}>

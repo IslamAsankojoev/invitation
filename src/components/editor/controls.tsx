@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FieldError, FieldLabel } from "@/components/ui/field";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { isSamplePhoto } from "@/lib/blocks";
 import { categoryLabels, libraryBy, type LibraryCategory } from "@/lib/library";
 import { cn } from "@/lib/utils";
 import { useUploadFile } from "./api";
@@ -206,9 +207,15 @@ export function UploadField({
           </Button>
         )}
       </div>
+      {isSamplePhoto(value) && <SamplePhotoNote>Фото из примера шаблона — замените своим</SamplePhotoNote>}
       {error && <FieldError>{error}</FieldError>}
     </div>
   );
+}
+
+/** Подсказка у фото из примера шаблона (чужая пара, место): гости увидят его, пока не заменят. */
+function SamplePhotoNote({ children }: { children: ReactNode }) {
+  return <p className="text-xs text-amber-700 dark:text-amber-300">{children}</p>;
 }
 
 /** Список фото (галерея): миниатюры с «левее/правее/убрать» и загрузка сразу нескольких файлов. */
@@ -259,6 +266,11 @@ export function PhotoListField({
         {value.map((src, i) => (
           <div key={`${src}-${i}`} className="group relative aspect-square overflow-hidden rounded-lg border">
             <img src={src} alt="" className="size-full object-cover" />
+            {isSamplePhoto(src) && (
+              <span className="absolute top-1 left-1 rounded bg-background/90 px-1 text-[0.65rem] font-medium text-amber-700 shadow-sm dark:text-amber-300">
+                пример
+              </span>
+            )}
             <button type="button" aria-label={`Убрать фото ${i + 1}`} onClick={() => onChange(value.filter((_, j) => j !== i))} className={`${arrow} top-1 right-1 bottom-auto`}>
               <X className="size-3.5" />
             </button>
@@ -289,6 +301,7 @@ export function PhotoListField({
           </label>
         )}
       </div>
+      {value.some(isSamplePhoto) && <SamplePhotoNote>Фото с пометкой «пример» — из шаблона, замените своими</SamplePhotoNote>}
       {error && <FieldError>{error}</FieldError>}
     </div>
   );

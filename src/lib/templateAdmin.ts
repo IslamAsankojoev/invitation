@@ -11,8 +11,8 @@ export const draftSlug = (templateId: string) => `tpl-${templateId}`;
 
 /**
  * Шаблон из приглашения, собранного в редакторе: тема, музыка и все блоки по порядку (структура `layout` — тексты,
- * фото и оформление каждого блока). Имя, описание и оформление типов, которых в приглашении нет (`blocks`), —
- * от прежнего шаблона. Цвета дресс-кода — из блока дресс-кода. Вход не мутирует.
+ * фото и оформление каждого блока). Имя, описание, хозяева примера и оформление типов, которых в приглашении нет
+ * (`blocks`), — от прежнего шаблона. Цвета дресс-кода — из блока дресс-кода. Вход не мутирует.
  */
 export function templateFromInvitation(base: Template, data: InvitationData): Template {
   // exact: блок целиком — пустые поля так и остаются пустыми (см. LayoutBlock).
@@ -25,6 +25,8 @@ export function templateFromInvitation(base: Template, data: InvitationData): Te
     id: base.id,
     name: base.name,
     description: base.description,
+    // Хозяева примера — как у прежнего: по ним форма «Главное о событии» находит, что заменить.
+    ...(base.hosts && { hosts: base.hosts }),
     ...((base.events || events.join() !== "wedding") && { events }),
     ...((base.language || data.language !== "ru") && { language: data.language }),
     theme: structuredClone(data.theme),
