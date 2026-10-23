@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, KeyRound, Link2, Send, Share2, Sparkles, Wifi } from "lucide-react";
+import { ChevronRight, Download, KeyRound, Link2, Send, Share2, Sparkles, TriangleAlert, Wifi } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import QRCode from "react-qr-code";
 import { CopyButton } from "@/components/CopyButton";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { shareGate } from "@/lib/access";
+import { sampleLeftovers, type Leftover } from "@/lib/checklist";
 import type { InvitationData } from "@/lib/schema";
 import type { ShareChannel } from "@/lib/analytics";
 import { sendEvent } from "@/lib/beacon";
@@ -29,9 +30,11 @@ type Props = {
   lanOrigin?: string | null;
   /** Для текста сообщения гостям и ссылки из имён. */
   data: InvitationData;
+  /** Открыть блок в панели «Блоки» — из проверки перед отправкой. */
+  onOpenBlock: (blockId: string) => void;
 };
 
-export function LinkPanel({ id, token, slug, onSlugChange, account, lanOrigin, data }: Props) {
+export function LinkPanel({ id, token, slug, onSlugChange, account, lanOrigin, data, onOpenBlock }: Props) {
   const [value, setValue] = useState(slug);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [origin, setOrigin] = useState("");
@@ -76,6 +79,7 @@ export function LinkPanel({ id, token, slug, onSlugChange, account, lanOrigin, d
 
   return (
     <div className="flex flex-col gap-4">
+      <SampleLeftovers items={sampleLeftovers(data)} onOpen={onOpenBlock} />
       {/* Главное действие вкладки — отправить ссылку гостям: крупные кнопки, а не только иконка. */}
       <Group title="Ссылка для гостей">
         <div className="flex items-center gap-2">
@@ -279,4 +283,40 @@ function downloadQrPng(svg: SVGSVGElement, fileName: string) {
     a.click();
   };
   img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+}
+
+/**
+ * Проверка перед отправкой: что в приглашении ещё из примера шаблона (чужие имена, адрес, фото — lib/checklist.ts).
+ * Отправить можно и так — список только подсказывает; пункт открывает блок.
+ */
+function SampleLeftovers({ items, onOpen }: { items: Leftover[]; onOpen: (blockId: string) => void }) {
+  if (!items.length) return null;
+  return (
+    <Alert
+      data-testid="sample-leftovers"
+      className="border-amber-300 bg-amber-50 text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-50"
+    >
+      <TriangleAlert aria-hidden="true" />
+      <AlertTitle>Перед отправкой проверьте</AlertTitle>
+      <AlertDescription className="text-amber-900 dark:text-amber-100/90">
+        <p>Это осталось из примера шаблона — гости увидят как есть.</p>
+        <ul aria-label="Осталось из примера" className="-mx-2 mt-1.5 flex flex-col">
+          {items.map((item) => (
+            <li key={item.blockId}>
+              <button
+                type="button"
+                onClick={() => onOpen(item.blockId)}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-amber-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none pointer-coarse:min-h-10 dark:hover:bg-amber-500/15"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="font-medium">{item.name}</span>: {item.what.join(", ")}
+                </span>
+                <ChevronRight aria-hidden="true" className="size-4 shrink-0 opacity-60" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </AlertDescription>
+    </Alert>
+  );
 }

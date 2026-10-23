@@ -448,6 +448,14 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
     if (on && expanded) scrollPreview(expanded);
   }
 
+  /** Пункт проверки перед отправкой (вкладка «Ссылка»): блок с примером — открыть в «Блоках» и показать в превью. */
+  function openBlock(blockId: string) {
+    setTab("Блоки");
+    setSheet(true);
+    expand(blockId);
+    panelScrollTo.current = blockId;
+  }
+
   /** «Отправить гостям»: панель «Ссылка» с кнопками WhatsApp и Telegram (на телефоне — открыть шторку). */
   function openShare() {
     setIntro(false);
@@ -648,7 +656,16 @@ export function Editor({ id, token, initialSlug, initialData, account, notice, l
                 <MusicPanel data={data} onChange={setData} />
               </TabsContent>
               <TabsContent value="Ссылка">
-                <LinkPanel id={id} token={token} slug={slug} onSlugChange={setSlug} account={account} lanOrigin={lanOrigin} data={data} />
+                <LinkPanel
+                  id={id}
+                  token={token}
+                  slug={slug}
+                  onSlugChange={setSlug}
+                  account={account}
+                  lanOrigin={lanOrigin}
+                  data={data}
+                  onOpenBlock={openBlock}
+                />
               </TabsContent>
             </div>
           </Tabs>

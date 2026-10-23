@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Editor, type EditorAccount } from "@/components/editor/Editor";
 import { updateBlock } from "@/lib/blocks";
 import { createDefaultInvitation } from "@/lib/defaults";
+import { createFromTemplate, findTemplate } from "@/lib/templates";
 import { openBlockView, openThemeSection } from "./editorHelpers";
 
 beforeEach(() => {
@@ -490,6 +491,40 @@ describe("Editor на телефоне: превью на весь экран, �
     const tg = new URL(screen.getByRole("link", { name: "Отправить в Telegram" }).getAttribute("href")!);
     expect(tg.searchParams.get("url")).toBe(url);
     expect(screen.getByRole("button", { name: "Скачать PNG: QR-код ссылки для гостей" })).toBeInTheDocument();
+  });
+
+  it("фото из примера шаблона помечены: в сводке блока, у поля фото и на миниатюрах галереи", async () => {
+    const user = userEvent.setup();
+    renderEditor(createFromTemplate(findTemplate("mocha")!));
+    await user.click(screen.getByRole("button", { name: "Панель «Блоки»" }));
+    const photo = screen.getAllByTestId("block-item-photo")[0];
+    expect(photo).toHaveTextContent("фото из примера");
+    await user.click(within(photo).getByRole("button", { name: "Фото 1" }));
+    expect(within(photo).getByText("Фото из примера шаблона — замените своим")).toBeVisible();
+    const gallery = screen.getByTestId("block-item-gallery");
+    await user.click(within(gallery).getByRole("button", { name: "Галерея" }));
+    expect(within(gallery).getAllByText("пример")).toHaveLength(6);
+  });
+
+  it("«Ссылка»: перед отправкой — что осталось из примера; пункт открывает блок, без примеров списка нет", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderEditor();
+    await user.click(screen.getByRole("button", { name: "Отправить гостям" }));
+    const check = screen.getByTestId("sample-leftovers");
+    expect(check).toHaveTextContent("Перед отправкой проверьте");
+    const items = within(check).getByRole("list", { name: "Осталось из примера" });
+    await user.click(within(items).getByRole("button", { name: /^Место: адрес/ }));
+    expect(screen.getByRole("tab", { name: "Блоки" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByLabelText("Адрес")).toBeVisible();
+    unmount();
+
+    let data = createDefaultInvitation();
+    data = updateBlock(data, "hero", { names: "Мария & Пётр", date: "2028-08-20T17:30" });
+    data = updateBlock(data, "location", { placeName: "Шале", address: "ул. Озёрная, 1" });
+    data = updateBlock(data, "program", { items: [{ time: "17:00", title: "Сбор гостей" }] });
+    renderEditor(data);
+    await user.click(screen.getByRole("button", { name: "Отправить гостям" }));
+    expect(screen.queryByTestId("sample-leftovers")).not.toBeInTheDocument();
   });
 
   it("над превью справа — «Гости», «Посмотреть как гость» и «Отправить гостям» (иконкой); в шапке панели — настройки", () => {

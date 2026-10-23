@@ -20,7 +20,7 @@ const bodySchema = z
 /**
  * Создаёт приглашение. Тело `{ template: id, setup?, eventType?, language? }` необязательно — по умолчанию первый
  * шаблон с примером текстов. `eventType`/`language` — событие и язык гостя (примеры текстов — под них, lib/localize.ts),
- * нет — как у шаблона. `setup` — ответы формы «главное о событии» (lib/setup.ts): имена, дата, место, песня.
+ * нет — как у шаблона. `setup` — ответы формы «главное о событии» (lib/setup.ts): имена, дата, хозяева, место, песня.
  */
 export async function POST(req: Request) {
   const text = await req.text().catch(() => "");
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   if (rawSetup !== undefined) {
     const setup = setupSchema.safeParse(rawSetup);
     if (!setup.success) return NextResponse.json({ error: "Проверьте поля", errors: formatZodErrors(setup.error) }, { status: 400 });
-    data = applySetup(data, setup.data);
+    data = applySetup(data, setup.data, template);
   }
 
   // Вошедший пользователь сразу становится владельцем — забирать в аккаунт потом не нужно.

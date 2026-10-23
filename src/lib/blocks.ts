@@ -59,6 +59,12 @@ export function findBlock<T extends BlockType>(data: InvitationData, type: T): B
 
 export const blockById = (data: InvitationData, id: string) => data.blocks.find((b) => b.id === id);
 
+/**
+ * Фото из примера шаблона (public/templates: пары, места, кольца; туда же админка копирует фото шаблонов), а не своё:
+ * свои загрузки лежат в /uploads или в Supabase.
+ */
+export const isSamplePhoto = (url: string | null | undefined) => !!url?.startsWith("/templates/");
+
 /** Новый уникальный id блока: тип + случайный хвост (никогда не равен названию типа). */
 export function newBlockId(type: BlockType, taken: Iterable<string> = []): string {
   const used = new Set(taken);
@@ -227,9 +233,15 @@ export function blockSummary(data: InvitationData, block: Block): string {
     case "text":
       return block.title?.trim() || firstWords(block.text);
     case "photo":
-      return block.photo ? block.caption?.trim() || "фото загружено" : "фото не загружено";
-    case "gallery":
-      return block.photos.length ? plural(block.photos.length, ["фото", "фото", "фото"]) : "фото не загружены";
+      if (!block.photo) return "фото не загружено";
+      return isSamplePhoto(block.photo) ? "фото из примера" : block.caption?.trim() || "фото загружено";
+    case "gallery": {
+      if (!block.photos.length) return "фото не загружены";
+      const all = plural(block.photos.length, ["фото", "фото", "фото"]);
+      const samples = block.photos.filter(isSamplePhoto).length;
+      if (!samples) return all;
+      return samples === block.photos.length ? `${all} из примера` : `${all}, ${samples} из примера`;
+    }
     case "contacts":
       return plural(block.people.length, ["контакт", "контакта", "контактов"]);
   }
